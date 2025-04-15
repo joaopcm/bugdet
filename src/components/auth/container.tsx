@@ -1,5 +1,6 @@
 import { env } from '@/env'
 import Image from 'next/image'
+import Link from 'next/link'
 import type { PropsWithChildren } from 'react'
 import { Card, CardContent } from '../ui/card'
 
@@ -32,11 +33,13 @@ export function AuthContainer({
 
       <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
         By clicking continue, you agree to our{' '}
-        <a href={`${env.NEXT_PUBLIC_APP_URL}/terms-of-service`}>
+        <Link href={`${env.NEXT_PUBLIC_APP_URL}/terms-of-service`}>
           Terms of Service
-        </a>{' '}
+        </Link>{' '}
         and{' '}
-        <a href={`${env.NEXT_PUBLIC_APP_URL}/privacy-policy`}>Privacy Policy</a>
+        <Link href={`${env.NEXT_PUBLIC_APP_URL}/privacy-policy`}>
+          Privacy Policy
+        </Link>
         .
       </div>
     </div>

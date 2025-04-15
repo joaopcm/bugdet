@@ -3,6 +3,7 @@ import { Nunito } from 'next/font/google'
 import { PT_Sans } from 'next/font/google'
 import './globals.css'
 import TRPCProvider from '@/components/providers/trpc'
+import { Toaster } from '@/components/ui/sonner'
 import type { PropsWithChildren } from 'react'
 
 const nunito = Nunito({
@@ -28,7 +29,10 @@ export default function RootLayout({ children }: PropsWithChildren) {
         className={`${nunito.variable} ${ptSans.variable} antialiased relative`}
       >
         <div className="texture" />
-        <TRPCProvider>{children}</TRPCProvider>
+        <TRPCProvider>
+          <main>{children}</main>
+          <Toaster />
+        </TRPCProvider>
       </body>
     </html>
   )
