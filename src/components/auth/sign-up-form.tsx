@@ -61,9 +61,8 @@ export function SignUpForm() {
     })
     if (error) {
       toast.error(error.message)
+      setIsLoading(false)
     }
-
-    setIsLoading(false)
   }
 
   return (
