@@ -1,5 +1,6 @@
 import { pgTable, timestamp, uuid, varchar } from 'drizzle-orm/pg-core'
-export const usersTable = pgTable('users', {
+
+export const users = pgTable('users', {
   id: uuid('id').defaultRandom().notNull().primaryKey(),
   email: varchar({ length: 255 }).notNull().unique(),
   created_at: timestamp('created_at', { withTimezone: true })

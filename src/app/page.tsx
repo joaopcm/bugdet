@@ -1,13 +1,11 @@
-'use client'
+import { serverClient } from '@/lib/trpc/server'
 
-import { trpc } from '@/lib/trpc/client'
-
-export default function Home() {
-  const greeting = trpc.greeting.useQuery()
+export default async function Home() {
+  const greeting = await serverClient.greeting()
 
   return (
     <main>
-      <div>{JSON.stringify(greeting.data)}</div>
+      <div>{JSON.stringify(greeting)}</div>
     </main>
   )
 }
