@@ -19,30 +19,42 @@ import { toast } from 'sonner'
 import { z } from 'zod'
 import { AuthContainer, AuthContainerHeader } from './container'
 
-const signInSchema = z.object({
-  email: z.string().email({ message: 'Please enter a valid email address' }),
-  password: z
-    .string()
-    .min(6, { message: 'Password must be at least 6 characters' }),
-})
+const signUpSchema = z
+  .object({
+    name: z.string().min(1, { message: 'Name is required' }).max(255),
+    email: z.string().email({ message: 'Please enter a valid email address' }),
+    password: z
+      .string()
+      .min(6, { message: 'Password must be at least 6 characters' }),
+    confirmPassword: z
+      .string()
+      .min(6, { message: 'Password must be at least 6 characters' }),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    path: ['confirmPassword'],
+    message: 'Passwords do not match',
+  })
 
-type SignInFormValues = z.infer<typeof signInSchema>
+type SignUpFormValues = z.infer<typeof signUpSchema>
 
-export function SignInForm() {
+export function SignUpForm() {
   const [isLoading, setIsLoading] = useState(false)
 
-  const form = useForm<SignInFormValues>({
-    resolver: zodResolver(signInSchema),
+  const form = useForm<SignUpFormValues>({
+    resolver: zodResolver(signUpSchema),
     defaultValues: {
+      name: '',
       email: '',
       password: '',
+      confirmPassword: '',
     },
   })
 
-  async function onSubmit(values: SignInFormValues) {
+  async function onSubmit(values: SignUpFormValues) {
     setIsLoading(true)
 
-    const { error } = await authClient.signIn.email({
+    const { error } = await authClient.signUp.email({
+      name: values.name,
       email: values.email,
       password: values.password,
       callbackURL: '/dashboard',
@@ -60,8 +72,22 @@ export function SignInForm() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="p-6 md:p-8">
           <div className="flex flex-col gap-6">
             <AuthContainerHeader
-              title="Welcome back"
-              description="Login to your Bugdet account"
+              title="Create an account"
+              description="Create your Bugdet account to get started"
+            />
+
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel htmlFor="name">Name</FormLabel>
+                  <FormControl>
+                    <Input {...field} placeholder="Theo" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
 
             <FormField
@@ -87,16 +113,23 @@ export function SignInForm() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <div className="flex items-center">
-                    <FormLabel htmlFor="password">Password</FormLabel>
-                    <Link
-                      tabIndex={-1}
-                      href="/forgot-password"
-                      className="ml-auto text-sm underline-offset-2 hover:underline"
-                    >
-                      Forgot your password?
-                    </Link>
-                  </div>
+                  <FormLabel htmlFor="password">Password</FormLabel>
+                  <FormControl>
+                    <Input type="password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel htmlFor="confirmPassword">
+                    Confirm Password
+                  </FormLabel>
                   <FormControl>
                     <Input type="password" {...field} />
                   </FormControl>
@@ -106,13 +139,13 @@ export function SignInForm() {
             />
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              Login
+              Sign up
             </Button>
 
             <div className="text-center text-sm">
-              Don&apos;t have an account?{' '}
-              <Link href="/sign-up" className="underline underline-offset-4">
-                Sign up
+              Already have an account?{' '}
+              <Link href="/sign-in" className="underline underline-offset-4">
+                Sign in
               </Link>
             </div>
           </div>
