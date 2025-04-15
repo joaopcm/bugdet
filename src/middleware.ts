@@ -7,7 +7,7 @@ export async function middleware(request: NextRequest) {
   const sessionCookie = getSessionCookie(request)
 
   if (!sessionCookie && !PUBLIC_PATHS.includes(request.nextUrl.pathname)) {
-    return NextResponse.redirect(new URL('/login', request.url))
+    return NextResponse.redirect(new URL('/sign-in', request.url))
   }
 
   return NextResponse.next()
