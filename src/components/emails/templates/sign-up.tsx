@@ -24,7 +24,6 @@ export default function SignUpEmail({ confirmationLink }: SignUpEmailProps) {
           below:
         </Text>
 
-        {/* Button with 3D border */}
         <Button
           className="bg-[#999A5E] text-white font-bold py-[12px] px-[24px] rounded-[8px] text-[16px] no-underline text-center block box-border"
           href={confirmationLink}
@@ -39,7 +38,6 @@ export default function SignUpEmail({ confirmationLink }: SignUpEmailProps) {
           Confirm My Account
         </Button>
 
-        {/* Text link alternative - updated to be left-aligned */}
         <Text className="text-[14px] text-gray-600 text-left mt-[16px] mb-[24px]">
           If the button doesn't work, copy and paste this link into your
           browser:
@@ -52,7 +50,6 @@ export default function SignUpEmail({ confirmationLink }: SignUpEmailProps) {
           </Link>
         </Text>
 
-        {/* Confirmation Box with 3D border */}
         <Section
           className="bg-[#F4F4F0] p-[24px] mb-[24px] rounded-[8px]"
           style={{
@@ -82,7 +79,6 @@ export default function SignUpEmail({ confirmationLink }: SignUpEmailProps) {
 
       <Hr className="border-[#999A5E] border-dashed my-[0px]" />
 
-      {/* Additional Information */}
       <Section className="px-[24px] py-[32px] bg-[#F9F9F5]">
         <Text className="text-[18px] font-bold text-[#76773C] mb-[16px]">
           Getting Started Is Easy
