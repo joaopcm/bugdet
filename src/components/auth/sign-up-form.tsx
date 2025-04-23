@@ -39,6 +39,7 @@ type SignUpFormValues = z.infer<typeof signUpSchema>
 
 export function SignUpForm() {
   const [isLoading, setIsLoading] = useState(false)
+  const [isSubmitted, setIsSubmitted] = useState(false)
 
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
@@ -61,8 +62,52 @@ export function SignUpForm() {
     })
     if (error) {
       toast.error(error.message)
-      setIsLoading(false)
     }
+
+    setIsLoading(false)
+    setIsSubmitted(true)
+  }
+
+  async function reSendVerificationEmail() {
+    setIsLoading(true)
+
+    const { error } = await authClient.sendVerificationEmail({
+      email: form.getValues('email'),
+      callbackURL: '/dashboard',
+    })
+    if (error) {
+      toast.error(error.message)
+    }
+
+    setIsLoading(false)
+    toast.success('Verification email sent')
+  }
+
+  if (isSubmitted) {
+    return (
+      <AuthContainer>
+        <div className="p-6 md:p-8">
+          <div className="flex flex-col gap-6">
+            <AuthContainerHeader
+              title="Check your inbox"
+              description="We just sent you a verification email"
+            />
+
+            <p className="text-center">
+              Please check your inbox and click the link to verify your account.
+            </p>
+
+            <Button
+              className="w-full"
+              onClick={reSendVerificationEmail}
+              disabled={isLoading}
+            >
+              Re-send verification email
+            </Button>
+          </div>
+        </div>
+      </AuthContainer>
+    )
   }
 
   return (
