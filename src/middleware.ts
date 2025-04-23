@@ -1,7 +1,7 @@
 import { getSessionCookie } from 'better-auth/cookies'
 import { type NextRequest, NextResponse } from 'next/server'
 
-const PUBLIC_PATHS = ['/', '/sign-in', '/sign-up']
+const PUBLIC_PATHS = ['/', '/sign-in', '/sign-up', '/forgot-password']
 
 export async function middleware(request: NextRequest) {
   const sessionCookie = getSessionCookie(request)
