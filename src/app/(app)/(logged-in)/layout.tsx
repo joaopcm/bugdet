@@ -1,9 +1,20 @@
 import { AppSidebar } from '@/components/logged-in/app-sidebar'
 import { SiteHeader } from '@/components/logged-in/site-header'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
+import { auth } from '@/lib/auth/auth'
+import { headers } from 'next/headers'
+import { redirect } from 'next/navigation'
 import type { PropsWithChildren } from 'react'
 
-export default function LoggedInLayout({ children }: PropsWithChildren) {
+export default async function LoggedInLayout({ children }: PropsWithChildren) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  })
+
+  if (!session) {
+    redirect('/sign-in')
+  }
+
   return (
     <SidebarProvider
       style={
@@ -13,7 +24,7 @@ export default function LoggedInLayout({ children }: PropsWithChildren) {
         } as React.CSSProperties
       }
     >
-      <AppSidebar variant="inset" />
+      <AppSidebar variant="inset" user={session.user} />
       <SidebarInset>
         <SiteHeader />
         <div className="flex flex-1 flex-col">

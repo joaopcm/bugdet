@@ -11,25 +11,33 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
-import { IconDashboard, IconInnerShadowTop } from '@tabler/icons-react'
+import {
+  IconDashboard,
+  IconInnerShadowTop,
+  IconUpload,
+} from '@tabler/icons-react'
+import type { User } from 'better-auth'
 import Link from 'next/link'
 import type * as React from 'react'
 
-const data = {
-  user: {
-    name: 'João',
-    email: 'jopcmelo@gmail.com',
+const routes = [
+  {
+    title: 'Dashboard',
+    url: '/dashboard',
+    icon: IconDashboard,
   },
-  navMain: [
-    {
-      title: 'Dashboard',
-      url: '/dashboard',
-      icon: IconDashboard,
-    },
-  ],
+  {
+    title: 'Uploads',
+    url: '/uploads',
+    icon: IconUpload,
+  },
+]
+
+interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
+  user: User
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({ user, ...props }: AppSidebarProps) {
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -48,10 +56,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={routes} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={user} />
       </SidebarFooter>
     </Sidebar>
   )
