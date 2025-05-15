@@ -2,9 +2,12 @@ import type { Metadata } from 'next'
 import { Nunito } from 'next/font/google'
 import { PT_Sans } from 'next/font/google'
 import './globals.css'
+import { fileRouter } from '@/app/api/uploadthing/core'
 import TRPCProvider from '@/components/providers/trpc'
 import { Toaster } from '@/components/ui/sonner'
+import { NextSSRPlugin } from '@uploadthing/react/next-ssr-plugin'
 import type { PropsWithChildren } from 'react'
+import { extractRouterConfig } from 'uploadthing/server'
 
 const nunito = Nunito({
   variable: '--font-nunito',
@@ -30,6 +33,7 @@ export default function RootLayout({ children }: PropsWithChildren) {
       >
         <div className="texture" />
         <TRPCProvider>
+          <NextSSRPlugin routerConfig={extractRouterConfig(fileRouter)} />
           <main>{children}</main>
           <Toaster />
         </TRPCProvider>
