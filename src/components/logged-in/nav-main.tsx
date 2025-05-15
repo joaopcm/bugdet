@@ -11,15 +11,15 @@ import {
 import type { Icon } from '@tabler/icons-react'
 import Link from 'next/link'
 
-export function NavMain({
-  items,
-}: {
+interface NavMainProps {
   items: {
     title: string
     url: string
     icon?: Icon
   }[]
-}) {
+}
+
+export function NavMain({ items }: NavMainProps) {
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">
