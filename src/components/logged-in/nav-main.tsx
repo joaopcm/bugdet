@@ -28,7 +28,7 @@ export function NavMain({
             <Button className="flex-1">Import Bank Statement</Button>
           </SidebarMenuItem>
         </SidebarMenu>
-        <SidebarMenu>
+        <SidebarMenu className="mt-2">
           {items.map((item) => (
             <Link href={item.url} key={item.title} prefetch>
               <SidebarMenuItem>
