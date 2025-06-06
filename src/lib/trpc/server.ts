@@ -1,10 +1,17 @@
 import { appRouter } from '@/server'
-import { httpBatchLink } from '@trpc/client'
+import { createCallerFactory, createTRPCContext } from '@/server/trpc'
+import { headers } from 'next/headers'
 
-export const serverClient = appRouter.createCaller({
-  links: [
-    httpBatchLink({
-      url: 'http://localhost:3000/api/trpc',
-    }),
-  ],
-})
+function createContext(opts: { headers: Headers }) {
+  return createTRPCContext({
+    headers: opts.headers,
+  })
+}
+
+const createCaller = createCallerFactory(appRouter)
+
+export const serverClient = await createCaller(
+  await createContext({
+    headers: await headers(),
+  }),
+)
