@@ -1,5 +1,6 @@
 'use client'
 
+import { env } from '@/env'
 import { trpc } from '@/lib/trpc/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { httpBatchLink, loggerLink } from '@trpc/react-query'
@@ -17,7 +18,7 @@ export default function TRPCProvider({ children }: PropsWithChildren) {
             (op.direction === 'down' && op.result instanceof Error),
         }),
         httpBatchLink({
-          url: 'http://localhost:3000/api/trpc',
+          url: `${env.NEXT_PUBLIC_APP_URL}/api/trpc`,
           transformer: superjson,
         }),
       ],
