@@ -14,6 +14,7 @@ import {
 import {
   IconDashboard,
   IconInnerShadowTop,
+  IconList,
   IconUpload,
 } from '@tabler/icons-react'
 import type { User } from 'better-auth'
@@ -25,6 +26,11 @@ const routes = [
     title: 'Dashboard',
     url: '/dashboard',
     icon: IconDashboard,
+  },
+  {
+    title: 'Transactions',
+    url: '/transactions',
+    icon: IconList,
   },
   {
     title: 'Uploads',
