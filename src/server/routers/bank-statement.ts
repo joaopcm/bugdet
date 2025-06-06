@@ -1,7 +1,8 @@
+import { upload } from '@/db/schema'
 import { createClient } from '@/lib/supabase/server'
 import { TRPCError } from '@trpc/server'
 import { z } from 'zod'
-import { publicProcedure, router } from '../trpc'
+import { protectedProcedure, router } from '../trpc'
 
 const fileSchema = z.object({
   name: z.string(),
@@ -11,16 +12,16 @@ const fileSchema = z.object({
 })
 
 export const bankStatementRouter = router({
-  upload: publicProcedure
+  upload: protectedProcedure
     .input(
       z.object({
         files: z.array(fileSchema).max(10).min(1),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const { files } = input
       const supabase = await createClient({ admin: true })
-      const urls: string[] = []
+      const filenames: string[] = []
 
       for (const fileData of files) {
         try {
@@ -42,7 +43,7 @@ export const bankStatementRouter = router({
           }
 
           if (data) {
-            urls.push(data.path)
+            filenames.push(data.path)
           }
         } catch (error) {
           console.error(error)
@@ -53,8 +54,15 @@ export const bankStatementRouter = router({
         }
       }
 
+      await ctx.db.insert(upload).values(
+        filenames.map((url) => ({
+          userId: ctx.user.id,
+          filename: url,
+        })),
+      )
+
       return {
-        urls,
+        urls: filenames,
       }
     }),
 })

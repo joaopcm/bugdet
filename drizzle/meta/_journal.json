@@ -8,6 +8,20 @@
       "when": 1744751109050,
       "tag": "0000_wealthy_shinko_yamashiro",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1749171800125,
+      "tag": "0001_lumpy_richard_fisk",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1749173136092,
+      "tag": "0002_elite_joseph",
+      "breakpoints": true
     }
   ]
 }
