@@ -11,13 +11,9 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
-import {
-  IconDashboard,
-  IconInnerShadowTop,
-  IconList,
-  IconUpload,
-} from '@tabler/icons-react'
+import { IconDashboard, IconList, IconUpload } from '@tabler/icons-react'
 import type { User } from 'better-auth'
+import Image from 'next/image'
 import Link from 'next/link'
 import type * as React from 'react'
 
@@ -54,7 +50,13 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
               <Link href="/dashboard">
-                <IconInnerShadowTop className="!size-5" />
+                <Image
+                  src="/images/android-chrome-192x192.png"
+                  alt="Bugdet.co"
+                  width={40}
+                  height={40}
+                  priority
+                />
                 <span className="text-base font-semibold">Bugdet.co</span>
               </Link>
             </SidebarMenuButton>
