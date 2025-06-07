@@ -9,6 +9,7 @@ import {
 import { TableHeader } from '@/components/ui/table'
 import { useUploads } from '@/hooks/use-uploads'
 import { EmptyState } from '../empty-state'
+import { LoadingState } from './loading-state'
 import { UploadItem } from './upload-item'
 
 export function UploadsTable() {
@@ -25,6 +26,8 @@ export function UploadsTable() {
         </TableRow>
       </TableHeader>
       <TableBody>
+        {isLoading && <LoadingState />}
+
         {uploads?.map((upload) => (
           <UploadItem key={upload.id} upload={upload} />
         ))}
@@ -32,7 +35,10 @@ export function UploadsTable() {
         {uploads?.length === 0 && (
           <TableRow>
             <TableCell colSpan={4} className="py-10">
-              <EmptyState />
+              <EmptyState
+                title="No uploads found."
+                description="Upload your bank statements to get started."
+              />
             </TableCell>
           </TableRow>
         )}
