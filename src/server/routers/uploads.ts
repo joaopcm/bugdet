@@ -3,6 +3,8 @@ import { CANCELLABLE_STATUSES, DELETABLE_STATUSES } from '@/constants/uploads'
 import { db } from '@/db'
 import { upload } from '@/db/schema'
 import { createClient } from '@/lib/supabase/server'
+import type { uploadBreakdownTask } from '@/trigger/upload-breakdown'
+import { tasks } from '@trigger.dev/sdk/v3'
 import { TRPCError } from '@trpc/server'
 import { and, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
@@ -89,14 +91,23 @@ export const uploadsRouter = router({
         }
       }
 
-      await ctx.db.insert(upload).values(
-        processedFiles.map((file) => ({
-          userId: ctx.user.id,
-          fileName: file.name,
-          filePath: file.path,
-          fileSize: file.size,
-        })),
-      )
+      const uploads = await ctx.db
+        .insert(upload)
+        .values(
+          processedFiles.map((file) => ({
+            userId: ctx.user.id,
+            fileName: file.name,
+            filePath: file.path,
+            fileSize: file.size,
+          })),
+        )
+        .returning()
+
+      for (const upload of uploads) {
+        await tasks.trigger<typeof uploadBreakdownTask>('upload-breakdown', {
+          uploadId: upload.id,
+        })
+      }
 
       return {
         urls: processedFiles,
