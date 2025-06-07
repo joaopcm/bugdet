@@ -8,6 +8,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
+import { useUploads } from '@/hooks/use-uploads'
 import { trpc } from '@/lib/trpc/client'
 import { type Icon, IconLoader2 } from '@tabler/icons-react'
 import Link from 'next/link'
@@ -27,6 +28,7 @@ export function NavMain({ items }: NavMainProps) {
   const pathname = usePathname()
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { refetch: refetchUploads } = useUploads()
 
   const { mutate: uploadBankStatement, isPending } =
     trpc.uploads.upload.useMutation({
@@ -34,6 +36,7 @@ export function NavMain({ items }: NavMainProps) {
         toast.error(error.message)
       },
       onSuccess: () => {
+        refetchUploads()
         router.push('/uploads')
       },
     })

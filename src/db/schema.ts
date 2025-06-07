@@ -63,6 +63,7 @@ export const uploadStatusEnum = pgEnum('upload_status', [
   'processing',
   'completed',
   'failed',
+  'cancelled',
 ])
 
 export const upload = pgTable('upload', {

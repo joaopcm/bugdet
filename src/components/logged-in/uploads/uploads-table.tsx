@@ -8,12 +8,12 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { TableHeader } from '@/components/ui/table'
-import { trpc } from '@/lib/trpc/client'
+import { useUploads } from '@/hooks/use-uploads'
 import { format } from 'date-fns'
 import { StatusBadge } from './status-badge'
 
 export function UploadsTable() {
-  const { data: uploads, isLoading } = trpc.uploads.list.useQuery()
+  const { data: uploads, isLoading } = useUploads()
 
   return (
     <Table>
@@ -40,7 +40,8 @@ export function UploadsTable() {
                 Download
               </Button>
 
-              {upload.status === 'queued' && (
+              {(upload.status === 'queued' ||
+                upload.status === 'processing') && (
                 <Button variant="destructive" size="sm">
                   Cancel
                 </Button>
