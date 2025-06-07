@@ -6,14 +6,14 @@ import { cn } from '@/lib/utils'
 import { RefreshCcwIcon } from 'lucide-react'
 
 export function RefreshButton() {
-  const { refetch: refetchUploads, isRefetching } = useUploads()
+  const { refetch: refetchUploads, isRefetching, isLoading } = useUploads()
 
   return (
     <Button
       variant="outline"
       size="icon"
       onClick={() => refetchUploads()}
-      disabled={isRefetching}
+      disabled={isRefetching || isLoading}
     >
       <RefreshCcwIcon
         className={cn({
