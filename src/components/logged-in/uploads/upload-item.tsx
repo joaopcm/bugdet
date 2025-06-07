@@ -8,6 +8,7 @@ import { useUploads } from '@/hooks/use-uploads'
 import { trpc } from '@/lib/trpc/client'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
+import { DoubleConfirmationAlertDialog } from '../double-confirmation-alert-dialog'
 import { StatusBadge } from './status-badge'
 
 interface UploadItemProps {
@@ -74,25 +75,27 @@ export function UploadItem({ upload }: UploadItemProps) {
         </Button>
 
         {CANCELLABLE_STATUSES.includes(upload.status) && (
-          <Button
-            variant="destructive"
-            size="sm"
-            disabled={isCancelling}
-            onClick={() => cancelUpload({ id: upload.id })}
+          <DoubleConfirmationAlertDialog
+            title="Cancel processing this upload?"
+            description="Are you sure you want to cancel the processing of this upload? This action cannot be undone."
+            onConfirm={() => cancelUpload({ id: upload.id })}
           >
-            Cancel
-          </Button>
+            <Button variant="destructive" size="sm" disabled={isCancelling}>
+              Cancel
+            </Button>
+          </DoubleConfirmationAlertDialog>
         )}
 
         {DELETABLE_STATUSES.includes(upload.status) && (
-          <Button
-            variant="destructive"
-            size="sm"
-            disabled={isDeleting}
-            onClick={() => deleteUpload({ id: upload.id })}
+          <DoubleConfirmationAlertDialog
+            title="Delete this upload?"
+            description="Are you sure you want to delete this upload? This action cannot be undone."
+            onConfirm={() => deleteUpload({ id: upload.id })}
           >
-            Delete
-          </Button>
+            <Button variant="destructive" size="sm" disabled={isDeleting}>
+              Delete
+            </Button>
+          </DoubleConfirmationAlertDialog>
         )}
       </TableCell>
     </TableRow>
