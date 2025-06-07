@@ -1,5 +1,6 @@
 import {
   boolean,
+  integer,
   pgEnum,
   pgTable,
   text,
@@ -58,7 +59,7 @@ export const verification = pgTable('verification', {
 })
 
 export const uploadStatusEnum = pgEnum('upload_status', [
-  'pending',
+  'queued',
   'processing',
   'completed',
   'failed',
@@ -69,8 +70,10 @@ export const upload = pgTable('upload', {
   userId: text('user_id')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
-  filename: text('filename').notNull(),
-  status: uploadStatusEnum('status').notNull().default('pending'),
+  fileName: text('file_name').notNull(),
+  filePath: text('file_path').notNull(),
+  fileSize: integer('file_size').notNull(),
+  status: uploadStatusEnum('status').notNull().default('queued'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at')
     .notNull()

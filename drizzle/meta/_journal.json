@@ -22,6 +22,20 @@
       "when": 1749173136092,
       "tag": "0002_elite_joseph",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1749318825964,
+      "tag": "0003_sad_menace",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1749319149835,
+      "tag": "0004_new_master_mold",
+      "breakpoints": true
     }
   ]
 }

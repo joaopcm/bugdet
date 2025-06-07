@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { db } from '@/db'
 import { upload } from '@/db/schema'
 import { createClient } from '@/lib/supabase/server'
@@ -23,15 +24,23 @@ export const uploadsRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { files } = input
       const supabase = await createClient({ admin: true })
-      const filenames: string[] = []
+      const processedFiles: {
+        name: string
+        path: string
+        size: number
+      }[] = []
 
       for (const fileData of files) {
         try {
           const buffer = Buffer.from(fileData.content, 'base64')
+          const fileName = fileData.name
+          const fileExtension = fileName.split('.').pop()
+          const filePath = `${randomUUID()}.${fileExtension}`
+          const fileSize = fileData.size
 
           const { data, error } = await supabase.storage
             .from('bank-statements')
-            .upload(fileData.name, buffer, {
+            .upload(filePath, buffer, {
               contentType: fileData.type,
             })
 
@@ -43,7 +52,11 @@ export const uploadsRouter = router({
           }
 
           if (data) {
-            filenames.push(data.path)
+            processedFiles.push({
+              name: fileName,
+              path: data.path,
+              size: fileSize,
+            })
           }
         } catch (error) {
           console.error(error)
@@ -55,21 +68,25 @@ export const uploadsRouter = router({
       }
 
       await ctx.db.insert(upload).values(
-        filenames.map((url) => ({
+        processedFiles.map((file) => ({
           userId: ctx.user.id,
-          filename: url,
+          fileName: file.name,
+          filePath: file.path,
+          fileSize: file.size,
         })),
       )
 
       return {
-        urls: filenames,
+        urls: processedFiles,
       }
     }),
   list: protectedProcedure.query(async ({ ctx }) => {
     const uploads = await db
       .select({
         id: upload.id,
-        filename: upload.filename,
+        fileName: upload.fileName,
+        filePath: upload.filePath,
+        fileSize: upload.fileSize,
         status: upload.status,
         createdAt: upload.createdAt,
       })
