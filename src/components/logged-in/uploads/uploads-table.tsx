@@ -1,7 +1,14 @@
 'use client'
-import { Table, TableBody, TableHead, TableRow } from '@/components/ui/table'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+} from '@/components/ui/table'
 import { TableHeader } from '@/components/ui/table'
 import { useUploads } from '@/hooks/use-uploads'
+import { EmptyState } from '../empty-state'
 import { UploadItem } from './upload-item'
 
 export function UploadsTable() {
@@ -21,6 +28,14 @@ export function UploadsTable() {
         {uploads?.map((upload) => (
           <UploadItem key={upload.id} upload={upload} />
         ))}
+
+        {uploads?.length === 0 && (
+          <TableRow>
+            <TableCell colSpan={4} className="py-10">
+              <EmptyState />
+            </TableCell>
+          </TableRow>
+        )}
       </TableBody>
     </Table>
   )
