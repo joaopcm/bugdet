@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/sidebar'
 import { useUploads } from '@/hooks/use-uploads'
 import { trpc } from '@/lib/trpc/client'
-import { type Icon, IconLoader2 } from '@tabler/icons-react'
+import type { Icon } from '@tabler/icons-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useRef } from 'react'
@@ -32,10 +32,20 @@ export function NavMain({ items }: NavMainProps) {
 
   const { mutate: uploadBankStatement, isPending } =
     trpc.uploads.upload.useMutation({
+      onMutate: () => {
+        toast.loading('Uploading bank statements...', {
+          id: 'upload-bank-statement',
+        })
+      },
       onError: (error) => {
-        toast.error(error.message)
+        toast.error(error.message, {
+          id: 'upload-bank-statement',
+        })
       },
       onSuccess: () => {
+        toast.success('Bank statements uploaded successfully', {
+          id: 'upload-bank-statement',
+        })
         refetchUploads()
         router.push('/uploads')
       },
@@ -88,14 +98,7 @@ export function NavMain({ items }: NavMainProps) {
               onClick={handleImportClick}
               disabled={isPending}
             >
-              {isPending ? (
-                <>
-                  <IconLoader2 className="animate-spin" />
-                  <span>Uploading...</span>
-                </>
-              ) : (
-                'Import Bank Statement'
-              )}
+              Import Bank Statement
             </Button>
           </SidebarMenuItem>
         </SidebarMenu>
