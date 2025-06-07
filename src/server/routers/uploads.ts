@@ -1,6 +1,8 @@
+import { db } from '@/db'
 import { upload } from '@/db/schema'
 import { createClient } from '@/lib/supabase/server'
 import { TRPCError } from '@trpc/server'
+import { desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { protectedProcedure, router } from '../trpc'
 
@@ -11,7 +13,7 @@ const fileSchema = z.object({
   content: z.string(),
 })
 
-export const bankStatementRouter = router({
+export const uploadsRouter = router({
   upload: protectedProcedure
     .input(
       z.object({
@@ -26,12 +28,10 @@ export const bankStatementRouter = router({
       for (const fileData of files) {
         try {
           const buffer = Buffer.from(fileData.content, 'base64')
-          const timestamp = Date.now()
-          const filename = `${timestamp}-${fileData.name}`
 
           const { data, error } = await supabase.storage
             .from('bank-statements')
-            .upload(filename, buffer, {
+            .upload(fileData.name, buffer, {
               contentType: fileData.type,
             })
 
@@ -65,4 +65,18 @@ export const bankStatementRouter = router({
         urls: filenames,
       }
     }),
+  list: protectedProcedure.query(async ({ ctx }) => {
+    const uploads = await db
+      .select({
+        id: upload.id,
+        filename: upload.filename,
+        status: upload.status,
+        createdAt: upload.createdAt,
+      })
+      .from(upload)
+      .where(eq(upload.userId, ctx.user.id))
+      .orderBy(desc(upload.createdAt))
+
+    return uploads
+  }),
 })

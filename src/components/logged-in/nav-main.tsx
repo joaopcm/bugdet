@@ -29,7 +29,7 @@ export function NavMain({ items }: NavMainProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const { mutate: uploadBankStatement, isPending } =
-    trpc.bankStatement.upload.useMutation({
+    trpc.uploads.upload.useMutation({
       onError: (error) => {
         toast.error(error.message)
       },
