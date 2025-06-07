@@ -13,13 +13,15 @@ const statusLabel: Record<Status, string> = {
   processing: 'Processing',
   completed: 'Completed',
   failed: 'Failed',
+  cancelled: 'Cancelled',
 }
 
 const statusIcon: Record<Status, React.ReactNode> = {
-  queued: <div className="size-2 rounded-full bg-gray-500" />,
+  queued: <div className="size-2 rounded-full bg-gray-400" />,
   processing: <div className="size-2 rounded-full bg-yellow-500" />,
   completed: <div className="size-2 rounded-full bg-green-500" />,
   failed: <div className="size-2 rounded-full bg-red-500" />,
+  cancelled: <div className="size-2 rounded-full bg-gray-400" />,
 }
 
 export function StatusBadge({ status }: StatusBadgeProps) {

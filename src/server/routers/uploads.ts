@@ -3,7 +3,7 @@ import { db } from '@/db'
 import { upload } from '@/db/schema'
 import { createClient } from '@/lib/supabase/server'
 import { TRPCError } from '@trpc/server'
-import { desc, eq } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { protectedProcedure, router } from '../trpc'
 
@@ -96,4 +96,36 @@ export const uploadsRouter = router({
 
     return uploads
   }),
+  cancel: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ input, ctx }) => {
+      const { id } = input
+
+      const [existingUpload] = await ctx.db
+        .select({ id: upload.id, status: upload.status })
+        .from(upload)
+        .where(and(eq(upload.id, id), eq(upload.userId, ctx.user.id)))
+
+      if (!existingUpload) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Upload not found.',
+        })
+      }
+
+      if (
+        existingUpload.status !== 'queued' &&
+        existingUpload.status !== 'processing'
+      ) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Upload is not cancellable.',
+        })
+      }
+
+      await ctx.db
+        .update(upload)
+        .set({ status: 'cancelled' })
+        .where(eq(upload.id, id))
+    }),
 })
