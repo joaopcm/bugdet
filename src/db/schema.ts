@@ -75,6 +75,7 @@ export const upload = pgTable('upload', {
   filePath: text('file_path').notNull(),
   fileSize: integer('file_size').notNull(),
   status: uploadStatusEnum('status').notNull().default('queued'),
+  deleted: boolean('deleted').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at')
     .notNull()

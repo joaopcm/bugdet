@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { TableCell, TableRow } from '@/components/ui/table'
+import { CANCELLABLE_STATUSES, DELETABLE_STATUSES } from '@/constants/uploads'
 import type { upload } from '@/db/schema'
 import { useUploads } from '@/hooks/use-uploads'
 import { trpc } from '@/lib/trpc/client'
@@ -32,6 +33,17 @@ export function UploadItem({ upload }: UploadItemProps) {
       },
     })
 
+  const { mutate: deleteUpload, isPending: isDeleting } =
+    trpc.uploads.delete.useMutation({
+      onSuccess: () => {
+        refetchUploads()
+        toast.success(`You have deleted the file "${upload.fileName}".`)
+      },
+      onError: (error) => {
+        toast.error(error.message)
+      },
+    })
+
   return (
     <TableRow>
       <TableCell>{upload.fileName}</TableCell>
@@ -46,7 +58,7 @@ export function UploadItem({ upload }: UploadItemProps) {
           Download
         </Button>
 
-        {(upload.status === 'queued' || upload.status === 'processing') && (
+        {CANCELLABLE_STATUSES.includes(upload.status) && (
           <Button
             variant="destructive"
             size="sm"
@@ -57,8 +69,13 @@ export function UploadItem({ upload }: UploadItemProps) {
           </Button>
         )}
 
-        {(upload.status === 'completed' || upload.status === 'cancelled') && (
-          <Button variant="destructive" size="sm">
+        {DELETABLE_STATUSES.includes(upload.status) && (
+          <Button
+            variant="destructive"
+            size="sm"
+            disabled={isDeleting}
+            onClick={() => deleteUpload({ id: upload.id })}
+          >
             Delete
           </Button>
         )}

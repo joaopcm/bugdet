@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { CANCELLABLE_STATUSES, DELETABLE_STATUSES } from '@/constants/uploads'
 import { db } from '@/db'
 import { upload } from '@/db/schema'
 import { createClient } from '@/lib/supabase/server'
@@ -13,6 +14,26 @@ const fileSchema = z.object({
   size: z.number(),
   content: z.string(),
 })
+
+async function getExistingUpload(id: string, userId: string) {
+  const [existingUpload] = await db
+    .select({
+      id: upload.id,
+      deleted: upload.deleted,
+      status: upload.status,
+    })
+    .from(upload)
+    .where(and(eq(upload.id, id), eq(upload.userId, userId)))
+
+  if (!existingUpload || existingUpload.deleted) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: 'Upload not found.',
+    })
+  }
+
+  return existingUpload
+}
 
 export const uploadsRouter = router({
   upload: protectedProcedure
@@ -91,7 +112,7 @@ export const uploadsRouter = router({
         createdAt: upload.createdAt,
       })
       .from(upload)
-      .where(eq(upload.userId, ctx.user.id))
+      .where(and(eq(upload.userId, ctx.user.id), eq(upload.deleted, false)))
       .orderBy(desc(upload.createdAt))
 
     return uploads
@@ -101,22 +122,9 @@ export const uploadsRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { id } = input
 
-      const [existingUpload] = await ctx.db
-        .select({ id: upload.id, status: upload.status })
-        .from(upload)
-        .where(and(eq(upload.id, id), eq(upload.userId, ctx.user.id)))
+      const existingUpload = await getExistingUpload(id, ctx.user.id)
 
-      if (!existingUpload) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Upload not found.',
-        })
-      }
-
-      if (
-        existingUpload.status !== 'queued' &&
-        existingUpload.status !== 'processing'
-      ) {
+      if (!CANCELLABLE_STATUSES.includes(existingUpload.status)) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: 'Upload is not cancellable.',
@@ -126,6 +134,25 @@ export const uploadsRouter = router({
       await ctx.db
         .update(upload)
         .set({ status: 'cancelled' })
-        .where(eq(upload.id, id))
+        .where(eq(upload.id, existingUpload.id))
+    }),
+  delete: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ input, ctx }) => {
+      const { id } = input
+
+      const existingUpload = await getExistingUpload(id, ctx.user.id)
+
+      if (!DELETABLE_STATUSES.includes(existingUpload.status)) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Upload is not deletable.',
+        })
+      }
+
+      await ctx.db
+        .update(upload)
+        .set({ deleted: true })
+        .where(eq(upload.id, existingUpload.id))
     }),
 })

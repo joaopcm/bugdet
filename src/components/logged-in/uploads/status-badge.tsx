@@ -1,8 +1,7 @@
 import { Badge } from '@/components/ui/badge'
 import type { uploadStatusEnum } from '@/db/schema'
-import {} from '@tabler/icons-react'
 
-type Status = (typeof uploadStatusEnum.enumValues)[number]
+export type Status = (typeof uploadStatusEnum.enumValues)[number]
 
 interface StatusBadgeProps {
   status: Status
