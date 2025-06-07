@@ -44,6 +44,16 @@ export function UploadItem({ upload }: UploadItemProps) {
       },
     })
 
+  const { mutate: downloadUpload, isPending: isDownloading } =
+    trpc.uploads.download.useMutation({
+      onSuccess: (data) => {
+        window.open(data.url, '_blank')
+      },
+      onError: (error) => {
+        toast.error(error.message)
+      },
+    })
+
   return (
     <TableRow>
       <TableCell>{upload.fileName}</TableCell>
@@ -54,7 +64,12 @@ export function UploadItem({ upload }: UploadItemProps) {
         {format(upload.createdAt, "MMM d, yyyy 'at' hh:mm a")}
       </TableCell>
       <TableCell className="flex items-center gap-2">
-        <Button variant="outline" size="sm">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={isDownloading}
+          onClick={() => downloadUpload({ id: upload.id })}
+        >
           Download
         </Button>
 

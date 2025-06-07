@@ -21,6 +21,7 @@ async function getExistingUpload(id: string, userId: string) {
       id: upload.id,
       deleted: upload.deleted,
       status: upload.status,
+      filePath: upload.filePath,
     })
     .from(upload)
     .where(and(eq(upload.id, id), eq(upload.userId, userId)))
@@ -150,9 +151,47 @@ export const uploadsRouter = router({
         })
       }
 
+      const supabase = await createClient({ admin: true })
+
+      const { error: deleteFileError } = await supabase.storage
+        .from('bank-statements')
+        .remove([existingUpload.filePath])
+
+      if (deleteFileError) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Failed to delete ${existingUpload.filePath}: ${deleteFileError.message}`,
+        })
+      }
+
       await ctx.db
         .update(upload)
         .set({ deleted: true })
         .where(eq(upload.id, existingUpload.id))
+    }),
+  download: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ input, ctx }) => {
+      const { id } = input
+
+      const existingUpload = await getExistingUpload(id, ctx.user.id)
+
+      const supabase = await createClient({ admin: true })
+
+      const { data: signedUrlData, error: signedUrlError } =
+        await supabase.storage
+          .from('bank-statements')
+          .createSignedUrl(existingUpload.filePath, 60 * 15) // 15 minutes
+
+      if (signedUrlError) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Failed to download ${existingUpload.filePath}: ${signedUrlError.message}`,
+        })
+      }
+
+      return {
+        url: signedUrlData.signedUrl,
+      }
     }),
 })
