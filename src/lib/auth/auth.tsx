@@ -23,7 +23,6 @@ export const auth = betterAuth({
       verification,
     },
   }),
-  plugins: [],
   emailVerification: {
     autoSignInAfterVerification: true,
     sendOnSignUp: true,
