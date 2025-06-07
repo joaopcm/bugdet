@@ -1,4 +1,5 @@
 import { PageLayout } from '@/components/logged-in/page-layout'
+import { RefreshButton } from '@/components/logged-in/uploads/refresh-button'
 import { UploadsTable } from '@/components/logged-in/uploads/uploads-table'
 import type { Metadata } from 'next'
 
@@ -14,6 +15,7 @@ export default function UploadsPage() {
           <PageLayout.HeaderTitle title="Uploads" />
           <PageLayout.HeaderDescription description="Upload, manage, and view your bank statements uploaded to the platform." />
         </PageLayout.HeaderContent>
+        <RefreshButton />
       </PageLayout.Header>
       <UploadsTable />
     </PageLayout.Root>

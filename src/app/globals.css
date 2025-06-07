@@ -55,6 +55,7 @@
   --color-destructive-border: var(--destructive-border);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-primary-border: var(--primary-border);
+  --animate-spin-reverse: spin-reverse 1s linear infinite;
 }
 
 :root {
@@ -174,5 +175,14 @@
     width: 100vw;
     height: 100dvh;
     pointer-events: none;
+  }
+}
+
+@keyframes spin-reverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
   }
 }
