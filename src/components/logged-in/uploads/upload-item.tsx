@@ -14,7 +14,7 @@ import { StatusBadge } from './status-badge'
 interface UploadItemProps {
   upload: Pick<
     typeof upload.$inferSelect,
-    'id' | 'fileName' | 'status' | 'createdAt'
+    'id' | 'fileName' | 'status' | 'createdAt' | 'failedReason'
   >
 }
 
@@ -59,7 +59,10 @@ export function UploadItem({ upload }: UploadItemProps) {
     <TableRow>
       <TableCell>{upload.fileName}</TableCell>
       <TableCell>
-        <StatusBadge status={upload.status} />
+        <StatusBadge
+          status={upload.status}
+          failedReason={upload.failedReason}
+        />
       </TableCell>
       <TableCell>
         {format(upload.createdAt, "MMM d, yyyy 'at' hh:mm a")}
