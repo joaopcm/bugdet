@@ -28,36 +28,38 @@ interface NavMainProps {
 
 export function NavMain({ items }: NavMainProps) {
   const [files, setFiles] = useState<FileList | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { refetch: refetchUploads } = useUploads()
 
-  const {
-    mutate: createSignedUploadUrls,
-    isPending: isCreatingSignedUploadUrls,
-  } = trpc.uploads.createSignedUploadUrls.useMutation({
-    onMutate: () => {
-      toast.loading('Preparing bank statement upload...', {
-        id: 'upload-bank-statement',
-      })
-    },
-    onError: (error) => {
-      toast.error(error.message, {
-        id: 'upload-bank-statement',
-      })
-    },
-    onSuccess: async ({ uploadUrls }) => {
-      const successfulUploads = await uploadToSignedUrls(uploadUrls)
-      processUploads({
-        files: successfulUploads.map((upload) => ({
-          fileSize: upload.file.size,
-          fileName: upload.file.name,
-          filePath: upload.signedUrlConfig.path,
-        })),
-      })
-    },
-  })
+  const { mutate: createSignedUploadUrls } =
+    trpc.uploads.createSignedUploadUrls.useMutation({
+      onMutate: () => {
+        setIsUploading(true)
+        toast.loading('Preparing bank statement upload...', {
+          id: 'upload-bank-statement',
+        })
+      },
+      onError: (error) => {
+        setIsUploading(false)
+        toast.error(error.message, {
+          id: 'upload-bank-statement',
+        })
+      },
+      onSuccess: async ({ uploadUrls }) => {
+        const successfulUploads = await uploadToSignedUrls(uploadUrls)
+        processUploads({
+          files: successfulUploads.map((upload) => ({
+            fileSize: upload.file.size,
+            fileName: upload.file.name,
+            filePath: upload.signedUrlConfig.path,
+          })),
+        })
+        setFiles(null)
+      },
+    })
 
   async function uploadToSignedUrls(configs: SignedUploadUrl[]) {
     if (!files) {
@@ -97,26 +99,28 @@ export function NavMain({ items }: NavMainProps) {
     return successfulUploads
   }
 
-  const { mutate: processUploads, isPending: isProcessingUploads } =
-    trpc.uploads.process.useMutation({
-      onMutate: () => {
-        toast.loading('Processing bank statements...', {
-          id: 'upload-bank-statement',
-        })
-      },
-      onError: (error) => {
-        toast.error(error.message, {
-          id: 'upload-bank-statement',
-        })
-      },
-      onSuccess: () => {
-        toast.success('Bank statements uploaded successfully', {
-          id: 'upload-bank-statement',
-        })
-        refetchUploads()
-        router.push('/uploads')
-      },
-    })
+  const { mutate: processUploads } = trpc.uploads.process.useMutation({
+    onMutate: () => {
+      toast.loading('Processing bank statements...', {
+        id: 'upload-bank-statement',
+      })
+    },
+    onError: (error) => {
+      toast.error(error.message, {
+        id: 'upload-bank-statement',
+      })
+    },
+    onSuccess: () => {
+      toast.success('Bank statements uploaded successfully', {
+        id: 'upload-bank-statement',
+      })
+      refetchUploads()
+      router.push('/uploads')
+    },
+    onSettled: () => {
+      setIsUploading(false)
+    },
+  })
 
   async function handleFileSelect(event: React.ChangeEvent<HTMLInputElement>) {
     const newFiles = event.target.files
@@ -151,7 +155,7 @@ export function NavMain({ items }: NavMainProps) {
             <Button
               className="flex-1"
               onClick={handleImportClick}
-              disabled={isCreatingSignedUploadUrls}
+              disabled={isUploading}
             >
               Import Bank Statement
             </Button>
