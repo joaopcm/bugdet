@@ -10,10 +10,12 @@ import {
 } from '@/components/ui/sidebar'
 import { useUploads } from '@/hooks/use-uploads'
 import { trpc } from '@/lib/trpc/client'
+import { uploadToSignedUrlAction } from '@/server/actions/uploads'
+import type { SignedUploadUrl } from '@/server/routers/uploads'
 import type { Icon } from '@tabler/icons-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 interface NavMainProps {
@@ -25,52 +27,83 @@ interface NavMainProps {
 }
 
 export function NavMain({ items }: NavMainProps) {
+  const [files, setFiles] = useState<FileList | null>(null)
   const pathname = usePathname()
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { refetch: refetchUploads } = useUploads()
 
-  const { mutate: uploadBankStatement, isPending } =
-    trpc.uploads.upload.useMutation({
-      onMutate: () => {
-        toast.loading('Uploading bank statements...', {
-          id: 'upload-bank-statement',
-        })
-      },
-      onError: (error) => {
-        toast.error(error.message, {
-          id: 'upload-bank-statement',
-        })
-      },
-      onSuccess: () => {
-        toast.success('Bank statements uploaded successfully', {
-          id: 'upload-bank-statement',
-        })
-        refetchUploads()
-        router.push('/uploads')
-      },
-    })
+  const {
+    mutate: createSignedUploadUrls,
+    isPending: isCreatingSignedUploadUrls,
+  } = trpc.uploads.createSignedUploadUrls.useMutation({
+    onMutate: () => {
+      toast.loading('Preparing bank statement upload...', {
+        id: 'upload-bank-statement',
+      })
+    },
+    onError: (error) => {
+      toast.error(error.message, {
+        id: 'upload-bank-statement',
+      })
+    },
+    onSuccess: async ({ uploadUrls }) => {
+      await uploadToSignedUrls(uploadUrls)
+    },
+  })
 
-  async function handleFileSelect(event: React.ChangeEvent<HTMLInputElement>) {
-    const files = event.target.files
-    if (files && files.length > 0) {
-      const fileArray = Array.from(files)
-      const fileData = []
-
-      for (const file of fileArray) {
-        fileData.push({
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          content: await file.text(),
-        })
-      }
-
-      uploadBankStatement({ files: fileData })
+  async function uploadToSignedUrls(urls: SignedUploadUrl[]) {
+    if (!files) {
+      throw new Error('No files to upload')
     }
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
+    const fileNameToUploadUrlMap = new Map<string, SignedUploadUrl>()
+    for (const url of urls) {
+      fileNameToUploadUrlMap.set(url.path, url)
+    }
+
+    for (const file of files) {
+      const uploadUrl = fileNameToUploadUrlMap.get(file.name)
+
+      if (uploadUrl) {
+        const result = await uploadToSignedUrlAction(
+          file.name,
+          uploadUrl.token,
+          file,
+        )
+      }
+    }
+  }
+
+  // const { mutate: processUpload, isPending: isProcessingUpload } =
+  //   trpc.uploads.process.useMutation({
+  //     onMutate: () => {
+  //       toast.loading('Uploading bank statements...', {
+  //         id: 'upload-bank-statement',
+  //       })
+  //     },
+  //     onError: (error) => {
+  //       toast.error(error.message, {
+  //         id: 'upload-bank-statement',
+  //       })
+  //     },
+  //     onSuccess: () => {
+  //       toast.success('Bank statements uploaded successfully', {
+  //         id: 'upload-bank-statement',
+  //       })
+  //       refetchUploads()
+  //       router.push('/uploads')
+  //     },
+  //   })
+
+  async function handleFileSelect(event: React.ChangeEvent<HTMLInputElement>) {
+    const newFiles = event.target.files
+
+    if (newFiles && newFiles.length > 0) {
+      setFiles(newFiles)
+      createSignedUploadUrls({
+        fileNames: Array.from(newFiles).map((file) => file.name),
+      })
     }
   }
 
@@ -88,15 +121,15 @@ export function NavMain({ items }: NavMainProps) {
               ref={fileInputRef}
               onChange={handleFileSelect}
               multiple
-              max={10}
               min={1}
-              accept=".csv,.pdf"
+              max={10}
+              accept=".pdf"
               className="hidden"
             />
             <Button
               className="flex-1"
               onClick={handleImportClick}
-              disabled={isPending}
+              disabled={isCreatingSignedUploadUrls}
             >
               Import Bank Statement
             </Button>

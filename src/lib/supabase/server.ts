@@ -1,12 +1,13 @@
 import { env } from '@/env'
 import { createServerClient } from '@supabase/ssr'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 
 interface CreateClientProps {
   admin?: boolean
 }
 
-export const createClient = async ({ admin }: CreateClientProps = {}) => {
+export async function createClient({ admin }: CreateClientProps = {}) {
   const cookieStore = await cookies()
 
   return createServerClient(
@@ -35,4 +36,8 @@ export const createClient = async ({ admin }: CreateClientProps = {}) => {
       },
     },
   )
+}
+
+export function createLambdaClient() {
+  return createSupabaseClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY)
 }

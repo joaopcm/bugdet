@@ -1,21 +1,11 @@
-import { randomUUID } from 'node:crypto'
 import { CANCELLABLE_STATUSES, DELETABLE_STATUSES } from '@/constants/uploads'
 import { db } from '@/db'
 import { upload } from '@/db/schema'
 import { createClient } from '@/lib/supabase/server'
-import type { uploadBreakdownTask } from '@/trigger/upload-breakdown'
-import { tasks } from '@trigger.dev/sdk/v3'
 import { TRPCError } from '@trpc/server'
 import { and, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { protectedProcedure, router } from '../trpc'
-
-const fileSchema = z.object({
-  name: z.string(),
-  type: z.string(),
-  size: z.number(),
-  content: z.string(),
-})
 
 async function getExistingUpload(id: string, userId: string) {
   const [existingUpload] = await db
@@ -38,80 +28,67 @@ async function getExistingUpload(id: string, userId: string) {
   return existingUpload
 }
 
+export type SignedUploadUrl = {
+  signedUrl: string
+  token: string
+  path: string
+}
+
 export const uploadsRouter = router({
-  upload: protectedProcedure
-    .input(
-      z.object({
-        files: z.array(fileSchema).max(10).min(1),
-      }),
-    )
-    .mutation(async ({ input, ctx }) => {
-      const { files } = input
+  createSignedUploadUrls: protectedProcedure
+    .input(z.object({ fileNames: z.array(z.string()).min(1).max(10) }))
+    .mutation(async ({ input }) => {
+      const { fileNames } = input
+
       const supabase = await createClient({ admin: true })
-      const processedFiles: {
-        name: string
-        path: string
-        size: number
-      }[] = []
+      const uploadUrls: SignedUploadUrl[] = []
 
-      for (const fileData of files) {
-        try {
-          const buffer = Buffer.from(fileData.content, 'base64')
-          const fileName = fileData.name
-          const fileExtension = fileName.split('.').pop()
-          const filePath = `${randomUUID()}.${fileExtension}`
-          const fileSize = fileData.size
-
-          const { data, error } = await supabase.storage
+      for (const fileName of fileNames) {
+        const { data: uploadUrl, error: uploadUrlError } =
+          await supabase.storage
             .from('bank-statements')
-            .upload(filePath, buffer, {
-              contentType: fileData.type,
-            })
+            .createSignedUploadUrl(fileName)
 
-          if (error) {
-            throw new TRPCError({
-              code: 'INTERNAL_SERVER_ERROR',
-              message: `Failed to upload ${fileData.name}: ${error.message}`,
-            })
-          }
-
-          if (data) {
-            processedFiles.push({
-              name: fileName,
-              path: data.path,
-              size: fileSize,
-            })
-          }
-        } catch (error) {
-          console.error(error)
+        if (uploadUrlError) {
           throw new TRPCError({
             code: 'INTERNAL_SERVER_ERROR',
-            message: `Failed to process ${fileData.name}`,
+            message: `Failed to create signed upload url for ${fileName}: ${uploadUrlError.message}`,
           })
         }
-      }
 
-      const uploads = await ctx.db
-        .insert(upload)
-        .values(
-          processedFiles.map((file) => ({
-            userId: ctx.user.id,
-            fileName: file.name,
-            filePath: file.path,
-            fileSize: file.size,
-          })),
-        )
-        .returning()
-
-      for (const upload of uploads) {
-        await tasks.trigger<typeof uploadBreakdownTask>('upload-breakdown', {
-          uploadId: upload.id,
-        })
+        uploadUrls.push(uploadUrl)
       }
 
       return {
-        urls: processedFiles,
+        uploadUrls,
       }
+    }),
+  process: protectedProcedure
+    .input(
+      z.object({
+        urls: z.array(z.string().url()).max(10).min(1),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const { urls } = input
+
+      // const [newUpload] = await ctx.db
+      //   .insert(upload)
+      //   .values({
+      //     userId: ctx.user.id,
+      //     fileName: name,
+      //     filePath: path,
+      //     fileSize: size,
+      //   })
+      //   .returning()
+
+      // await tasks.trigger<typeof uploadBreakdownTask>('upload-breakdown', {
+      //   uploadId: newUpload.id,
+      // })
+
+      // return {
+      //   id: newUpload.id,
+      // }
     }),
   list: protectedProcedure.query(async ({ ctx }) => {
     const uploads = await db
