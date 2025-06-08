@@ -20,6 +20,7 @@ export function UploadsTable() {
       <TableHeader>
         <TableRow>
           <TableHead>File Name</TableHead>
+          <TableHead>File Size</TableHead>
           <TableHead>Status</TableHead>
           <TableHead>Uploaded At</TableHead>
           <TableHead>Actions</TableHead>

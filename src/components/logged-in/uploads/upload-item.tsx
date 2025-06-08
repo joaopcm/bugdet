@@ -6,6 +6,7 @@ import { CANCELLABLE_STATUSES, DELETABLE_STATUSES } from '@/constants/uploads'
 import type { upload } from '@/db/schema'
 import { useUploads } from '@/hooks/use-uploads'
 import { trpc } from '@/lib/trpc/client'
+import { formatBytes } from '@/lib/utils'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
 import { DoubleConfirmationAlertDialog } from '../double-confirmation-alert-dialog'
@@ -14,7 +15,7 @@ import { StatusBadge } from './status-badge'
 interface UploadItemProps {
   upload: Pick<
     typeof upload.$inferSelect,
-    'id' | 'fileName' | 'status' | 'createdAt' | 'failedReason'
+    'id' | 'fileName' | 'status' | 'createdAt' | 'failedReason' | 'fileSize'
   >
 }
 
@@ -58,6 +59,7 @@ export function UploadItem({ upload }: UploadItemProps) {
   return (
     <TableRow>
       <TableCell>{upload.fileName}</TableCell>
+      <TableCell>{formatBytes(upload.fileSize)}</TableCell>
       <TableCell>
         <StatusBadge
           status={upload.status}
