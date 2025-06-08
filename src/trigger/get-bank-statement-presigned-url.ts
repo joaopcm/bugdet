@@ -1,3 +1,4 @@
+import { CANCELLABLE_STATUSES } from '@/constants/uploads'
 import { db } from '@/db'
 import { upload } from '@/db/schema'
 import { createLambdaClient } from '@/lib/supabase/server'
@@ -31,8 +32,10 @@ export const getBankStatementPresignedUrlTask = task({
       throw new AbortTaskRunError(`Upload ${payload.uploadId} not found.`)
     }
 
-    if (existingUpload.status !== 'queued') {
-      logger.warn(`Upload ${payload.uploadId} is not queued. Skipping...`)
+    if (!CANCELLABLE_STATUSES.includes(existingUpload.status)) {
+      logger.warn(
+        `Upload ${payload.uploadId} is not in a cancellable status. Skipping...`,
+      )
       return { success: false, url: null }
     }
 
