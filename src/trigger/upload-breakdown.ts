@@ -9,6 +9,13 @@ export const uploadBreakdownTask = task({
   run: async (payload: { uploadId: string }, { ctx }) => {
     logger.info(`Processing upload ${payload.uploadId}...`, { payload, ctx })
 
+    await db
+      .update(upload)
+      .set({
+        status: 'processing',
+      })
+      .where(eq(upload.id, payload.uploadId))
+
     const review = await reviewBankStatementTask
       .triggerAndWait({
         uploadId: payload.uploadId,
@@ -35,6 +42,14 @@ export const uploadBreakdownTask = task({
     logger.info(
       `Bank statement ${payload.uploadId} is valid. Breaking it down into smaller batches to import transactions...`,
     )
+
+    // TODO: Instead of setting the status to completed, we should trigger another task to break down the bank statement into smaller batches and store the transactions in the database.
+    await db
+      .update(upload)
+      .set({
+        status: 'completed',
+      })
+      .where(eq(upload.id, payload.uploadId))
 
     return { success: true }
   },
