@@ -1,7 +1,9 @@
+import { randomUUID } from 'node:crypto'
 import { CANCELLABLE_STATUSES, DELETABLE_STATUSES } from '@/constants/uploads'
 import { db } from '@/db'
 import { upload } from '@/db/schema'
 import { createClient } from '@/lib/supabase/server'
+import { uploadBreakdownTask } from '@/trigger/upload-breakdown'
 import { TRPCError } from '@trpc/server'
 import { and, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
@@ -32,22 +34,25 @@ export type SignedUploadUrl = {
   signedUrl: string
   token: string
   path: string
+  originalFileName: string
 }
 
 export const uploadsRouter = router({
   createSignedUploadUrls: protectedProcedure
     .input(z.object({ fileNames: z.array(z.string()).min(1).max(10) }))
     .mutation(async ({ input }) => {
-      const { fileNames } = input
-
       const supabase = await createClient({ admin: true })
       const uploadUrls: SignedUploadUrl[] = []
 
-      for (const fileName of fileNames) {
+      for (const fileName of input.fileNames) {
+        const extension = fileName.split('.').pop()
+        const uniqueFileName = `${randomUUID()}.${extension}`
         const { data: uploadUrl, error: uploadUrlError } =
           await supabase.storage
             .from('bank-statements')
-            .createSignedUploadUrl(fileName)
+            .createSignedUploadUrl(uniqueFileName, {
+              upsert: true,
+            })
 
         if (uploadUrlError) {
           throw new TRPCError({
@@ -56,7 +61,10 @@ export const uploadsRouter = router({
           })
         }
 
-        uploadUrls.push(uploadUrl)
+        uploadUrls.push({
+          ...uploadUrl,
+          originalFileName: fileName,
+        })
       }
 
       return {
@@ -66,29 +74,42 @@ export const uploadsRouter = router({
   process: protectedProcedure
     .input(
       z.object({
-        urls: z.array(z.string().url()).max(10).min(1),
+        files: z
+          .array(
+            z.object({
+              fileName: z.string(),
+              fileSize: z.number(),
+              filePath: z.string(),
+            }),
+          )
+          .max(10)
+          .min(1),
       }),
     )
-    .mutation(async ({ input }) => {
-      const { urls } = input
+    .mutation(async ({ input, ctx }) => {
+      const { files } = input
 
-      // const [newUpload] = await ctx.db
-      //   .insert(upload)
-      //   .values({
-      //     userId: ctx.user.id,
-      //     fileName: name,
-      //     filePath: path,
-      //     fileSize: size,
-      //   })
-      //   .returning()
+      const newUploads = await ctx.db
+        .insert(upload)
+        .values(
+          files.map((file) => ({
+            userId: ctx.user.id,
+            fileName: file.fileName,
+            filePath: file.filePath,
+            fileSize: file.fileSize,
+          })),
+        )
+        .returning({
+          id: upload.id,
+        })
 
-      // await tasks.trigger<typeof uploadBreakdownTask>('upload-breakdown', {
-      //   uploadId: newUpload.id,
-      // })
-
-      // return {
-      //   id: newUpload.id,
-      // }
+      await uploadBreakdownTask.batchTrigger(
+        newUploads.map((upload) => ({
+          payload: {
+            uploadId: upload.id,
+          },
+        })),
+      )
     }),
   list: protectedProcedure.query(async ({ ctx }) => {
     const uploads = await db

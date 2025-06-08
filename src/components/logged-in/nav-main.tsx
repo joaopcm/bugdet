@@ -48,53 +48,75 @@ export function NavMain({ items }: NavMainProps) {
       })
     },
     onSuccess: async ({ uploadUrls }) => {
-      await uploadToSignedUrls(uploadUrls)
+      const successfulUploads = await uploadToSignedUrls(uploadUrls)
+      processUploads({
+        files: successfulUploads.map((upload) => ({
+          fileSize: upload.file.size,
+          fileName: upload.file.name,
+          filePath: upload.signedUrlConfig.path,
+        })),
+      })
     },
   })
 
-  async function uploadToSignedUrls(urls: SignedUploadUrl[]) {
+  async function uploadToSignedUrls(configs: SignedUploadUrl[]) {
     if (!files) {
       throw new Error('No files to upload')
     }
 
-    const fileNameToUploadUrlMap = new Map<string, SignedUploadUrl>()
-    for (const url of urls) {
-      fileNameToUploadUrlMap.set(url.path, url)
+    const fileNameToSignedUrlConfigMap = new Map<string, SignedUploadUrl>()
+    for (const config of configs) {
+      fileNameToSignedUrlConfigMap.set(config.originalFileName, config)
     }
+
+    toast.loading('Uploading bank statements...', {
+      id: 'upload-bank-statement',
+    })
+
+    const successfulUploads: {
+      file: File
+      signedUrlConfig: SignedUploadUrl
+    }[] = []
 
     for (const file of files) {
-      const uploadUrl = fileNameToUploadUrlMap.get(file.name)
+      const signedUrlConfig = fileNameToSignedUrlConfigMap.get(file.name)
 
-      if (uploadUrl) {
-        const result = await uploadToSignedUrlAction(
-          file.name,
-          uploadUrl.token,
-          file,
-        )
+      if (!signedUrlConfig) {
+        toast.error(`Failed to upload "${file.name}".`)
+        continue
       }
+
+      await uploadToSignedUrlAction(
+        signedUrlConfig.path,
+        signedUrlConfig.token,
+        file,
+      )
+      successfulUploads.push({ file, signedUrlConfig })
     }
+
+    return successfulUploads
   }
 
-  // const { mutate: processUpload, isPending: isProcessingUpload } =
-  //   trpc.uploads.process.useMutation({
-  //     onMutate: () => {
-  //       toast.loading('Uploading bank statements...', {
-  //         id: 'upload-bank-statement',
-  //       })
-  //     },
-  //     onError: (error) => {
-  //       toast.error(error.message, {
-  //         id: 'upload-bank-statement',
-  //       })
-  //     },
-  //     onSuccess: () => {
-  //       toast.success('Bank statements uploaded successfully', {
-  //         id: 'upload-bank-statement',
-  //       })
-  //       refetchUploads()
-  //       router.push('/uploads')
-  //     },
-  //   })
+  const { mutate: processUploads, isPending: isProcessingUploads } =
+    trpc.uploads.process.useMutation({
+      onMutate: () => {
+        toast.loading('Processing bank statements...', {
+          id: 'upload-bank-statement',
+        })
+      },
+      onError: (error) => {
+        toast.error(error.message, {
+          id: 'upload-bank-statement',
+        })
+      },
+      onSuccess: () => {
+        toast.success('Bank statements uploaded successfully', {
+          id: 'upload-bank-statement',
+        })
+        refetchUploads()
+        router.push('/uploads')
+      },
+    })
 
   async function handleFileSelect(event: React.ChangeEvent<HTMLInputElement>) {
     const newFiles = event.target.files
