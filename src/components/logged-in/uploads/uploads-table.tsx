@@ -35,7 +35,7 @@ export function UploadsTable() {
 
         {uploads?.length === 0 && (
           <TableRow>
-            <TableCell colSpan={4} className="py-10">
+            <TableCell colSpan={5} className="py-10">
               <EmptyState
                 title="No uploads found."
                 description="Upload your bank statements to get started."

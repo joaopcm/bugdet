@@ -9,6 +9,9 @@ export function LoadingState() {
           <Skeleton className="h-3.5 w-44" />
         </TableCell>
         <TableCell>
+          <Skeleton className="h-3.5 w-10" />
+        </TableCell>
+        <TableCell>
           <Skeleton className="h-[22px] w-16" />
         </TableCell>
         <TableCell>
@@ -26,6 +29,9 @@ export function LoadingState() {
           <Skeleton className="h-3.5 w-56" />
         </TableCell>
         <TableCell>
+          <Skeleton className="h-3.5 w-10" />
+        </TableCell>
+        <TableCell>
           <Skeleton className="h-[22px] w-16" />
         </TableCell>
         <TableCell>
@@ -41,6 +47,9 @@ export function LoadingState() {
       <TableRow>
         <TableCell>
           <Skeleton className="h-3.5 w-36" />
+        </TableCell>
+        <TableCell>
+          <Skeleton className="h-3.5 w-10" />
         </TableCell>
         <TableCell>
           <Skeleton className="h-[22px] w-16" />
