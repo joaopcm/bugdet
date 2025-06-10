@@ -64,6 +64,20 @@
       "when": 1749588538005,
       "tag": "0008_safe_blazing_skull",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1749596765041,
+      "tag": "0009_massive_morlocks",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1749596974434,
+      "tag": "0010_bizarre_lilith",
+      "breakpoints": true
     }
   ]
 }

@@ -1,7 +1,8 @@
 import { db } from '@/db'
-import { upload } from '@/db/schema'
+import { transaction, upload } from '@/db/schema'
 import { logger, task } from '@trigger.dev/sdk/v3'
 import { and, eq, ne } from 'drizzle-orm'
+import { categorizeAndImportTransactionsTask } from './categorize-and-import-transactions'
 import { reviewBankStatementTask } from './review-bank-statement'
 
 export const uploadBreakdownTask = task({
@@ -51,15 +52,15 @@ export const uploadBreakdownTask = task({
       })
       .where(eq(upload.id, payload.uploadId))
 
-    // const { transactions } = await categorizeAndImportTransactionsTask
-    //   .triggerAndWait({
-    //     uploadId: payload.uploadId,
-    //   })
-    //   .unwrap()
+    const { transactions } = await categorizeAndImportTransactionsTask
+      .triggerAndWait({
+        uploadId: payload.uploadId,
+      })
+      .unwrap()
 
     await db.transaction(async (tx) => {
       const [upToDateUpload] = await tx
-        .select({ status: upload.status })
+        .select({ status: upload.status, userId: upload.userId })
         .from(upload)
         .where(eq(upload.id, payload.uploadId))
 
@@ -70,7 +71,27 @@ export const uploadBreakdownTask = task({
         return { success: true }
       }
 
-      // TODO: import the transactions to the database
+      const uniqueCategories = [
+        ...new Set(transactions.map((transaction) => transaction.category)),
+      ]
+      logger.info('Unique categories found:', {
+        uniqueCategories,
+      })
+
+      await tx.insert(transaction).values(
+        transactions.map((transaction) => ({
+          uploadId: payload.uploadId,
+          userId: upToDateUpload.userId,
+          date: transaction.date,
+          merchantName: transaction.merchantName,
+          amount: transaction.amount,
+          currency: transaction.currency,
+          metadata: transaction.metadata,
+        })),
+      )
+      logger.info(
+        `Imported ${transactions.length} transactions to the database for upload ${payload.uploadId}.`,
+      )
 
       await tx
         .update(upload)

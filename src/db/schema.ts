@@ -1,5 +1,6 @@
 import {
   boolean,
+  date,
   integer,
   jsonb,
   pgEnum,
@@ -92,6 +93,33 @@ export const upload = pgTable('upload', {
   failedReason: text('failed_reason'),
   metadata: jsonb('metadata').$type<UploadMetadata>(),
   deleted: boolean('deleted').notNull().default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at')
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+})
+
+export type TransactionMetadata = {
+  originalCurrency?: string | null
+  originalAmount?: number | null
+  installmentNumber?: number | null
+  totalInstallments?: number | null
+}
+
+export const transaction = pgTable('transaction', {
+  id: uuid('id').defaultRandom().notNull().primaryKey(),
+  uploadId: uuid('upload_id')
+    .notNull()
+    .references(() => upload.id, { onDelete: 'set null' }),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  date: date('date').notNull(),
+  merchantName: text('merchant_name').notNull(),
+  amount: integer('amount').notNull(),
+  currency: text('currency').notNull(),
+  metadata: jsonb('metadata').$type<TransactionMetadata>(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at')
     .notNull()
