@@ -1,7 +1,9 @@
+import { db } from '@/db'
+import { category, upload } from '@/db/schema'
 import { google } from '@ai-sdk/google'
 import { AbortTaskRunError, logger, retry, task } from '@trigger.dev/sdk/v3'
 import { generateObject } from 'ai'
-import {} from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { getBankStatementPresignedUrlTask } from './get-bank-statement-presigned-url'
 
@@ -32,6 +34,30 @@ export const categorizeAndImportTransactionsTask = task({
       method: 'GET',
     })
     const fileBuffer = await response.arrayBuffer()
+
+    logger.info(
+      `Finding categories for the user that owns the upload ${payload.uploadId}...`,
+    )
+
+    const [{ userId }] = await db
+      .select({ userId: upload.userId })
+      .from(upload)
+      .where(eq(upload.id, payload.uploadId))
+    logger.info(`The user that owns the upload is ${userId}`)
+
+    const categories = await db
+      .select({ id: category.id, name: category.name })
+      .from(category)
+      .where(eq(category.userId, userId))
+
+    logger.info(
+      `Found ${categories.length} categories for the user ${userId}:`,
+      {
+        categories,
+      },
+    )
+
+    logger.info('Extracting transactions from bank statement with AI...')
 
     const schema = z.object({
       metadata: z
@@ -90,7 +116,6 @@ export const categorizeAndImportTransactionsTask = task({
         ),
     })
 
-    logger.info('Extracting transactions from bank statement with AI...')
     const result = await generateObject({
       model: google('gemini-2.5-flash-preview-04-17', {
         structuredOutputs: true,
@@ -103,6 +128,29 @@ export const categorizeAndImportTransactionsTask = task({
           role: 'system',
           content:
             'You are a bank statement expert. You are given a bank statement and you need to extract the transactions from it. Your main goal is to extract the transactions from the bank statement and return them in the correct format.',
+        },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: 'Hello! Before you start, I would like to give you some information about the categories that I have already created so you can use them to categorize the transactions:',
+            },
+            {
+              type: 'text',
+              text: categories
+                .map((category) => `- ${category.name}`)
+                .join('\n'),
+            },
+            {
+              type: 'text',
+              text: "But don't worry to stick to them if you don't find a good match. Feel free to create new categories if you think they are missing.",
+            },
+            {
+              type: 'text',
+              text: 'Now, let me give you the bank statement:',
+            },
+          ],
         },
         {
           role: 'user',

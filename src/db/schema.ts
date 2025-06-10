@@ -100,6 +100,19 @@ export const upload = pgTable('upload', {
     .$onUpdate(() => new Date()),
 })
 
+export const category = pgTable('category', {
+  id: uuid('id').defaultRandom().notNull().primaryKey(),
+  name: text('name').notNull(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at')
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+})
+
 export type TransactionMetadata = {
   originalCurrency?: string | null
   originalAmount?: number | null
@@ -115,6 +128,9 @@ export const transaction = pgTable('transaction', {
   userId: text('user_id')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
+  categoryId: uuid('category_id').references(() => category.id, {
+    onDelete: 'set null',
+  }),
   date: date('date').notNull(),
   merchantName: text('merchant_name').notNull(),
   amount: integer('amount').notNull(),

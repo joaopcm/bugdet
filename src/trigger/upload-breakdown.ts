@@ -1,7 +1,7 @@
 import { db } from '@/db'
-import { transaction, upload } from '@/db/schema'
+import { category, transaction, upload } from '@/db/schema'
 import { logger, task } from '@trigger.dev/sdk/v3'
-import { and, eq, ne } from 'drizzle-orm'
+import { and, eq, inArray, ne } from 'drizzle-orm'
 import { categorizeAndImportTransactionsTask } from './categorize-and-import-transactions'
 import { reviewBankStatementTask } from './review-bank-statement'
 
@@ -72,16 +72,64 @@ export const uploadBreakdownTask = task({
       }
 
       const uniqueCategories = [
-        ...new Set(transactions.map((transaction) => transaction.category)),
+        ...new Set(
+          transactions
+            .map((transaction) => transaction.category)
+            .filter((category): category is string => category !== null),
+        ),
       ]
-      logger.info('Unique categories found:', {
+      logger.info('Unique categories used:', {
         uniqueCategories,
       })
+
+      const existingCategories = await tx
+        .select({ id: category.id, name: category.name })
+        .from(category)
+        .where(
+          and(
+            eq(category.userId, upToDateUpload.userId),
+            inArray(category.name, uniqueCategories),
+          ),
+        )
+
+      const existingCategoryNames = new Set(
+        existingCategories.map((cat) => cat.name),
+      )
+
+      const categoriesToInsert = uniqueCategories.filter(
+        (categoryName) => !existingCategoryNames.has(categoryName),
+      )
+
+      let newCategories: { id: string; name: string }[] = []
+      if (categoriesToInsert.length > 0) {
+        newCategories = await tx
+          .insert(category)
+          .values(
+            categoriesToInsert.map((categoryName) => ({
+              name: categoryName,
+              userId: upToDateUpload.userId,
+            })),
+          )
+          .returning({ id: category.id, name: category.name })
+        logger.info(`Inserted ${categoriesToInsert.length} new categories`)
+      } else {
+        logger.info('No new categories to insert')
+      }
+
+      const categoryNameToId = new Map(
+        [...existingCategories, ...newCategories].map((cat) => [
+          cat.name,
+          cat.id,
+        ]),
+      )
 
       await tx.insert(transaction).values(
         transactions.map((transaction) => ({
           uploadId: payload.uploadId,
           userId: upToDateUpload.userId,
+          categoryId: transaction.category
+            ? (categoryNameToId.get(transaction.category) ?? null)
+            : null,
           date: transaction.date,
           merchantName: transaction.merchantName,
           amount: transaction.amount,
