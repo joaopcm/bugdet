@@ -5,10 +5,6 @@ import { createLambdaClient } from '@/lib/supabase/server'
 import { AbortTaskRunError, logger, task } from '@trigger.dev/sdk/v3'
 import { eq } from 'drizzle-orm'
 
-type GetBankStatementPresignedUrlTaskResult =
-  | { success: false; url: null }
-  | { success: true; url: string }
-
 export const getBankStatementPresignedUrlTask = task({
   id: 'get-bank-statement-presigned-url',
   retry: {
@@ -16,7 +12,7 @@ export const getBankStatementPresignedUrlTask = task({
   },
   run: async (payload: {
     uploadId: string
-  }): Promise<GetBankStatementPresignedUrlTaskResult> => {
+  }): Promise<{ url: string }> => {
     logger.info(`Getting presigned URL for upload ${payload.uploadId}...`)
 
     const [existingUpload] = await db
@@ -33,10 +29,9 @@ export const getBankStatementPresignedUrlTask = task({
     }
 
     if (!CANCELLABLE_STATUSES.includes(existingUpload.status)) {
-      logger.warn(
-        `Upload ${payload.uploadId} is not in a cancellable status. Skipping...`,
+      throw new AbortTaskRunError(
+        `Upload ${payload.uploadId} is not in a cancellable status.`,
       )
-      return { success: false, url: null }
     }
 
     const supabase = createLambdaClient()
@@ -57,7 +52,6 @@ export const getBankStatementPresignedUrlTask = task({
     })
 
     return {
-      success: true,
       url: signedUrlData.signedUrl,
     }
   },

@@ -18,7 +18,7 @@ export const reviewBankStatementTask = task({
       })
       .unwrap()
 
-    if (!presignedUrl.success) {
+    if (!presignedUrl.url) {
       throw new AbortTaskRunError(
         `Failed to get presigned URL for upload ${payload.uploadId}`,
       )

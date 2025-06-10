@@ -53,4 +53,23 @@ export const uploadBreakdownTask = task({
 
     return { success: true }
   },
+  handleError: async (payload, error, { ctx }) => {
+    logger.error(`Run ${ctx.run.id} failed`, {
+      payload,
+      error,
+    })
+
+    await db
+      .update(upload)
+      .set({
+        status: 'failed',
+        failedReason:
+          "I'm sorry, I had a hard time processing your request. Please try again later.",
+      })
+      .where(eq(upload.id, payload.uploadId))
+
+    return {
+      skipRetrying: true,
+    }
+  },
 })

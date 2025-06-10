@@ -63,7 +63,7 @@ export function NavMain({ items }: NavMainProps) {
 
   async function uploadToSignedUrls(configs: SignedUploadUrl[]) {
     if (!files) {
-      throw new Error('No files to upload')
+      throw new Error('No files to upload.')
     }
 
     const fileNameToSignedUrlConfigMap = new Map<string, SignedUploadUrl>()
