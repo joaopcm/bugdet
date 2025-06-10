@@ -52,30 +52,37 @@ export const reviewBankStatementTask = task({
               startDate: z
                 .string()
                 .optional()
-                .describe('The start date of the statement period.'),
+                .describe(
+                  'The start date of the statement period (e.g. "14 ABR 2025").',
+                ),
               endDate: z
                 .string()
                 .optional()
-                .describe('The end date of the statement period.'),
+                .describe(
+                  'The end date of the statement period (e.g. "14 MAI 2025").',
+                ),
             })
             .required()
             .describe('The period of the statement.'),
-          issueDate: z
-            .string()
-            .optional()
-            .describe('The date of the statement.'),
-          dueDate: z
-            .string()
-            .optional()
-            .describe('The due date of the statement (for credit cards).'),
-          accountHolderName: z
-            .string()
-            .optional()
-            .describe('The name of the account holder.'),
-          accountNumber: z
-            .string()
-            .optional()
-            .describe('The number of the account.'),
+          extraInformation: z
+            .array(
+              z.object({
+                key: z
+                  .string()
+                  .describe(
+                    'The key of the extra information (e.g. "Credit Limit", "Interest Rate", "Minimum Payment", "Issue Date", "Due Date", "Account Holder Name", etc.). Keys must always be in English.',
+                  ),
+                value: z
+                  .string()
+                  .describe(
+                    'The value of the extra information (e.g. "R$ 1000.00", "10%", "R$ 100.00", etc.). Values must always be in the same language as the statement.',
+                  ),
+              }),
+            )
+            .max(4)
+            .describe(
+              'Extra information not covered by the other fields. Useful to find the bank statement by its most important characteristics.',
+            ),
         })
         .describe(
           'Relevant information about the file. Useful to find the file by its most important characteristics.',
@@ -95,9 +102,10 @@ export const reviewBankStatementTask = task({
 
     logger.info('Analyzing bank statement with AI...')
     const result = await generateObject({
-      model: google('gemini-2.0-flash', {
+      model: google('gemini-2.5-flash-preview-04-17', {
         structuredOutputs: true,
       }),
+      output: 'object',
       schemaName: 'review-bank-statement',
       schema,
       messages: [

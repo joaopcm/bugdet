@@ -74,10 +74,10 @@ export type UploadMetadata = {
     startDate?: string | null
     endDate?: string | null
   }
-  issueDate?: string | null
-  dueDate?: string | null
-  accountHolderName?: string | null
-  accountNumber?: string | null
+  extraInformation: {
+    key: string
+    value: string
+  }[]
 }
 
 export const upload = pgTable('upload', {

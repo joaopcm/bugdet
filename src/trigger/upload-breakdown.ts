@@ -1,8 +1,7 @@
 import { db } from '@/db'
 import { upload } from '@/db/schema'
-import { logger, task, tasks } from '@trigger.dev/sdk/v3'
+import { logger, task } from '@trigger.dev/sdk/v3'
 import { and, eq, ne } from 'drizzle-orm'
-import type { categorizeAndImportTransactionsTask } from './categorize-and-import-transactions'
 import { reviewBankStatementTask } from './review-bank-statement'
 
 export const uploadBreakdownTask = task({
@@ -52,14 +51,33 @@ export const uploadBreakdownTask = task({
       })
       .where(eq(upload.id, payload.uploadId))
 
-    const { id } = await tasks.trigger<
-      typeof categorizeAndImportTransactionsTask
-    >('categorize-and-import-transactions', {
-      uploadId: payload.uploadId,
-    })
+    // const { transactions } = await categorizeAndImportTransactionsTask
+    //   .triggerAndWait({
+    //     uploadId: payload.uploadId,
+    //   })
+    //   .unwrap()
 
-    logger.info('Categorize and import transactions task triggered', {
-      id,
+    await db.transaction(async (tx) => {
+      const [upToDateUpload] = await tx
+        .select({ status: upload.status })
+        .from(upload)
+        .where(eq(upload.id, payload.uploadId))
+
+      if (upToDateUpload.status !== 'processing') {
+        logger.warn(
+          `Stopping processing upload ${payload.uploadId} because it is not in a processing status anymore.`,
+        )
+        return { success: true }
+      }
+
+      // TODO: import the transactions to the database
+
+      await tx
+        .update(upload)
+        .set({
+          status: 'completed',
+        })
+        .where(eq(upload.id, payload.uploadId))
     })
 
     return { success: true }

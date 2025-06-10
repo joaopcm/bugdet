@@ -47,27 +47,15 @@ export function FileName({ fileName, metadata }: FileNameProps) {
               />
             )}
 
-            {metadata.issueDate && (
-              <MetadataField label="Issue Date" value={metadata.issueDate} />
-            )}
-
-            {metadata.dueDate && (
-              <MetadataField label="Due Date" value={metadata.dueDate} />
-            )}
-
-            {metadata.accountHolderName && (
-              <MetadataField
-                label="Account Holder Name"
-                value={metadata.accountHolderName}
-              />
-            )}
-
-            {metadata.accountNumber && (
-              <MetadataField
-                label="Account Number"
-                value={metadata.accountNumber}
-              />
-            )}
+            {metadata.extraInformation &&
+              metadata.extraInformation.length > 0 &&
+              metadata.extraInformation.map((info) => (
+                <MetadataField
+                  key={info.key}
+                  label={info.key}
+                  value={info.value}
+                />
+              ))}
           </ul>
         </TooltipContent>
       </Tooltip>
