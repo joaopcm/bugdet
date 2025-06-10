@@ -95,11 +95,11 @@ export const reviewBankStatementTask = task({
 
     logger.info('Analyzing bank statement with AI...')
     const result = await generateObject({
-      model: google('gemini-2.0-flash-001', {
+      model: google('gemini-2.0-flash', {
         structuredOutputs: true,
       }),
       schemaName: 'review-bank-statement',
-      schema: schema,
+      schema,
       messages: [
         {
           role: 'system',

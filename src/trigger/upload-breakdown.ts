@@ -1,7 +1,8 @@
 import { db } from '@/db'
 import { upload } from '@/db/schema'
-import { logger, task } from '@trigger.dev/sdk/v3'
+import { logger, task, tasks } from '@trigger.dev/sdk/v3'
 import { and, eq, ne } from 'drizzle-orm'
+import type { categorizeAndImportTransactionsTask } from './categorize-and-import-transactions'
 import { reviewBankStatementTask } from './review-bank-statement'
 
 export const uploadBreakdownTask = task({
@@ -41,17 +42,25 @@ export const uploadBreakdownTask = task({
     }
 
     logger.info(
-      `Bank statement ${payload.uploadId} is valid. Breaking it down into smaller batches to import transactions...`,
+      `Bank statement ${payload.uploadId} is valid. Sending it to the categorize and import transactions task...`,
     )
 
     await db
       .update(upload)
       .set({
-        // TODO: Instead of setting the status to completed, we should trigger another task to break down the bank statement into smaller batches and store the transactions in the database.
-        status: 'completed',
         metadata: review.metadata,
       })
       .where(eq(upload.id, payload.uploadId))
+
+    const { id } = await tasks.trigger<
+      typeof categorizeAndImportTransactionsTask
+    >('categorize-and-import-transactions', {
+      uploadId: payload.uploadId,
+    })
+
+    logger.info('Categorize and import transactions task triggered', {
+      id,
+    })
 
     return { success: true }
   },

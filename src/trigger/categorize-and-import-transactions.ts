@@ -1,4 +1,9 @@
+import { db } from '@/db'
+import { upload } from '@/db/schema'
+import { google } from '@ai-sdk/google'
 import { AbortTaskRunError, logger, retry, task } from '@trigger.dev/sdk/v3'
+import { generateObject } from 'ai'
+import { and, eq, ne } from 'drizzle-orm'
 import { z } from 'zod'
 import { getBankStatementPresignedUrlTask } from './get-bank-statement-presigned-url'
 
@@ -30,6 +35,120 @@ export const categorizeAndImportTransactionsTask = task({
     })
     const fileBuffer = await response.arrayBuffer()
 
-    const schema = z.array(z.object({}))
+    const schema = z.array(
+      z.object({
+        metadata: z
+          .object({
+            originalCurrency: z
+              .string()
+              .optional()
+              .describe(
+                'The original currency of the transaction for international transactions. Use the ISO 4217 currency code (e.g. "USD", "BRL", "EUR", etc.).',
+              ),
+            originalAmount: z
+              .number()
+              .optional()
+              .describe(
+                'The original amount in cents of the transaction for international transactions. Use the amount in the original currency. (e.g. "1000" for $10.00, "100" for $1.00, "10" for $0.10, etc.). Use positive numbers for when the transaction is a debit (e.g. a purchase, a withdrawal, etc.) and negative numbers for when the transaction is a credit (e.g. a refund, a deposit, etc.).',
+              ),
+            installmentNumber: z
+              .number()
+              .optional()
+              .describe(
+                'The number of the installment when the purchase was paid in installments (e.g. 1, 2, 3, etc.).',
+              ),
+            totalInstallments: z
+              .number()
+              .optional()
+              .describe(
+                'The total amount of installments for this transaction, if provided (e.g. 12, 24, 36, etc.).',
+              ),
+          })
+          .describe(
+            'Relevant information about the transaction. Useful to find the transaction by its most important characteristics.',
+          ),
+        date: z
+          .string()
+          .describe('The date of the transaction (e.g. "2025-01-01").'),
+        merchantName: z
+          .string()
+          .describe(
+            "The merchant's name written in the same way as on the document.",
+          ),
+        amount: z
+          .number()
+          .describe(
+            'The amount of the transaction in cents (e.g. "1000" for $10.00, "100" for $1.00, "10" for $0.10, etc.). Use positive numbers for when the transaction is a debit (e.g. a purchase, a withdrawal, etc.) and negative numbers for when the transaction is a credit (e.g. a refund, a deposit, etc.).',
+          ),
+        currency: z
+          .string()
+          .describe(
+            'The effective currency of the transaction. Use the ISO 4217 currency code (e.g. "USD", "BRL", "EUR", etc.).',
+          ),
+        category: z
+          .string()
+          .nullable()
+          .describe(
+            'The category of the transaction based on the merchant name and relevant information (e.g. "Food", "Transportation", "Entertainment", "Shopping", "Health", "Education", "Other"). Leave null if you cannot find a category.',
+          ),
+      }),
+    )
+
+    logger.info('Extracting transactions from bank statement with AI...')
+    const result = await generateObject({
+      model: google('gemini-2.5-flash-preview-04-17', {
+        structuredOutputs: true,
+      }),
+      maxTokens: 100_000,
+      schemaName: 'categorize-and-import-transactions',
+      schema,
+      messages: [
+        {
+          role: 'system',
+          content:
+            'You are a bank statement expert. You are given a bank statement and you need to extract the transactions from it. Your main goal is to extract the transactions from the bank statement and return them in the correct format.',
+        },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: 'Here is my bank statement:',
+            },
+            {
+              type: 'file',
+              data: fileBuffer,
+              mimeType: 'application/pdf',
+            },
+          ],
+        },
+      ],
+    })
+    logger.info('AI analysis complete', { transactions: result.object })
+
+    return {
+      transactions: result.object,
+    }
+  },
+  handleError: async (payload, error, { ctx }) => {
+    logger.error(`Run ${ctx.run.id} failed`, {
+      payload,
+      error,
+    })
+
+    await db
+      .update(upload)
+      .set({
+        status: 'failed',
+        failedReason:
+          "I couldn't extract the transactions from this file. Please, try again.",
+      })
+      .where(
+        and(eq(upload.id, payload.uploadId), ne(upload.status, 'cancelled')),
+      )
+
+    return {
+      skipRetrying: true,
+    }
   },
 })
