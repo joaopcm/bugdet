@@ -1,7 +1,7 @@
 import { db } from '@/db'
 import { upload } from '@/db/schema'
 import { logger, task } from '@trigger.dev/sdk/v3'
-import { eq } from 'drizzle-orm'
+import { and, eq, ne } from 'drizzle-orm'
 import { reviewBankStatementTask } from './review-bank-statement'
 
 export const uploadBreakdownTask = task({
@@ -33,6 +33,7 @@ export const uploadBreakdownTask = task({
         .set({
           status: 'failed',
           failedReason: review.reason,
+          metadata: review.metadata,
         })
         .where(eq(upload.id, payload.uploadId))
 
@@ -43,11 +44,12 @@ export const uploadBreakdownTask = task({
       `Bank statement ${payload.uploadId} is valid. Breaking it down into smaller batches to import transactions...`,
     )
 
-    // TODO: Instead of setting the status to completed, we should trigger another task to break down the bank statement into smaller batches and store the transactions in the database.
     await db
       .update(upload)
       .set({
+        // TODO: Instead of setting the status to completed, we should trigger another task to break down the bank statement into smaller batches and store the transactions in the database.
         status: 'completed',
+        metadata: review.metadata,
       })
       .where(eq(upload.id, payload.uploadId))
 
@@ -66,7 +68,9 @@ export const uploadBreakdownTask = task({
         failedReason:
           "I'm sorry, I had a hard time processing your request. Please try again later.",
       })
-      .where(eq(upload.id, payload.uploadId))
+      .where(
+        and(eq(upload.id, payload.uploadId), ne(upload.status, 'cancelled')),
+      )
 
     return {
       skipRetrying: true,

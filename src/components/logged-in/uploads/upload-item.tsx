@@ -10,12 +10,19 @@ import { formatBytes } from '@/lib/utils'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
 import { DoubleConfirmationAlertDialog } from '../double-confirmation-alert-dialog'
+import { FileName } from './file-name'
 import { StatusBadge } from './status-badge'
 
 interface UploadItemProps {
   upload: Pick<
     typeof upload.$inferSelect,
-    'id' | 'fileName' | 'status' | 'createdAt' | 'failedReason' | 'fileSize'
+    | 'id'
+    | 'fileName'
+    | 'status'
+    | 'createdAt'
+    | 'failedReason'
+    | 'fileSize'
+    | 'metadata'
   >
 }
 
@@ -58,7 +65,9 @@ export function UploadItem({ upload }: UploadItemProps) {
 
   return (
     <TableRow>
-      <TableCell>{upload.fileName}</TableCell>
+      <TableCell>
+        <FileName fileName={upload.fileName} metadata={upload.metadata} />
+      </TableCell>
       <TableCell>{formatBytes(upload.fileSize)}</TableCell>
       <TableCell>
         <StatusBadge

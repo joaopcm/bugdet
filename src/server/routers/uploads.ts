@@ -120,6 +120,7 @@ export const uploadsRouter = router({
         fileSize: upload.fileSize,
         status: upload.status,
         failedReason: upload.failedReason,
+        metadata: upload.metadata,
         createdAt: upload.createdAt,
       })
       .from(upload)

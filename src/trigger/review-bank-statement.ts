@@ -33,10 +33,57 @@ export const reviewBankStatementTask = task({
     const fileBuffer = await response.arrayBuffer()
 
     const schema = z.object({
+      metadata: z
+        .object({
+          documentType: z
+            .string()
+            .optional()
+            .describe(
+              'The type of document (e.g. "Credit Card", "Checking Account", "Savings", etc.).',
+            ),
+          bankName: z
+            .string()
+            .optional()
+            .describe(
+              'The name of the bank (e.g. "Bank of America", "Nubank", etc.).',
+            ),
+          statementPeriod: z
+            .object({
+              startDate: z
+                .string()
+                .optional()
+                .describe('The start date of the statement period.'),
+              endDate: z
+                .string()
+                .optional()
+                .describe('The end date of the statement period.'),
+            })
+            .required()
+            .describe('The period of the statement.'),
+          issueDate: z
+            .string()
+            .optional()
+            .describe('The date of the statement.'),
+          dueDate: z
+            .string()
+            .optional()
+            .describe('The due date of the statement (for credit cards).'),
+          accountHolderName: z
+            .string()
+            .optional()
+            .describe('The name of the account holder.'),
+          accountNumber: z
+            .string()
+            .optional()
+            .describe('The number of the account.'),
+        })
+        .describe(
+          'Relevant information about the file. Useful to find the file by its most important characteristics.',
+        ),
       isValid: z
         .boolean()
         .describe(
-          'Whether the file matches the expected format of a bank statement',
+          'Whether the file matches the expected format of a bank statement.',
         ),
       reason: z
         .string()

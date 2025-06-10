@@ -1,6 +1,7 @@
 import {
   boolean,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   text,
@@ -66,6 +67,19 @@ export const uploadStatusEnum = pgEnum('upload_status', [
   'cancelled',
 ])
 
+export type UploadMetadata = {
+  documentType?: string | null
+  bankName?: string | null
+  statementPeriod: {
+    startDate?: string | null
+    endDate?: string | null
+  }
+  issueDate?: string | null
+  dueDate?: string | null
+  accountHolderName?: string | null
+  accountNumber?: string | null
+}
+
 export const upload = pgTable('upload', {
   id: uuid('id').defaultRandom().notNull().primaryKey(),
   userId: text('user_id')
@@ -76,6 +90,7 @@ export const upload = pgTable('upload', {
   fileSize: integer('file_size').notNull(),
   status: uploadStatusEnum('status').notNull().default('queued'),
   failedReason: text('failed_reason'),
+  metadata: jsonb('metadata').$type<UploadMetadata>(),
   deleted: boolean('deleted').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at')

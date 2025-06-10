@@ -57,6 +57,13 @@
       "when": 1749337262365,
       "tag": "0007_stormy_morgan_stark",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1749588538005,
+      "tag": "0008_safe_blazing_skull",
+      "breakpoints": true
     }
   ]
 }
