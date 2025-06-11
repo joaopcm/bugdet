@@ -10,6 +10,7 @@ import {
 import { TableHeader } from '@/components/ui/table'
 import { useTransactions } from '@/hooks/use-transactions'
 import { EmptyState } from '../empty-state'
+import { LoadingState } from './loading-state'
 import { TransactionItem } from './transaction-item'
 
 export function TransactionsTable() {
@@ -27,7 +28,7 @@ export function TransactionsTable() {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {/* {isLoading && <LoadingState />} */}
+        {isLoading && <LoadingState />}
 
         {transactions?.map((transaction) => (
           <TransactionItem key={transaction.id} transaction={transaction} />
