@@ -15,10 +15,8 @@ export function FileName({ fileName, metadata }: FileNameProps) {
   if (metadata) {
     return (
       <Tooltip>
-        <TooltipTrigger asChild>
-          <TableCell className="cursor-pointer underline decoration-dashed underline-offset-2">
-            {fileName}
-          </TableCell>
+        <TooltipTrigger className="cursor-pointer underline decoration-dashed underline-offset-2">
+          {fileName}
         </TooltipTrigger>
         <TooltipContent side="right">
           <ul className="grid gap-3 text-xs">

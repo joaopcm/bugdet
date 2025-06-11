@@ -9,6 +9,7 @@ import { formatCurrency } from '@/lib/utils'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
 import { DoubleConfirmationAlertDialog } from '../double-confirmation-alert-dialog'
+import { Amount } from './amount'
 import { Category } from './category'
 
 interface TransactionItemProps {
@@ -52,7 +53,11 @@ export function TransactionItem({ transaction }: TransactionItemProps) {
       </TableCell>
       <TableCell>{transaction.merchantName}</TableCell>
       <TableCell>
-        {formatCurrency(transaction.amount, transaction.currency)}
+        <Amount
+          amount={transaction.amount}
+          currency={transaction.currency}
+          metadata={transaction.metadata}
+        />
       </TableCell>
       <TableCell className="flex items-center gap-2">
         <DoubleConfirmationAlertDialog
