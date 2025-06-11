@@ -1,0 +1,1 @@
+export const MAX_TRANSACTIONS_PREVIEW = 30
