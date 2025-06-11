@@ -136,6 +136,7 @@ export const transaction = pgTable('transaction', {
   amount: integer('amount').notNull(),
   currency: text('currency').notNull(),
   metadata: jsonb('metadata').$type<TransactionMetadata>(),
+  deleted: boolean('deleted').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at')
     .notNull()

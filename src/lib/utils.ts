@@ -16,3 +16,11 @@ export function formatBytes(bytes: number, decimals = 2): string {
 
   return `${Number.parseFloat((bytes / k ** i).toFixed(dm))} ${sizes[i]}`
 }
+
+export function formatCurrency(cents: number, currency: string): string {
+  const price = cents / 100
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency,
+  }).format(price)
+}

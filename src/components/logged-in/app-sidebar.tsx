@@ -11,7 +11,12 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
-import { IconDashboard, IconList, IconUpload } from '@tabler/icons-react'
+import {
+  IconCategory,
+  IconDashboard,
+  IconList,
+  IconUpload,
+} from '@tabler/icons-react'
 import type { User } from 'better-auth'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -27,6 +32,11 @@ const routes = [
     title: 'Transactions',
     url: '/transactions',
     icon: IconList,
+  },
+  {
+    title: 'Categories',
+    url: '/categories',
+    icon: IconCategory,
   },
   {
     title: 'Uploads',
