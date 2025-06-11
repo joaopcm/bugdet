@@ -35,13 +35,20 @@ export function Amount({ amount, currency, metadata }: AmountProps) {
           )}
 
           {metadata.originalAmount && metadata.originalCurrency && (
-            <MetadataField
-              label="Original Amount"
-              value={formatCurrency(
-                metadata.originalAmount,
-                metadata.originalCurrency,
-              )}
-            />
+            <>
+              <MetadataField
+                label="Original Amount"
+                value={formatCurrency(
+                  metadata.originalAmount,
+                  metadata.originalCurrency,
+                )}
+              />
+
+              <MetadataField
+                label="Conversion Rate"
+                value={`${(amount / metadata.originalAmount).toFixed(4)} ${currency} per ${metadata.originalCurrency}`}
+              />
+            </>
           )}
         </ul>
       </TooltipContent>

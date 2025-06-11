@@ -53,13 +53,13 @@ export const reviewBankStatementTask = task({
                 .string()
                 .optional()
                 .describe(
-                  'The start date of the statement period (e.g. "14 ABR 2025").',
+                  'The start date of the statement period following the format "14 ABR 2025".',
                 ),
               endDate: z
                 .string()
                 .optional()
                 .describe(
-                  'The end date of the statement period (e.g. "14 MAI 2025").',
+                  'The end date of the statement period following the format "14 ABR 2025".',
                 ),
             })
             .required()
