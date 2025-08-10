@@ -1,4 +1,4 @@
-import { google } from '@ai-sdk/google'
+import { openai } from '@ai-sdk/openai'
 import { AbortTaskRunError, logger, retry, task } from '@trigger.dev/sdk/v3'
 import { generateObject } from 'ai'
 import { z } from 'zod'
@@ -102,11 +102,7 @@ export const reviewBankStatementTask = task({
 
     logger.info('Analyzing bank statement with AI...')
     const result = await generateObject({
-      model: google('gemini-2.5-flash-preview-04-17', {
-        structuredOutputs: true,
-      }),
-      output: 'object',
-      schemaName: 'review-bank-statement',
+      model: openai('gpt-4o'),
       schema,
       messages: [
         {
@@ -124,7 +120,7 @@ export const reviewBankStatementTask = task({
             {
               type: 'file',
               data: fileBuffer,
-              mimeType: 'application/pdf',
+              mediaType: 'application/pdf',
             },
           ],
         },

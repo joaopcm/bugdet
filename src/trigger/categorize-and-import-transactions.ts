@@ -60,68 +60,68 @@ export const categorizeAndImportTransactionsTask = task({
     logger.info('Extracting transactions from bank statement with AI...')
 
     const schema = z.object({
-      metadata: z
-        .object({
-          originalCurrency: z
+      transactions: z.array(
+        z.object({
+          metadata: z
+            .object({
+              originalCurrency: z
+                .string()
+                .optional()
+                .describe(
+                  'The original currency of the transaction for international transactions. Use the ISO 4217 currency code (e.g. "USD", "BRL", "EUR", etc.).',
+                ),
+              originalAmount: z
+                .number()
+                .optional()
+                .describe(
+                  'The original amount in cents of the transaction for international transactions. Use the amount in the original currency. (e.g. "1000" for $10.00, "100" for $1.00, "10" for $0.10, etc.). Use positive numbers for when the transaction is a debit (e.g. a purchase, a withdrawal, etc.) and negative numbers for when the transaction is a credit (e.g. a refund, a deposit, etc.).',
+                ),
+              installmentNumber: z
+                .number()
+                .optional()
+                .describe(
+                  'The number of the installment when the purchase was paid in installments (e.g. 1, 2, 3, etc.).',
+                ),
+              totalInstallments: z
+                .number()
+                .optional()
+                .describe(
+                  'The total amount of installments for this transaction, if provided (e.g. 12, 24, 36, etc.).',
+                ),
+            })
+            .describe(
+              'Relevant information about the transaction. Useful to find the transaction by its most important characteristics.',
+            ),
+          date: z
             .string()
-            .optional()
+            .describe('The date of the transaction (e.g. "2025-01-01").'),
+          merchantName: z
+            .string()
             .describe(
-              'The original currency of the transaction for international transactions. Use the ISO 4217 currency code (e.g. "USD", "BRL", "EUR", etc.).',
+              "The merchant's name written in the same way as on the document.",
             ),
-          originalAmount: z
+          amount: z
             .number()
-            .optional()
             .describe(
-              'The original amount in cents of the transaction for international transactions. Use the amount in the original currency. (e.g. "1000" for $10.00, "100" for $1.00, "10" for $0.10, etc.). Use positive numbers for when the transaction is a debit (e.g. a purchase, a withdrawal, etc.) and negative numbers for when the transaction is a credit (e.g. a refund, a deposit, etc.).',
+              'The amount of the transaction in cents (e.g. "1000" for $10.00, "100" for $1.00, "10" for $0.10, etc.). Use positive numbers for when the transaction is a debit (e.g. a purchase, a withdrawal, etc.) and negative numbers for when the transaction is a credit (e.g. a refund, a deposit, etc.).',
             ),
-          installmentNumber: z
-            .number()
-            .optional()
+          currency: z
+            .string()
             .describe(
-              'The number of the installment when the purchase was paid in installments (e.g. 1, 2, 3, etc.).',
+              'The effective currency of the transaction. Use the ISO 4217 currency code (e.g. "USD", "BRL", "EUR", etc.).',
             ),
-          totalInstallments: z
-            .number()
-            .optional()
+          category: z
+            .string()
+            .nullable()
             .describe(
-              'The total amount of installments for this transaction, if provided (e.g. 12, 24, 36, etc.).',
+              'The category of the transaction based on the merchant name and relevant information (e.g. "Food", "Transportation", "Entertainment", "Shopping", "Health", "Education", "Other"). Leave null if you cannot find a category.',
             ),
-        })
-        .describe(
-          'Relevant information about the transaction. Useful to find the transaction by its most important characteristics.',
-        ),
-      date: z
-        .string()
-        .describe('The date of the transaction (e.g. "2025-01-01").'),
-      merchantName: z
-        .string()
-        .describe(
-          "The merchant's name written in the same way as on the document.",
-        ),
-      amount: z
-        .number()
-        .describe(
-          'The amount of the transaction in cents (e.g. "1000" for $10.00, "100" for $1.00, "10" for $0.10, etc.). Use positive numbers for when the transaction is a debit (e.g. a purchase, a withdrawal, etc.) and negative numbers for when the transaction is a credit (e.g. a refund, a deposit, etc.).',
-        ),
-      currency: z
-        .string()
-        .describe(
-          'The effective currency of the transaction. Use the ISO 4217 currency code (e.g. "USD", "BRL", "EUR", etc.).',
-        ),
-      category: z
-        .string()
-        .nullable()
-        .describe(
-          'The category of the transaction based on the merchant name and relevant information (e.g. "Food", "Transportation", "Entertainment", "Shopping", "Health", "Education", "Other"). Leave null if you cannot find a category.',
-        ),
+        }),
+      ),
     })
 
     const result = await generateObject({
-      model: google('gemini-2.5-flash-preview-04-17', {
-        structuredOutputs: true,
-      }),
-      output: 'array',
-      schemaName: 'categorize-and-import-transactions',
+      model: google('gemini-2.5-flash'),
       schema,
       messages: [
         {
@@ -162,7 +162,7 @@ export const categorizeAndImportTransactionsTask = task({
             {
               type: 'file',
               data: fileBuffer,
-              mimeType: 'application/pdf',
+              mediaType: 'application/pdf',
             },
           ],
         },
@@ -171,7 +171,7 @@ export const categorizeAndImportTransactionsTask = task({
     logger.info('AI analysis complete', { transactions: result.object })
 
     return {
-      transactions: result.object,
+      transactions: result.object.transactions,
     }
   },
 })
