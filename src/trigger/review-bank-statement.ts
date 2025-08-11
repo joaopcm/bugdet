@@ -103,12 +103,16 @@ export const reviewBankStatementTask = task({
     logger.info('Analyzing bank statement with AI...')
     const result = await generateObject({
       model: openai('gpt-4o'),
+      mode: 'json',
+      schemaName: 'review-bank-statement',
+      schemaDescription: 'A JSON schema for a bank statement.',
+      output: 'object',
       schema,
       messages: [
         {
           role: 'system',
           content:
-            'You are a bank statement expert. You are given a bank statement and you need to determine if it is a valid bank statement. If it is not a valid bank statement, you need to provide a reason why it is not a valid bank statement. The bank statement is sent as a file by the user.',
+            'You are a bank statement expert. You are given a bank statement and you need to determine if it is a valid bank statement using a JSON schema. If it is not a valid bank statement, you need to provide a reason why it is not a valid bank statement. The bank statement is sent as a file by the user.',
         },
         {
           role: 'user',

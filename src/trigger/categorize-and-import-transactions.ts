@@ -1,6 +1,6 @@
 import { db } from '@/db'
 import { category, upload } from '@/db/schema'
-import { google } from '@ai-sdk/google'
+import { openai } from '@ai-sdk/openai'
 import { AbortTaskRunError, logger, retry, task } from '@trigger.dev/sdk/v3'
 import { generateObject } from 'ai'
 import { eq } from 'drizzle-orm'
@@ -121,13 +121,17 @@ export const categorizeAndImportTransactionsTask = task({
     })
 
     const result = await generateObject({
-      model: google('gemini-2.5-flash'),
+      model: openai('gpt-4o-mini'),
+      mode: 'json',
+      schemaName: 'categorize-and-import-transactions',
+      schemaDescription: 'A JSON schema for a categorization of transactions.',
+      output: 'object',
       schema,
       messages: [
         {
           role: 'system',
           content:
-            'You are a bank statement expert. You are given a bank statement and you need to extract the transactions from it. Your main goal is to extract the transactions from the bank statement and return them in the correct format.',
+            'You are a bank statement expert. You are given a bank statement and you need to extract the transactions from it following a JSON schema. Your main goal is to extract the transactions from the bank statement and return them in the correct format.',
         },
         {
           role: 'user',
