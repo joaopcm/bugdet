@@ -1,13 +1,13 @@
 import {
   boolean,
   date,
+  index,
   integer,
   jsonb,
   pgEnum,
   pgTable,
   text,
   timestamp,
-  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core'
 
@@ -84,37 +84,50 @@ export type UploadMetadata = {
     | null
 }
 
-export const upload = pgTable('upload', {
-  id: uuid('id').defaultRandom().notNull().primaryKey(),
-  userId: text('user_id')
-    .notNull()
-    .references(() => user.id, { onDelete: 'cascade' }),
-  fileName: text('file_name').notNull(),
-  filePath: text('file_path').notNull(),
-  fileSize: integer('file_size').notNull(),
-  status: uploadStatusEnum('status').notNull().default('queued'),
-  failedReason: text('failed_reason'),
-  metadata: jsonb('metadata').$type<UploadMetadata>(),
-  deleted: boolean('deleted').notNull().default(false),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at')
-    .notNull()
-    .defaultNow()
-    .$onUpdate(() => new Date()),
-})
+export const upload = pgTable(
+  'upload',
+  {
+    id: uuid('id').defaultRandom().notNull().primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    fileName: text('file_name').notNull(),
+    filePath: text('file_path').notNull(),
+    fileSize: integer('file_size').notNull(),
+    status: uploadStatusEnum('status').notNull().default('queued'),
+    failedReason: text('failed_reason'),
+    metadata: jsonb('metadata').$type<UploadMetadata>(),
+    deleted: boolean('deleted').notNull().default(false),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at')
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => ({
+    userIdIdx: index('upload_user_id_idx').on(table.userId).concurrently(),
+    deletedIdx: index('upload_deleted_idx').on(table.deleted).concurrently(),
+  }),
+)
 
-export const category = pgTable('category', {
-  id: uuid('id').defaultRandom().notNull().primaryKey(),
-  name: text('name').notNull(),
-  userId: text('user_id')
-    .notNull()
-    .references(() => user.id, { onDelete: 'cascade' }),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at')
-    .notNull()
-    .defaultNow()
-    .$onUpdate(() => new Date()),
-})
+export const category = pgTable(
+  'category',
+  {
+    id: uuid('id').defaultRandom().notNull().primaryKey(),
+    name: text('name').notNull(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at')
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => ({
+    userIdIdx: index('category_user_id_idx').on(table.userId).concurrently(),
+  }),
+)
 
 export type TransactionMetadata = {
   originalCurrency?: string | null
@@ -123,30 +136,49 @@ export type TransactionMetadata = {
   totalInstallments?: number | null
 }
 
-export const transaction = pgTable('transaction', {
-  id: uuid('id').defaultRandom().notNull().primaryKey(),
-  uploadId: uuid('upload_id')
-    .notNull()
-    .references(() => upload.id, { onDelete: 'set null' }),
-  userId: text('user_id')
-    .notNull()
-    .references(() => user.id, { onDelete: 'cascade' }),
-  categoryId: uuid('category_id').references(() => category.id, {
-    onDelete: 'set null',
+export const transaction = pgTable(
+  'transaction',
+  {
+    id: uuid('id').defaultRandom().notNull().primaryKey(),
+    uploadId: uuid('upload_id')
+      .notNull()
+      .references(() => upload.id, { onDelete: 'set null' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    categoryId: uuid('category_id').references(() => category.id, {
+      onDelete: 'set null',
+    }),
+    date: date('date').notNull(),
+    merchantName: text('merchant_name').notNull(),
+    amount: integer('amount').notNull(),
+    currency: text('currency').notNull(),
+    confidence: integer('confidence').notNull().default(100),
+    metadata: jsonb('metadata').$type<TransactionMetadata>(),
+    deleted: boolean('deleted').notNull().default(false),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at')
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => ({
+    userIdIdx: index('transaction_user_id_idx').on(table.userId).concurrently(),
+    uploadIdIdx: index('transaction_upload_id_idx')
+      .on(table.uploadId)
+      .concurrently(),
+    categoryIdIdx: index('transaction_category_id_idx')
+      .on(table.categoryId)
+      .concurrently(),
+    confidenceIdx: index('transaction_confidence_idx')
+      .on(table.confidence)
+      .concurrently(),
+    dateIdx: index('transaction_date_idx').on(table.date).concurrently(),
+    deletedIdx: index('transaction_deleted_idx')
+      .on(table.deleted)
+      .concurrently(),
   }),
-  date: date('date').notNull(),
-  merchantName: text('merchant_name').notNull(),
-  amount: integer('amount').notNull(),
-  currency: text('currency').notNull(),
-  confidence: integer('confidence').notNull().default(100),
-  metadata: jsonb('metadata').$type<TransactionMetadata>(),
-  deleted: boolean('deleted').notNull().default(false),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at')
-    .notNull()
-    .defaultNow()
-    .$onUpdate(() => new Date()),
-})
+)
 
 export const merchantCategory = pgTable(
   'merchant_category',
@@ -166,9 +198,11 @@ export const merchantCategory = pgTable(
       .$onUpdate(() => new Date()),
   },
   (table) => ({
-    uniqueMerchantUser: uniqueIndex('unique_merchant_user').on(
-      table.merchantName,
-      table.userId,
-    ),
+    userIdIdx: index('merchant_category_user_id_idx')
+      .on(table.userId)
+      .concurrently(),
+    categoryIdIdx: index('merchant_category_category_id_idx')
+      .on(table.categoryId)
+      .concurrently(),
   }),
 )

@@ -120,6 +120,13 @@
       "when": 1755884574197,
       "tag": "0016_common_blazing_skull",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1755900189747,
+      "tag": "0017_majestic_blockbuster",
+      "breakpoints": true
     }
   ]
 }
