@@ -109,6 +109,7 @@ export function ForgotPasswordForm() {
                   <FormLabel htmlFor="email">Email</FormLabel>
                   <FormControl>
                     <Input
+                      id="email"
                       placeholder="m@example.com"
                       type="email"
                       {...field}

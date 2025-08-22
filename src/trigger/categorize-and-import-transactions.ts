@@ -86,6 +86,12 @@ export const categorizeAndImportTransactionsTask = task({
             .describe(
               'The category of the transaction based on the merchant name and relevant information (e.g. "Food", "Transportation", "Entertainment", "Shopping", "Health", "Education", "Other"). Leave null if you cannot find a category.',
             ),
+          confidence: z
+            .number()
+            .optional()
+            .describe(
+              'Your confidence level about the transaction being correctly extracted and categorized. Use an integer between 0 and 100. 100 is the highest confidence level.',
+            ),
         }),
       ),
     })
@@ -221,7 +227,7 @@ export const categorizeAndImportTransactionsTask = task({
           merchantName: transaction.merchantName,
           amount: transaction.amount,
           currency: transaction.currency,
-          // metadata: transaction.metadata,
+          confidence: transaction.confidence,
         })),
       )
       logger.info(

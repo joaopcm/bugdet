@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { TableCell, TableRow } from '@/components/ui/table'
+import { CONFIDENCE_THRESHOLD } from '@/constants/transactions'
 import type { transaction } from '@/db/schema'
 import { useTransactions } from '@/hooks/use-transactions'
 import { trpc } from '@/lib/trpc/client'
@@ -11,6 +12,7 @@ import { toast } from 'sonner'
 import { DoubleConfirmationAlertDialog } from '../double-confirmation-alert-dialog'
 import { Amount } from './amount'
 import { Category } from './category'
+import { EditTransactionDialog } from './edit-transaction-dialog'
 
 interface TransactionItemProps {
   transaction: Pick<
@@ -22,6 +24,7 @@ interface TransactionItemProps {
     | 'merchantName'
     | 'amount'
     | 'currency'
+    | 'confidence'
     | 'metadata'
     | 'createdAt'
   > & {
@@ -49,7 +52,10 @@ export function TransactionItem({ transaction }: TransactionItemProps) {
     <TableRow>
       <TableCell>{format(transaction.date, 'MMM d, yyyy')}</TableCell>
       <TableCell>
-        <Category categoryName={transaction.categoryName} />
+        <Category
+          categoryName={transaction.categoryName}
+          confidence={transaction.confidence}
+        />
       </TableCell>
       <TableCell>{transaction.merchantName}</TableCell>
       <TableCell>
@@ -69,6 +75,18 @@ export function TransactionItem({ transaction }: TransactionItemProps) {
             Delete
           </Button>
         </DoubleConfirmationAlertDialog>
+
+        <EditTransactionDialog transaction={transaction}>
+          {transaction.confidence < CONFIDENCE_THRESHOLD ? (
+            <Button variant="default" size="sm">
+              Review
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm">
+              Edit
+            </Button>
+          )}
+        </EditTransactionDialog>
       </TableCell>
     </TableRow>
   )

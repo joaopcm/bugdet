@@ -24,3 +24,14 @@ export function formatCurrency(cents: number, currency: string): string {
     currency,
   }).format(price)
 }
+
+export function getCurrencySymbol(currency: string): string {
+  return (
+    new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+    })
+      .formatToParts(1)
+      .find((part) => part.type === 'currency')?.value || ''
+  )
+}

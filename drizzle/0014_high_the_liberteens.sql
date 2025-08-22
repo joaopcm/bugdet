@@ -1,0 +1,1 @@
+ALTER TABLE "transaction" ADD COLUMN "confidence" integer DEFAULT 100 NOT NULL;

@@ -36,6 +36,7 @@ export const transactionsRouter = router({
         merchantName: transaction.merchantName,
         amount: transaction.amount,
         currency: transaction.currency,
+        confidence: transaction.confidence,
         metadata: transaction.metadata,
         createdAt: transaction.createdAt,
       })
@@ -62,6 +63,31 @@ export const transactionsRouter = router({
       await db
         .update(transaction)
         .set({ deleted: true })
+        .where(eq(transaction.id, existingTransaction.id))
+    }),
+  update: protectedProcedure
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        categoryId: z.string().uuid().nullable(),
+        date: z.string().date(),
+        merchantName: z.string().min(1).max(255),
+        amount: z.number().max(Number.MAX_SAFE_INTEGER / 100),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const existingTransaction = await getExistingTransaction(
+        input.id,
+        ctx.user.id,
+      )
+
+      await db
+        .update(transaction)
+        .set({
+          ...input,
+          amount: input.amount * 100,
+          confidence: 100,
+        })
         .where(eq(transaction.id, existingTransaction.id))
     }),
 })

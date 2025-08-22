@@ -1,10 +1,12 @@
 import { Badge } from '@/components/ui/badge'
+import { CONFIDENCE_THRESHOLD } from '@/constants/transactions'
 
 interface CategoryProps {
   categoryName: string | null
+  confidence: number
 }
 
-export function Category({ categoryName }: CategoryProps) {
+export function Category({ categoryName, confidence }: CategoryProps) {
   if (!categoryName) {
     return (
       <Badge variant="outline" className="select-none">
@@ -13,8 +15,13 @@ export function Category({ categoryName }: CategoryProps) {
     )
   }
 
+  const isLowConfidence = confidence < CONFIDENCE_THRESHOLD
+
   return (
-    <Badge variant="default" className="select-none">
+    <Badge
+      variant={isLowConfidence ? 'secondary' : 'default'}
+      className="select-none"
+    >
       {categoryName}
     </Badge>
   )
