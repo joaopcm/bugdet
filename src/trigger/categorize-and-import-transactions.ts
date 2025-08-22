@@ -1,9 +1,9 @@
 import { db } from '@/db'
-import { category, transaction, upload } from '@/db/schema'
+import { category, merchantCategory, transaction, upload } from '@/db/schema'
 import { openai } from '@ai-sdk/openai'
 import { AbortTaskRunError, logger, retry, task } from '@trigger.dev/sdk/v3'
 import { generateObject } from 'ai'
-import { and, eq, inArray, ne } from 'drizzle-orm'
+import { and, desc, eq, inArray, ne } from 'drizzle-orm'
 import { z } from 'zod'
 import { getBankStatementPresignedUrlTask } from './get-bank-statement-presigned-url'
 
@@ -49,7 +49,6 @@ export const categorizeAndImportTransactionsTask = task({
       .select({ id: category.id, name: category.name })
       .from(category)
       .where(eq(category.userId, userId))
-
     logger.info(
       `Found ${categories.length} categories for the user ${userId}:`,
       {
@@ -57,13 +56,30 @@ export const categorizeAndImportTransactionsTask = task({
       },
     )
 
-    logger.info('Extracting transactions from bank statement with AI...')
+    const merchantCategories = await db
+      .select({
+        merchantName: merchantCategory.merchantName,
+        categoryName: category.name,
+      })
+      .from(merchantCategory)
+      .leftJoin(category, eq(merchantCategory.categoryId, category.id))
+      .where(eq(merchantCategory.userId, userId))
+      .orderBy(desc(merchantCategory.updatedAt))
+      .limit(50)
+    logger.info(
+      `Found ${merchantCategories.length} merchant categories for the user ${userId}:`,
+      {
+        merchantCategories,
+      },
+    )
 
+    logger.info('Extracting transactions from bank statement with AI...')
     const schema = z.object({
       transactions: z.array(
         z.object({
           date: z
             .string()
+            .date()
             .describe('The date of the transaction (e.g. "2025-01-01").'),
           merchantName: z
             .string()
@@ -126,6 +142,15 @@ export const categorizeAndImportTransactionsTask = task({
             {
               type: 'text',
               text: "But don't worry to stick to them if you don't find a good match. Feel free to create new categories if you think they are missing.",
+            },
+            {
+              type: 'text',
+              text: `Also, remember to stick to the following categories whenever you find a merchant name that matches one of the following: ${merchantCategories
+                .map(
+                  (merchantCategory) =>
+                    `- Merchant name: ${merchantCategory.merchantName} → Category: ${merchantCategory.categoryName ?? 'N/A'}`,
+                )
+                .join('\n')}.`,
             },
             {
               type: 'text',

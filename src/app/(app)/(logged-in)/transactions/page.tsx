@@ -16,6 +16,7 @@ export default function TransactionsPage() {
           <PageLayout.HeaderTitle title="Transactions" />
           <PageLayout.HeaderDescription description="View and manage your transactions." />
         </PageLayout.HeaderContent>
+
         <div className="flex items-center gap-2">
           <CreateTransactionDialog />
           <RefreshButton />

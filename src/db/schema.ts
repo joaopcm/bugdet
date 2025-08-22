@@ -185,6 +185,9 @@ export const transaction = pgTable(
     deletedIdx: index('transaction_deleted_idx')
       .on(table.deleted)
       .concurrently(),
+    merchantNameIdx: index('transaction_merchant_name_idx')
+      .on(table.merchantName)
+      .concurrently(),
   }),
 )
 
