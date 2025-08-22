@@ -7,6 +7,7 @@ import { useCategories } from '@/hooks/use-categories'
 import { trpc } from '@/lib/trpc/client'
 import { toast } from 'sonner'
 import { DoubleConfirmationAlertDialog } from '../double-confirmation-alert-dialog'
+import { EditCategoryDialog } from './edit-category-dialog'
 import { NameWithPreview } from './name-with-preview'
 
 interface CategoryItemProps {
@@ -48,6 +49,7 @@ export function CategoryItem({ category }: CategoryItemProps) {
             Delete
           </Button>
         </DoubleConfirmationAlertDialog>
+        <EditCategoryDialog categoryId={category.id} name={category.name} />
       </TableCell>
     </TableRow>
   )

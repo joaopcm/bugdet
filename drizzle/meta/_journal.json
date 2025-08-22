@@ -127,6 +127,13 @@
       "when": 1755900189747,
       "tag": "0017_majestic_blockbuster",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1755902593047,
+      "tag": "0018_lazy_veda",
+      "breakpoints": true
     }
   ]
 }

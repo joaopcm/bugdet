@@ -15,15 +15,23 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { CategoryForm, type CategoryFormValues } from './category-form'
 
-export function CreateCategoryDialog() {
+interface EditCategoryDialogProps {
+  categoryId: string
+  name: string
+}
+
+export function EditCategoryDialog({
+  categoryId,
+  name,
+}: EditCategoryDialogProps) {
   const [isOpen, setIsOpen] = useState(false)
   const { refetch: refetchCategories } = useCategories()
 
-  const { mutate: createCategory, isPending: isCreating } =
-    trpc.categories.create.useMutation({
+  const { mutate: updateCategory, isPending: isUpdating } =
+    trpc.categories.update.useMutation({
       onSuccess: (_, { name }) => {
         refetchCategories()
-        toast.success(`You have created the category "${name}".`)
+        toast.success(`You have updated the category "${name}".`)
         setIsOpen(false)
       },
       onError: (error) => {
@@ -32,22 +40,28 @@ export function CreateCategoryDialog() {
     })
 
   function onSubmit(values: CategoryFormValues) {
-    createCategory(values)
+    updateCategory({ id: categoryId, name: values.name })
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button>New category</Button>
+        <Button variant="outline" size="sm">
+          Edit
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create category</DialogTitle>
+          <DialogTitle>Edit category</DialogTitle>
           <DialogDescription>
-            Create a new category to group your transactions.
+            Edit the category to group your transactions.
           </DialogDescription>
         </DialogHeader>
-        <CategoryForm isLoading={isCreating} onSubmit={onSubmit} />
+        <CategoryForm
+          isLoading={isUpdating}
+          onSubmit={onSubmit}
+          initialValues={{ name }}
+        />
       </DialogContent>
     </Dialog>
   )

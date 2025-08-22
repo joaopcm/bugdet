@@ -41,7 +41,7 @@ export const categoriesRouter = router({
           eq(transaction.deleted, false),
         ),
       )
-      .where(eq(category.userId, ctx.user.id))
+      .where(and(eq(category.userId, ctx.user.id), eq(category.deleted, false)))
       .groupBy(category.id, category.name, category.createdAt)
       .orderBy(desc(category.createdAt))
 
@@ -64,6 +64,7 @@ export const categoriesRouter = router({
         .where(
           and(
             eq(transaction.categoryId, existingCategory.id),
+            eq(transaction.userId, ctx.user.id),
             eq(transaction.deleted, false),
           ),
         )
@@ -77,7 +78,14 @@ export const categoriesRouter = router({
     .mutation(async ({ ctx, input }) => {
       const existingCategory = await getExistingCategory(input.id, ctx.user.id)
 
-      await db.delete(category).where(eq(category.id, existingCategory.id))
+      await db
+        .delete(category)
+        .where(
+          and(
+            eq(category.id, existingCategory.id),
+            eq(category.userId, ctx.user.id),
+          ),
+        )
     }),
   create: protectedProcedure
     .input(z.object({ name: z.string().min(1).max(255) }))
@@ -86,5 +94,22 @@ export const categoriesRouter = router({
         ...input,
         userId: ctx.user.id,
       })
+    }),
+  update: protectedProcedure
+    .input(
+      z.object({ id: z.string().uuid(), name: z.string().min(1).max(255) }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const existingCategory = await getExistingCategory(input.id, ctx.user.id)
+
+      await db
+        .update(category)
+        .set(input)
+        .where(
+          and(
+            eq(category.id, existingCategory.id),
+            eq(category.userId, ctx.user.id),
+          ),
+        )
     }),
 })

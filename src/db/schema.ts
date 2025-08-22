@@ -84,6 +84,8 @@ export type UploadMetadata = {
     | null
 }
 
+export type Upload = typeof upload.$inferSelect
+
 export const upload = pgTable(
   'upload',
   {
@@ -110,6 +112,8 @@ export const upload = pgTable(
   }),
 )
 
+export type Category = typeof category.$inferSelect
+
 export const category = pgTable(
   'category',
   {
@@ -118,6 +122,7 @@ export const category = pgTable(
     userId: text('user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),
+    deleted: boolean('deleted').notNull().default(false),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at')
       .notNull()
@@ -126,8 +131,11 @@ export const category = pgTable(
   },
   (table) => ({
     userIdIdx: index('category_user_id_idx').on(table.userId).concurrently(),
+    deletedIdx: index('category_deleted_idx').on(table.deleted).concurrently(),
   }),
 )
+
+export type Transaction = typeof transaction.$inferSelect
 
 export type TransactionMetadata = {
   originalCurrency?: string | null
@@ -179,6 +187,8 @@ export const transaction = pgTable(
       .concurrently(),
   }),
 )
+
+export type MerchantCategory = typeof merchantCategory.$inferSelect
 
 export const merchantCategory = pgTable(
   'merchant_category',
