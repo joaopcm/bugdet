@@ -1,4 +1,3 @@
-import { TableCell } from '@/components/ui/table'
 import {
   Tooltip,
   TooltipContent,
@@ -31,14 +30,14 @@ export function FileName({ fileName, metadata }: FileNameProps) {
               <MetadataField label="Bank Name" value={metadata.bankName} />
             )}
 
-            {metadata.statementPeriod.startDate && (
+            {metadata.statementPeriod?.startDate && (
               <MetadataField
                 label="Statement Period Start Date"
                 value={metadata.statementPeriod.startDate}
               />
             )}
 
-            {metadata.statementPeriod.endDate && (
+            {metadata.statementPeriod?.endDate && (
               <MetadataField
                 label="Statement Period End Date"
                 value={metadata.statementPeriod.endDate}
@@ -60,7 +59,7 @@ export function FileName({ fileName, metadata }: FileNameProps) {
     )
   }
 
-  return <TableCell>{fileName}</TableCell>
+  return <>{fileName}</>
 }
 
 interface MetadataFieldProps {

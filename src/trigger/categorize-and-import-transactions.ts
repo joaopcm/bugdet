@@ -1,9 +1,9 @@
 import { db } from '@/db'
-import { category, upload } from '@/db/schema'
+import { category, transaction, upload } from '@/db/schema'
 import { openai } from '@ai-sdk/openai'
 import { AbortTaskRunError, logger, retry, task } from '@trigger.dev/sdk/v3'
 import { generateObject } from 'ai'
-import { eq } from 'drizzle-orm'
+import { and, eq, inArray, ne } from 'drizzle-orm'
 import { z } from 'zod'
 import { getBankStatementPresignedUrlTask } from './get-bank-statement-presigned-url'
 
@@ -62,36 +62,6 @@ export const categorizeAndImportTransactionsTask = task({
     const schema = z.object({
       transactions: z.array(
         z.object({
-          metadata: z
-            .object({
-              originalCurrency: z
-                .string()
-                .optional()
-                .describe(
-                  'The original currency of the transaction for international transactions. Use the ISO 4217 currency code (e.g. "USD", "BRL", "EUR", etc.).',
-                ),
-              originalAmount: z
-                .number()
-                .optional()
-                .describe(
-                  'The original amount in cents of the transaction for international transactions. Use the amount in the original currency. (e.g. "1000" for $10.00, "100" for $1.00, "10" for $0.10, etc.). Use positive numbers for when the transaction is a debit (e.g. a purchase, a withdrawal, etc.) and negative numbers for when the transaction is a credit (e.g. a refund, a deposit, etc.).',
-                ),
-              installmentNumber: z
-                .number()
-                .optional()
-                .describe(
-                  'The number of the installment when the purchase was paid in installments (e.g. 1, 2, 3, etc.).',
-                ),
-              totalInstallments: z
-                .number()
-                .optional()
-                .describe(
-                  'The total amount of installments for this transaction, if provided (e.g. 12, 24, 36, etc.).',
-                ),
-            })
-            .describe(
-              'Relevant information about the transaction. Useful to find the transaction by its most important characteristics.',
-            ),
           date: z
             .string()
             .describe('The date of the transaction (e.g. "2025-01-01").'),
@@ -121,24 +91,25 @@ export const categorizeAndImportTransactionsTask = task({
     })
 
     const result = await generateObject({
-      model: openai('gpt-4o-mini'),
+      model: openai('gpt-5-mini'),
       mode: 'json',
       schemaName: 'categorize-and-import-transactions',
-      schemaDescription: 'A JSON schema for a categorization of transactions.',
+      schemaDescription:
+        'A JSON schema for a categorization of transactions based on the merchant name and relevant information.',
       output: 'object',
       schema,
       messages: [
         {
           role: 'system',
           content:
-            'You are a bank statement expert. You are given a bank statement and you need to extract the transactions from it following a JSON schema. Your main goal is to extract the transactions from the bank statement and return them in the correct format.',
+            'You are a bank statement expert. You are given a bank statement and you need to extract the transactions from it following a JSON schema. Your main goal is to extract the transactions from the bank statement and return them in the correct JSON format.',
         },
         {
           role: 'user',
           content: [
             {
               type: 'text',
-              text: 'Hello! Before you start, I would like to give you some information about the categories that I have already created so you can use them to categorize the transactions:',
+              text: 'Hello! Before you start, I would like to give you some information about the categories I have already created so you can use them to categorize the transactions:',
             },
             {
               type: 'text',
@@ -174,8 +145,121 @@ export const categorizeAndImportTransactionsTask = task({
     })
     logger.info('AI analysis complete', { transactions: result.object })
 
+    await db.transaction(async (tx) => {
+      const [upToDateUpload] = await tx
+        .select({ status: upload.status, userId: upload.userId })
+        .from(upload)
+        .where(eq(upload.id, payload.uploadId))
+
+      if (upToDateUpload.status !== 'processing') {
+        logger.warn(
+          `Stopping processing upload ${payload.uploadId} because it is not in a processing status anymore.`,
+        )
+        return { success: true }
+      }
+
+      const uniqueCategories = [
+        ...new Set(
+          result.object.transactions
+            .map((transaction) => transaction.category)
+            .filter((category): category is string => category !== null),
+        ),
+      ]
+      logger.info('Unique categories used:', {
+        uniqueCategories,
+      })
+
+      const existingCategories = await tx
+        .select({ id: category.id, name: category.name })
+        .from(category)
+        .where(
+          and(
+            eq(category.userId, upToDateUpload.userId),
+            inArray(category.name, uniqueCategories),
+          ),
+        )
+
+      const existingCategoryNames = new Set(
+        existingCategories.map((cat) => cat.name),
+      )
+
+      const categoriesToInsert = uniqueCategories.filter(
+        (categoryName) => !existingCategoryNames.has(categoryName),
+      )
+
+      let newCategories: { id: string; name: string }[] = []
+      if (categoriesToInsert.length > 0) {
+        newCategories = await tx
+          .insert(category)
+          .values(
+            categoriesToInsert.map((categoryName) => ({
+              name: categoryName,
+              userId: upToDateUpload.userId,
+            })),
+          )
+          .returning({ id: category.id, name: category.name })
+        logger.info(`Inserted ${categoriesToInsert.length} new categories`)
+      } else {
+        logger.info('No new categories to insert')
+      }
+
+      const categoryNameToId = new Map(
+        [...existingCategories, ...newCategories].map((cat) => [
+          cat.name,
+          cat.id,
+        ]),
+      )
+
+      await tx.insert(transaction).values(
+        result.object.transactions.map((transaction) => ({
+          uploadId: payload.uploadId,
+          userId: upToDateUpload.userId,
+          categoryId: transaction.category
+            ? (categoryNameToId.get(transaction.category) ?? null)
+            : null,
+          date: transaction.date,
+          merchantName: transaction.merchantName,
+          amount: transaction.amount,
+          currency: transaction.currency,
+          // metadata: transaction.metadata,
+        })),
+      )
+      logger.info(
+        `Imported ${result.object.transactions.length} transactions to the database for upload ${payload.uploadId}.`,
+      )
+
+      await tx
+        .update(upload)
+        .set({
+          status: 'completed',
+        })
+        .where(eq(upload.id, payload.uploadId))
+    })
+
     return {
-      transactions: result.object.transactions,
+      success: true,
+    }
+  },
+  handleError: async (payload, error, { ctx }) => {
+    logger.error(`Run ${ctx.run.id} failed`, {
+      payload,
+      error,
+    })
+
+    await db
+      .update(upload)
+      .set({
+        status: 'failed',
+        failedReason:
+          "I'm sorry, I had a hard time processing your request. Please try again later.",
+      })
+      .where(
+        and(eq(upload.id, payload.uploadId), ne(upload.status, 'cancelled')),
+      )
+
+    return {
+      skipRetrying: true,
+      error,
     }
   },
 })

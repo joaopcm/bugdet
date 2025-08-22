@@ -33,60 +33,6 @@ export const reviewBankStatementTask = task({
     const fileBuffer = await response.arrayBuffer()
 
     const schema = z.object({
-      metadata: z
-        .object({
-          documentType: z
-            .string()
-            .optional()
-            .describe(
-              'The type of document (e.g. "Credit Card", "Checking Account", "Savings", etc.).',
-            ),
-          bankName: z
-            .string()
-            .optional()
-            .describe(
-              'The name of the bank (e.g. "Bank of America", "Nubank", etc.).',
-            ),
-          statementPeriod: z
-            .object({
-              startDate: z
-                .string()
-                .optional()
-                .describe(
-                  'The start date of the statement period following the format "14 ABR 2025".',
-                ),
-              endDate: z
-                .string()
-                .optional()
-                .describe(
-                  'The end date of the statement period following the format "14 ABR 2025".',
-                ),
-            })
-            .required()
-            .describe('The period of the statement.'),
-          extraInformation: z
-            .array(
-              z.object({
-                key: z
-                  .string()
-                  .describe(
-                    'The key of the extra information (e.g. "Credit Limit", "Interest Rate", "Minimum Payment", "Issue Date", "Due Date", "Account Holder Name", etc.). Keys must always be in English.',
-                  ),
-                value: z
-                  .string()
-                  .describe(
-                    'The value of the extra information (e.g. "R$ 1000.00", "10%", "R$ 100.00", etc.). Values must always be in the same language as the statement.',
-                  ),
-              }),
-            )
-            .max(4)
-            .describe(
-              'Extra information not covered by the other fields. Useful to find the bank statement by its most important characteristics.',
-            ),
-        })
-        .describe(
-          'Relevant information about the file. Useful to find the file by its most important characteristics.',
-        ),
       isValid: z
         .boolean()
         .describe(
@@ -102,24 +48,25 @@ export const reviewBankStatementTask = task({
 
     logger.info('Analyzing bank statement with AI...')
     const result = await generateObject({
-      model: openai('gpt-4o'),
+      model: openai('gpt-5-mini'),
       mode: 'json',
       schemaName: 'review-bank-statement',
-      schemaDescription: 'A JSON schema for a bank statement.',
+      schemaDescription:
+        'A JSON schema to represent whether a submitted file looks like a bank statement.',
       output: 'object',
       schema,
       messages: [
         {
           role: 'system',
           content:
-            'You are a bank statement expert. You are given a bank statement and you need to determine if it is a valid bank statement using a JSON schema. If it is not a valid bank statement, you need to provide a reason why it is not a valid bank statement. The bank statement is sent as a file by the user.',
+            'You are a bank statement expert. You are given a file and you need to determine if it looks like a bank statement. If it is not a valid bank statement, you need to provide a reason why it is not a valid bank statement.',
         },
         {
           role: 'user',
           content: [
             {
               type: 'text',
-              text: 'Is my bank statement valid?',
+              text: 'Is this file a bank statement?',
             },
             {
               type: 'file',
