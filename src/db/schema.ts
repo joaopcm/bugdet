@@ -71,14 +71,16 @@ export const uploadStatusEnum = pgEnum('upload_status', [
 export type UploadMetadata = {
   documentType?: string | null
   bankName?: string | null
-  statementPeriod: {
+  statementPeriod?: {
     startDate?: string | null
     endDate?: string | null
-  }
-  extraInformation: {
-    key: string
-    value: string
-  }[]
+  } | null
+  extraInformation?:
+    | {
+        key: string
+        value: string
+      }[]
+    | null
 }
 
 export const upload = pgTable('upload', {
