@@ -5,6 +5,7 @@ import './globals.css'
 import TRPCProvider from '@/components/providers/trpc'
 import { Toaster } from '@/components/ui/sonner'
 import { env } from '@/env'
+import { NuqsAdapter } from 'nuqs/adapters/next/app'
 import type { PropsWithChildren } from 'react'
 
 const nunito = Nunito({
@@ -86,8 +87,10 @@ export default function RootLayout({ children }: PropsWithChildren) {
       >
         <div className="texture" />
         <TRPCProvider>
-          <main>{children}</main>
-          <Toaster />
+          <NuqsAdapter>
+            <main>{children}</main>
+            <Toaster />
+          </NuqsAdapter>
         </TRPCProvider>
       </body>
     </html>

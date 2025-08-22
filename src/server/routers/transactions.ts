@@ -25,33 +25,42 @@ async function getExistingTransaction(id: string, userId: string) {
 }
 
 export const transactionsRouter = router({
-  list: protectedProcedure.query(async ({ ctx }) => {
-    const transactions = await db
-      .select({
-        id: transaction.id,
-        uploadId: transaction.uploadId,
-        categoryId: transaction.categoryId,
-        categoryName: category.name,
-        date: transaction.date,
-        merchantName: transaction.merchantName,
-        amount: transaction.amount,
-        currency: transaction.currency,
-        confidence: transaction.confidence,
-        metadata: transaction.metadata,
-        createdAt: transaction.createdAt,
-      })
-      .from(transaction)
-      .leftJoin(category, eq(transaction.categoryId, category.id))
-      .where(
-        and(
-          eq(transaction.userId, ctx.user.id),
-          eq(transaction.deleted, false),
-        ),
-      )
-      .orderBy(desc(transaction.date), desc(transaction.id))
+  list: protectedProcedure
+    .input(
+      z.object({
+        categoryId: z.string().uuid().nullable(),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const transactions = await db
+        .select({
+          id: transaction.id,
+          uploadId: transaction.uploadId,
+          categoryId: transaction.categoryId,
+          categoryName: category.name,
+          date: transaction.date,
+          merchantName: transaction.merchantName,
+          amount: transaction.amount,
+          currency: transaction.currency,
+          confidence: transaction.confidence,
+          metadata: transaction.metadata,
+          createdAt: transaction.createdAt,
+        })
+        .from(transaction)
+        .leftJoin(category, eq(transaction.categoryId, category.id))
+        .where(
+          and(
+            eq(transaction.userId, ctx.user.id),
+            eq(transaction.deleted, false),
+            input.categoryId
+              ? eq(transaction.categoryId, input.categoryId)
+              : undefined,
+          ),
+        )
+        .orderBy(desc(transaction.date), desc(transaction.id))
 
-    return transactions
-  }),
+      return transactions
+    }),
   delete: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
