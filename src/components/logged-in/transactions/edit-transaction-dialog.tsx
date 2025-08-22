@@ -48,6 +48,7 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod'
 import { format } from 'date-fns'
 import { CalendarIcon } from 'lucide-react'
+import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import z from 'zod'
@@ -79,6 +80,7 @@ export function EditTransactionDialog({
   children,
   transaction,
 }: EditTransactionDialogProps) {
+  const [isOpen, setIsOpen] = useState(false)
   const { data: categories } = useCategories()
   const { refetch: refetchTransactions } = useTransactions()
 
@@ -99,6 +101,7 @@ export function EditTransactionDialog({
         toast.success(
           `You have updated the transaction "${formatCurrency(transaction.amount, transaction.currency)} - ${transaction.merchantName}".`,
         )
+        setIsOpen(false)
       },
       onError: (error) => {
         toast.error(error.message)
@@ -116,7 +119,7 @@ export function EditTransactionDialog({
   const isLowConfidence = transaction.confidence < CONFIDENCE_THRESHOLD
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent>
         <Form {...form}>
