@@ -66,7 +66,7 @@ export function CategoryForm({
             <Button variant="outline">Cancel</Button>
           </DialogClose>
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Saving...' : 'Save'}
+            Save
           </Button>
         </DialogFooter>
       </form>

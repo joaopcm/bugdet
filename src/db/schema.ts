@@ -148,9 +148,9 @@ export const transaction = pgTable(
   'transaction',
   {
     id: uuid('id').defaultRandom().notNull().primaryKey(),
-    uploadId: uuid('upload_id')
-      .notNull()
-      .references(() => upload.id, { onDelete: 'set null' }),
+    uploadId: uuid('upload_id').references(() => upload.id, {
+      onDelete: 'set null',
+    }),
     userId: text('user_id')
       .notNull()
       .references(() => user.id, { onDelete: 'cascade' }),

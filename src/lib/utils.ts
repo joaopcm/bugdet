@@ -25,11 +25,20 @@ export function formatCurrency(cents: number, currency: string): string {
   }).format(price)
 }
 
-export function getCurrencySymbol(currency: string): string {
+export function getCurrencyCode(currency?: string): string {
+  if (currency) {
+    return currency
+  }
+
+  return Intl.NumberFormat().resolvedOptions().currency || 'USD'
+}
+
+export function getCurrencySymbol(currency?: string): string {
+  const currencyCode = currency || getCurrencyCode()
   return (
     new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency,
+      currency: currencyCode,
     })
       .formatToParts(1)
       .find((part) => part.type === 'currency')?.value || ''

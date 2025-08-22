@@ -63,7 +63,33 @@ export const transactionsRouter = router({
       await db
         .update(transaction)
         .set({ deleted: true })
-        .where(eq(transaction.id, existingTransaction.id))
+        .where(
+          and(
+            eq(transaction.id, existingTransaction.id),
+            eq(transaction.userId, ctx.user.id),
+          ),
+        )
+    }),
+  create: protectedProcedure
+    .input(
+      z.object({
+        categoryId: z.string().uuid().nullable(),
+        date: z.string().date(),
+        merchantName: z.string().min(1).max(255),
+        amount: z.number().max(Number.MAX_SAFE_INTEGER / 100),
+        currency: z.string().min(3).max(3),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await db.insert(transaction).values({
+        amount: input.amount,
+        categoryId: input.categoryId,
+        date: input.date,
+        merchantName: input.merchantName,
+        currency: input.currency,
+        confidence: 100,
+        userId: ctx.user.id,
+      })
     }),
   update: protectedProcedure
     .input(
@@ -86,10 +112,14 @@ export const transactionsRouter = router({
           .update(transaction)
           .set({
             ...input,
-            amount: input.amount,
             confidence: 100,
           })
-          .where(eq(transaction.id, existingTransaction.id))
+          .where(
+            and(
+              eq(transaction.id, existingTransaction.id),
+              eq(transaction.userId, ctx.user.id),
+            ),
+          )
 
         if (input.categoryId) {
           const [existingMerchantCategory] = await tx
@@ -106,7 +136,12 @@ export const transactionsRouter = router({
             await tx
               .update(merchantCategory)
               .set({ categoryId: input.categoryId })
-              .where(eq(merchantCategory.id, existingMerchantCategory.id))
+              .where(
+                and(
+                  eq(merchantCategory.id, existingMerchantCategory.id),
+                  eq(merchantCategory.userId, ctx.user.id),
+                ),
+              )
             return
           }
 

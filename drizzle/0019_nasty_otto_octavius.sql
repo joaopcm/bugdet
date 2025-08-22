@@ -1,0 +1,1 @@
+ALTER TABLE "transaction" ALTER COLUMN "upload_id" DROP NOT NULL;
