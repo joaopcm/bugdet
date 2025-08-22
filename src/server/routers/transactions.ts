@@ -1,5 +1,5 @@
 import { db } from '@/db'
-import { category, transaction } from '@/db/schema'
+import { category, merchantCategory, transaction } from '@/db/schema'
 import { TRPCError } from '@trpc/server'
 import { and, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
@@ -48,7 +48,7 @@ export const transactionsRouter = router({
           eq(transaction.deleted, false),
         ),
       )
-      .orderBy(desc(transaction.date))
+      .orderBy(desc(transaction.date), desc(transaction.id))
 
     return transactions
   }),
@@ -81,13 +81,41 @@ export const transactionsRouter = router({
         ctx.user.id,
       )
 
-      await db
-        .update(transaction)
-        .set({
-          ...input,
-          amount: input.amount * 100,
-          confidence: 100,
-        })
-        .where(eq(transaction.id, existingTransaction.id))
+      await db.transaction(async (tx) => {
+        await tx
+          .update(transaction)
+          .set({
+            ...input,
+            amount: input.amount,
+            confidence: 100,
+          })
+          .where(eq(transaction.id, existingTransaction.id))
+
+        if (input.categoryId) {
+          const [existingMerchantCategory] = await tx
+            .select()
+            .from(merchantCategory)
+            .where(
+              and(
+                eq(merchantCategory.merchantName, input.merchantName),
+                eq(merchantCategory.userId, ctx.user.id),
+              ),
+            )
+
+          if (existingMerchantCategory) {
+            await tx
+              .update(merchantCategory)
+              .set({ categoryId: input.categoryId })
+              .where(eq(merchantCategory.id, existingMerchantCategory.id))
+            return
+          }
+
+          await tx.insert(merchantCategory).values({
+            merchantName: input.merchantName,
+            userId: ctx.user.id,
+            categoryId: input.categoryId,
+          })
+        }
+      })
     }),
 })

@@ -7,6 +7,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core'
 
@@ -146,3 +147,28 @@ export const transaction = pgTable('transaction', {
     .defaultNow()
     .$onUpdate(() => new Date()),
 })
+
+export const merchantCategory = pgTable(
+  'merchant_category',
+  {
+    id: uuid('id').defaultRandom().notNull().primaryKey(),
+    merchantName: text('merchant_name').notNull(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    categoryId: uuid('category_id').references(() => category.id, {
+      onDelete: 'cascade',
+    }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at')
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => ({
+    uniqueMerchantUser: uniqueIndex('unique_merchant_user').on(
+      table.merchantName,
+      table.userId,
+    ),
+  }),
+)

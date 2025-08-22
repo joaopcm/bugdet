@@ -1,0 +1,1 @@
+DROP INDEX "merchant_name_idx";

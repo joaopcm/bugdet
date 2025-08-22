@@ -5,6 +5,7 @@ export function CurrencyInput({
   thousandSeparator = true,
   decimalScale = 2,
   fixedDecimalScale = true,
+  autoComplete = 'off',
   ...props
 }: NumericFormatProps) {
   return (
@@ -13,6 +14,7 @@ export function CurrencyInput({
       decimalScale={decimalScale}
       fixedDecimalScale={fixedDecimalScale}
       customInput={Input}
+      autoComplete={autoComplete}
       {...props}
     />
   )

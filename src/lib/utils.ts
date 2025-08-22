@@ -35,3 +35,8 @@ export function getCurrencySymbol(currency: string): string {
       .find((part) => part.type === 'currency')?.value || ''
   )
 }
+
+export function parseCurrency(value: string) {
+  const parsedValue = value.replace(/\D/g, '')
+  return Number(parsedValue)
+}

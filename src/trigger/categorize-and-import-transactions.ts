@@ -68,7 +68,7 @@ export const categorizeAndImportTransactionsTask = task({
           merchantName: z
             .string()
             .describe(
-              "The merchant's name written in the same way as on the document.",
+              "The merchant's name written in the same way as on the document. Do not include any unrelated information like the date, installments, etc. Only include the merchant's name.",
             ),
           amount: z
             .number()
