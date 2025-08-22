@@ -11,8 +11,7 @@ import { TableHeader } from '@/components/ui/table'
 import { useCategories } from '@/hooks/use-categories'
 import { EmptyState } from '../empty-state'
 import { CategoryItem } from './category-item'
-// import { LoadingState } from './loading-state'
-// import { TransactionItem } from './transaction-item'
+import { LoadingState } from './loading-state'
 
 export function CategoriesTable() {
   const { data: categories, isLoading } = useCategories()
@@ -21,13 +20,13 @@ export function CategoriesTable() {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Name</TableHead>
-          <TableHead>Transactions</TableHead>
-          <TableHead>Actions</TableHead>
+          <TableHead className="w-1/2">Name</TableHead>
+          <TableHead className="w-1/4">Transactions</TableHead>
+          <TableHead className="w-1/4">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {/* {isLoading && <LoadingState />} */}
+        {isLoading && <LoadingState />}
 
         {categories?.map((category) => (
           <CategoryItem key={category.id} category={category} />
@@ -35,7 +34,7 @@ export function CategoriesTable() {
 
         {categories?.length === 0 && (
           <TableRow>
-            <TableCell colSpan={5} className="py-10">
+            <TableCell colSpan={3} className="py-10">
               <EmptyState
                 title="No categories found."
                 description="Upload your bank statements or create your first category to get started."

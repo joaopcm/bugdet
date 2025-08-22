@@ -20,11 +20,11 @@ export function TransactionsTable() {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Date</TableHead>
-          <TableHead>Category</TableHead>
-          <TableHead>Merchant</TableHead>
-          <TableHead>Amount</TableHead>
-          <TableHead>Actions</TableHead>
+          <TableHead className="w-[15%]">Date</TableHead>
+          <TableHead className="w-[20%]">Category</TableHead>
+          <TableHead className="w-[30%]">Merchant</TableHead>
+          <TableHead className="w-[20%]">Amount</TableHead>
+          <TableHead className="w-[15%]">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>

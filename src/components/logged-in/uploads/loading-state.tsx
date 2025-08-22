@@ -5,59 +5,59 @@ export function LoadingState() {
   return (
     <>
       <TableRow>
-        <TableCell>
+        <TableCell className="w-[35%]">
+          <Skeleton className="h-3.5 w-48" />
+        </TableCell>
+        <TableCell className="w-[15%]">
+          <Skeleton className="h-3.5 w-16" />
+        </TableCell>
+        <TableCell className="w-[15%]">
+          <Skeleton className="h-[22px] w-20" />
+        </TableCell>
+        <TableCell className="w-[20%]">
+          <Skeleton className="h-3.5 w-32" />
+        </TableCell>
+        <TableCell className="w-[15%]">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-[34px] w-[95px]" />
+            <Skeleton className="h-[34px] w-[72px]" />
+          </div>
+        </TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="w-[35%]">
+          <Skeleton className="h-3.5 w-52" />
+        </TableCell>
+        <TableCell className="w-[15%]">
+          <Skeleton className="h-3.5 w-16" />
+        </TableCell>
+        <TableCell className="w-[15%]">
+          <Skeleton className="h-[22px] w-20" />
+        </TableCell>
+        <TableCell className="w-[20%]">
+          <Skeleton className="h-3.5 w-32" />
+        </TableCell>
+        <TableCell className="w-[15%]">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-[34px] w-[95px]" />
+            <Skeleton className="h-[34px] w-[72px]" />
+          </div>
+        </TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell className="w-[35%]">
           <Skeleton className="h-3.5 w-44" />
         </TableCell>
-        <TableCell>
-          <Skeleton className="h-3.5 w-10" />
+        <TableCell className="w-[15%]">
+          <Skeleton className="h-3.5 w-16" />
         </TableCell>
-        <TableCell>
-          <Skeleton className="h-[22px] w-16" />
+        <TableCell className="w-[15%]">
+          <Skeleton className="h-[22px] w-20" />
         </TableCell>
-        <TableCell>
-          <Skeleton className="h-3.5 w-36" />
+        <TableCell className="w-[20%]">
+          <Skeleton className="h-3.5 w-32" />
         </TableCell>
-        <TableCell>
-          <div className="flex items-center gap-2">
-            <Skeleton className="h-[34px] w-[95px]" />
-            <Skeleton className="h-[34px] w-[72px]" />
-          </div>
-        </TableCell>
-      </TableRow>
-      <TableRow>
-        <TableCell>
-          <Skeleton className="h-3.5 w-56" />
-        </TableCell>
-        <TableCell>
-          <Skeleton className="h-3.5 w-10" />
-        </TableCell>
-        <TableCell>
-          <Skeleton className="h-[22px] w-16" />
-        </TableCell>
-        <TableCell>
-          <Skeleton className="h-3.5 w-36" />
-        </TableCell>
-        <TableCell>
-          <div className="flex items-center gap-2">
-            <Skeleton className="h-[34px] w-[95px]" />
-            <Skeleton className="h-[34px] w-[72px]" />
-          </div>
-        </TableCell>
-      </TableRow>
-      <TableRow>
-        <TableCell>
-          <Skeleton className="h-3.5 w-36" />
-        </TableCell>
-        <TableCell>
-          <Skeleton className="h-3.5 w-10" />
-        </TableCell>
-        <TableCell>
-          <Skeleton className="h-[22px] w-16" />
-        </TableCell>
-        <TableCell>
-          <Skeleton className="h-3.5 w-36" />
-        </TableCell>
-        <TableCell>
+        <TableCell className="w-[15%]">
           <div className="flex items-center gap-2">
             <Skeleton className="h-[34px] w-[95px]" />
             <Skeleton className="h-[34px] w-[72px]" />

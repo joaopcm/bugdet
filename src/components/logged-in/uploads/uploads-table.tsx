@@ -19,11 +19,11 @@ export function UploadsTable() {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>File Name</TableHead>
-          <TableHead>File Size</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Uploaded At</TableHead>
-          <TableHead>Actions</TableHead>
+          <TableHead className="w-[35%]">File Name</TableHead>
+          <TableHead className="w-[15%]">File Size</TableHead>
+          <TableHead className="w-[15%]">Status</TableHead>
+          <TableHead className="w-[20%]">Uploaded At</TableHead>
+          <TableHead className="w-[15%]">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>

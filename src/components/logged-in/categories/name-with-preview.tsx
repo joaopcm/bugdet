@@ -52,38 +52,40 @@ export function NameWithPreview({ id, name }: NameWithPreviewProps) {
       >
         {name}
       </TooltipTrigger>
-      <TooltipContent side="right">
-        <ul
-          className={cn('max-h-48 overflow-y-auto grid gap-3 text-xs', {
-            'min-w-48 max-w-56': !!lastTransactions?.length,
-          })}
-        >
-          {isLoading && <li>Loading...</li>}
+      <TooltipContent side="right" className="p-0">
+        <div className="px-3 py-1.5 overflow-y-auto max-h-48">
+          <ul
+            className={cn('grid gap-3 text-xs', {
+              'min-w-48 max-w-56': !!lastTransactions?.length,
+            })}
+          >
+            {isLoading && <li>Loading...</li>}
 
-          {dates.map((date) => (
-            <li key={date} className="grid gap-0.5">
-              <span className="text-muted">{date}</span>
-              <ul className="grid gap-0.5">
-                {transactionsGroupedByDate[date].map((transaction) => (
-                  <TransactionPreviewItem
-                    key={transaction.id}
-                    date={transaction.date}
-                    merchantName={transaction.merchantName}
-                    amount={transaction.amount}
-                    currency={transaction.currency}
-                  />
-                ))}
-              </ul>
-            </li>
-          ))}
-
-          {lastTransactions?.length &&
-            lastTransactions.length >= MAX_TRANSACTIONS_PREVIEW && (
-              <li>
-                <span className="text-muted">More transactions...</span>
+            {dates.map((date) => (
+              <li key={date} className="grid gap-0.5">
+                <span className="text-muted">{date}</span>
+                <ul className="grid gap-0.5">
+                  {transactionsGroupedByDate[date].map((transaction) => (
+                    <TransactionPreviewItem
+                      key={transaction.id}
+                      date={transaction.date}
+                      merchantName={transaction.merchantName}
+                      amount={transaction.amount}
+                      currency={transaction.currency}
+                    />
+                  ))}
+                </ul>
               </li>
-            )}
-        </ul>
+            ))}
+
+            {lastTransactions?.length &&
+              lastTransactions.length >= MAX_TRANSACTIONS_PREVIEW && (
+                <li>
+                  <span className="text-muted">More transactions...</span>
+                </li>
+              )}
+          </ul>
+        </div>
       </TooltipContent>
     </Tooltip>
   )
