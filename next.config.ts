@@ -16,6 +16,7 @@ const nextConfig: NextConfig = {
     }
     return headers
   },
+  serverExternalPackages: ['@supabase/supabase-js'],
 }
 
 export default nextConfig

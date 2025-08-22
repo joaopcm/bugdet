@@ -34,6 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { CONFIDENCE_THRESHOLD } from '@/constants/transactions'
 import type { transaction } from '@/db/schema'
 import { useCategories } from '@/hooks/use-categories'
 import { useTransactions } from '@/hooks/use-transactions'
@@ -64,7 +65,13 @@ interface EditTransactionDialogProps {
   children: React.ReactNode
   transaction: Pick<
     typeof transaction.$inferSelect,
-    'id' | 'categoryId' | 'date' | 'merchantName' | 'amount' | 'currency'
+    | 'id'
+    | 'categoryId'
+    | 'date'
+    | 'merchantName'
+    | 'amount'
+    | 'currency'
+    | 'confidence'
   >
 }
 
@@ -106,6 +113,8 @@ export function EditTransactionDialog({
     })
   }
 
+  const isLowConfidence = transaction.confidence < CONFIDENCE_THRESHOLD
+
   return (
     <Dialog>
       <DialogTrigger asChild>{children}</DialogTrigger>
@@ -113,9 +122,13 @@ export function EditTransactionDialog({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <DialogHeader>
-              <DialogTitle>Edit transaction</DialogTitle>
+              <DialogTitle>
+                {isLowConfidence ? 'Review' : 'Edit'} transaction
+              </DialogTitle>
               <DialogDescription>
-                Review and make changes to the transaction.
+                {isLowConfidence
+                  ? 'Review and make changes to the transaction.'
+                  : 'Edit the transaction.'}
               </DialogDescription>
             </DialogHeader>
 

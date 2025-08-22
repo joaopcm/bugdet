@@ -246,7 +246,7 @@ export const categorizeAndImportTransactionsTask = task({
       success: true,
     }
   },
-  handleError: async (payload, error, { ctx }) => {
+  catchError: async ({ ctx, error, payload }) => {
     logger.error(`Run ${ctx.run.id} failed`, {
       payload,
       error,
@@ -265,7 +265,6 @@ export const categorizeAndImportTransactionsTask = task({
 
     return {
       skipRetrying: true,
-      error,
     }
   },
 })

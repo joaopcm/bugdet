@@ -132,7 +132,7 @@ export const extractUploadMetadataTask = task({
 
     return { success: true }
   },
-  handleError: async (payload, error, { ctx }) => {
+  catchError: async ({ ctx, error, payload }) => {
     logger.error(`Run ${ctx.run.id} failed`, {
       payload,
       error,
@@ -140,7 +140,6 @@ export const extractUploadMetadataTask = task({
 
     return {
       skipRetrying: true,
-      error,
     }
   },
 })
