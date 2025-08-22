@@ -1,6 +1,8 @@
 import { CategoriesTable } from '@/components/logged-in/categories/categories-table'
+import { CreateCategoryDialog } from '@/components/logged-in/categories/create-category-dialog'
 import { RefreshButton } from '@/components/logged-in/categories/refresh-button'
 import { PageLayout } from '@/components/logged-in/page-layout'
+import { Button } from '@/components/ui/button'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -15,7 +17,13 @@ export default function CategoriesPage() {
           <PageLayout.HeaderTitle title="Categories" />
           <PageLayout.HeaderDescription description="View and manage your categories." />
         </PageLayout.HeaderContent>
-        <RefreshButton />
+
+        <div className="flex items-center gap-2">
+          <CreateCategoryDialog>
+            <Button>New category</Button>
+          </CreateCategoryDialog>
+          <RefreshButton />
+        </div>
       </PageLayout.Header>
       <CategoriesTable />
     </PageLayout.Root>

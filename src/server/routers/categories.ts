@@ -79,4 +79,12 @@ export const categoriesRouter = router({
 
       await db.delete(category).where(eq(category.id, existingCategory.id))
     }),
+  create: protectedProcedure
+    .input(z.object({ name: z.string().min(1).max(255) }))
+    .mutation(async ({ ctx, input }) => {
+      await db.insert(category).values({
+        ...input,
+        userId: ctx.user.id,
+      })
+    }),
 })

@@ -53,8 +53,6 @@ import { useForm } from 'react-hook-form'
 import { toast } from 'sonner'
 import z from 'zod'
 
-type EditTransactionFormValues = z.infer<typeof editTransactionSchema>
-
 const editTransactionSchema = z.object({
   categoryId: z.string().uuid().nullable(),
   date: z.string().date(),
@@ -75,6 +73,8 @@ interface EditTransactionDialogProps {
     | 'confidence'
   >
 }
+
+type EditTransactionFormValues = z.infer<typeof editTransactionSchema>
 
 export function EditTransactionDialog({
   children,
