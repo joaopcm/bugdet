@@ -1,3 +1,4 @@
+import { SUGGESTED_TRANSACTION_FILTERS_DAYS } from '@/constants/suggested-transaction-filters'
 import { CONFIDENCE_THRESHOLD } from '@/constants/transactions'
 import { db } from '@/db'
 import { category, merchantCategory, transaction } from '@/db/schema'
@@ -12,6 +13,7 @@ import {
   gte,
   ilike,
   inArray,
+  isNotNull,
   lt,
   sql,
 } from 'drizzle-orm'
@@ -207,7 +209,7 @@ export const transactionsRouter = router({
     return transactions
   }),
   getMostFrequentMerchant: protectedProcedure.query(async ({ ctx }) => {
-    const fortyFiveDaysAgo = subDays(new Date(), 45)
+    const dateRange = subDays(new Date(), SUGGESTED_TRANSACTION_FILTERS_DAYS)
 
     const result = await db
       .select({
@@ -218,11 +220,58 @@ export const transactionsRouter = router({
         and(
           eq(transaction.userId, ctx.user.id),
           eq(transaction.deleted, false),
-          gte(transaction.date, format(fortyFiveDaysAgo, 'yyyy-MM-dd')),
+          gte(transaction.date, format(dateRange, 'yyyy-MM-dd')),
         ),
       )
       .groupBy(transaction.merchantName)
       .orderBy(desc(sql<number>`count(*)`))
+      .limit(1)
+
+    return result[0] || null
+  }),
+  getMostFrequentCategory: protectedProcedure.query(async ({ ctx }) => {
+    const dateRange = subDays(new Date(), SUGGESTED_TRANSACTION_FILTERS_DAYS)
+
+    const result = await db
+      .select({
+        categoryId: transaction.categoryId,
+        categoryName: category.name,
+      })
+      .from(transaction)
+      .leftJoin(category, eq(transaction.categoryId, category.id))
+      .where(
+        and(
+          eq(transaction.userId, ctx.user.id),
+          eq(transaction.deleted, false),
+          gte(transaction.date, format(dateRange, 'yyyy-MM-dd')),
+          isNotNull(transaction.categoryId),
+        ),
+      )
+      .groupBy(transaction.categoryId, category.name)
+      .orderBy(desc(sql<number>`count(*)`))
+      .limit(1)
+
+    return result[0] || null
+  }),
+  getMostExpensiveMerchant: protectedProcedure.query(async ({ ctx }) => {
+    const dateRange = subDays(new Date(), SUGGESTED_TRANSACTION_FILTERS_DAYS)
+
+    const result = await db
+      .select({
+        merchantName: transaction.merchantName,
+        totalAmount: sql<number>`sum(${transaction.amount})`,
+        currency: transaction.currency,
+      })
+      .from(transaction)
+      .where(
+        and(
+          eq(transaction.userId, ctx.user.id),
+          eq(transaction.deleted, false),
+          gte(transaction.date, format(dateRange, 'yyyy-MM-dd')),
+        ),
+      )
+      .groupBy(transaction.merchantName, transaction.currency)
+      .orderBy(desc(sql<number>`sum(${transaction.amount})`))
       .limit(1)
 
     return result[0] || null

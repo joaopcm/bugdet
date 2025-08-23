@@ -82,7 +82,11 @@ export function ToReview() {
       </TooltipTrigger>
       <TooltipContent side="bottom" className="max-w-64 text-pretty">
         I wasn't entirely sure when classifying {transactions?.length}{' '}
-        transactions. Click to list and review them.
+        {transactions?.length === 1 ? 'transaction' : 'transactions'}. Click to
+        list and review {transactions?.length === 1 ? 'it' : 'them'}.
+        <br />
+        <br />
+        I'll improve my classification skills over time as you review them.
       </TooltipContent>
     </Tooltip>
   )

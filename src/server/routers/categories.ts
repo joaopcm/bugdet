@@ -2,8 +2,7 @@ import { MAX_TRANSACTIONS_PREVIEW } from '@/constants/categories'
 import { db } from '@/db'
 import { category, transaction } from '@/db/schema'
 import { TRPCError } from '@trpc/server'
-import { format, subDays } from 'date-fns'
-import { and, count, desc, eq, gte, isNotNull, sql } from 'drizzle-orm'
+import { and, count, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { protectedProcedure, router } from '../trpc'
 
@@ -113,28 +112,4 @@ export const categoriesRouter = router({
           ),
         )
     }),
-  getMostFrequentCategory: protectedProcedure.query(async ({ ctx }) => {
-    const fortyFiveDaysAgo = subDays(new Date(), 45)
-
-    const result = await db
-      .select({
-        categoryId: transaction.categoryId,
-        categoryName: category.name,
-      })
-      .from(transaction)
-      .leftJoin(category, eq(transaction.categoryId, category.id))
-      .where(
-        and(
-          eq(transaction.userId, ctx.user.id),
-          eq(transaction.deleted, false),
-          gte(transaction.date, format(fortyFiveDaysAgo, 'yyyy-MM-dd')),
-          isNotNull(transaction.categoryId),
-        ),
-      )
-      .groupBy(transaction.categoryId, category.name)
-      .orderBy(desc(sql<number>`count(*)`))
-      .limit(1)
-
-    return result[0] || null
-  }),
 })
