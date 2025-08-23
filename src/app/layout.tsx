@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Nunito } from 'next/font/google'
 import { PT_Sans } from 'next/font/google'
 import './globals.css'
+import { TailwindIndicator } from '@/components/devtools/tailwind-indicator'
 import TRPCProvider from '@/components/providers/trpc'
 import { Toaster } from '@/components/ui/sonner'
 import { env } from '@/env'
@@ -90,6 +91,7 @@ export default function RootLayout({ children }: PropsWithChildren) {
           <NuqsAdapter>
             <main>{children}</main>
             <Toaster />
+            <TailwindIndicator />
           </NuqsAdapter>
         </TRPCProvider>
       </body>

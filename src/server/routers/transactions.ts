@@ -1,7 +1,7 @@
 import { db } from '@/db'
 import { category, merchantCategory, transaction } from '@/db/schema'
 import { TRPCError } from '@trpc/server'
-import { and, between, desc, eq } from 'drizzle-orm'
+import { type SQL, and, between, desc, eq, ilike } from 'drizzle-orm'
 import { z } from 'zod'
 import { protectedProcedure, router } from '../trpc'
 
@@ -31,10 +31,11 @@ export const transactionsRouter = router({
         categoryId: z.string().uuid().nullable(),
         from: z.string().date().nullable(),
         to: z.string().date().nullable(),
+        query: z.string().min(1).max(255).nullable(),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const whereClauses = [
+      const whereClauses: (SQL<unknown> | undefined)[] = [
         eq(transaction.userId, ctx.user.id),
         eq(transaction.deleted, false),
       ]
@@ -47,7 +48,9 @@ export const transactionsRouter = router({
         whereClauses.push(between(transaction.date, input.from, input.to))
       }
 
-      console.log(input.from, input.to)
+      if (input.query) {
+        whereClauses.push(ilike(transaction.merchantName, `%${input.query}%`))
+      }
 
       const transactions = await db
         .select({

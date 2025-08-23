@@ -6,6 +6,7 @@ export function useTransactionsFilters() {
     category: parseAsString.withDefault('all'),
     from: parseAsLocalDate,
     to: parseAsLocalDate,
+    query: parseAsString.withDefault(''),
   })
 
   return {
