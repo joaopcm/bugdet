@@ -7,7 +7,7 @@ import type { transaction } from '@/db/schema'
 import { useTransactions } from '@/hooks/use-transactions'
 import { trpc } from '@/lib/trpc/client'
 import { formatCurrency } from '@/lib/utils'
-import { format } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 import { toast } from 'sonner'
 import { DoubleConfirmationAlertDialog } from '../double-confirmation-alert-dialog'
 import { Amount } from './amount'
@@ -50,7 +50,7 @@ export function TransactionItem({ transaction }: TransactionItemProps) {
 
   return (
     <TableRow>
-      <TableCell>{format(transaction.date, 'MMM d, yyyy')}</TableCell>
+      <TableCell>{format(parseISO(transaction.date), 'MMM d, yyyy')}</TableCell>
       <TableCell>
         <Category
           categoryName={transaction.categoryName}

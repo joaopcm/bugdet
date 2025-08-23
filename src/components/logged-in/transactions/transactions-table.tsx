@@ -11,6 +11,7 @@ import { TableHeader } from '@/components/ui/table'
 import { useTransactions } from '@/hooks/use-transactions'
 import { EmptyState } from '../empty-state'
 import { CategoryFilter } from './filters/category-filter'
+import { DateRangeFilter } from './filters/date-range-filter'
 import { LoadingState } from './loading-state'
 import { TransactionItem } from './transaction-item'
 
@@ -20,6 +21,7 @@ export function TransactionsTable() {
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-4 gap-2">
+        <DateRangeFilter />
         <CategoryFilter />
       </div>
       <Table>

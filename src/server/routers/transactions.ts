@@ -1,7 +1,7 @@
 import { db } from '@/db'
 import { category, merchantCategory, transaction } from '@/db/schema'
 import { TRPCError } from '@trpc/server'
-import { and, desc, eq } from 'drizzle-orm'
+import { and, between, desc, eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { protectedProcedure, router } from '../trpc'
 
@@ -29,9 +29,26 @@ export const transactionsRouter = router({
     .input(
       z.object({
         categoryId: z.string().uuid().nullable(),
+        from: z.string().date().nullable(),
+        to: z.string().date().nullable(),
       }),
     )
     .query(async ({ ctx, input }) => {
+      const whereClauses = [
+        eq(transaction.userId, ctx.user.id),
+        eq(transaction.deleted, false),
+      ]
+
+      if (input.categoryId) {
+        whereClauses.push(eq(transaction.categoryId, input.categoryId))
+      }
+
+      if (input.from && input.to) {
+        whereClauses.push(between(transaction.date, input.from, input.to))
+      }
+
+      console.log(input.from, input.to)
+
       const transactions = await db
         .select({
           id: transaction.id,
@@ -48,15 +65,7 @@ export const transactionsRouter = router({
         })
         .from(transaction)
         .leftJoin(category, eq(transaction.categoryId, category.id))
-        .where(
-          and(
-            eq(transaction.userId, ctx.user.id),
-            eq(transaction.deleted, false),
-            input.categoryId
-              ? eq(transaction.categoryId, input.categoryId)
-              : undefined,
-          ),
-        )
+        .where(and(...whereClauses))
         .orderBy(desc(transaction.date), desc(transaction.id))
 
       return transactions
