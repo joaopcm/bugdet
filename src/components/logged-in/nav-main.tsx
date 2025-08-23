@@ -16,7 +16,11 @@ import type { Icon } from '@tabler/icons-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useRef, useState } from 'react'
+import { useHotkeys } from 'react-hotkeys-hook'
 import { toast } from 'sonner'
+import { Kbd } from '../ui/kbd'
+
+const IMPORT_BANK_STATEMENT_SHORTCUT = 'I'
 
 interface NavMainProps {
   items: {
@@ -33,6 +37,8 @@ export function NavMain({ items }: NavMainProps) {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { refetch: refetchUploads } = useUploads()
+
+  useHotkeys(IMPORT_BANK_STATEMENT_SHORTCUT, () => handleImportClick())
 
   const { mutate: createSignedUploadUrls } =
     trpc.uploads.createSignedUploadUrls.useMutation({
@@ -158,6 +164,9 @@ export function NavMain({ items }: NavMainProps) {
               disabled={isUploading}
             >
               Import Bank Statement
+              <Kbd variant="default" className="-mr-2">
+                {IMPORT_BANK_STATEMENT_SHORTCUT}
+              </Kbd>
             </Button>
           </SidebarMenuItem>
         </SidebarMenu>

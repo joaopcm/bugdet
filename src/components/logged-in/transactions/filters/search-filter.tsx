@@ -37,7 +37,7 @@ export function SearchFilter() {
           <Input
             placeholder="Search by merchant name..."
             className="pl-9"
-            value={searchParams.query || ''}
+            defaultValue={searchParams.query || ''}
             onChange={(e) => debouncedSetSearchParams(e.target.value)}
             ref={inputRef}
           />
