@@ -14,6 +14,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useCategories } from '@/hooks/use-categories'
+import { usePagination } from '@/hooks/use-pagination'
 import { useState } from 'react'
 import { useHotkeys } from 'react-hotkeys-hook'
 import { useTransactionsFilters } from './search-params'
@@ -23,6 +24,7 @@ const CATEGORY_SHORTCUT = 'C'
 export function CategoryFilter() {
   const { data: categories } = useCategories()
   const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
+  const { setPagination } = usePagination()
   const [isOpen, setIsOpen] = useState(false)
 
   useHotkeys(CATEGORY_SHORTCUT, (e) => {
@@ -32,7 +34,10 @@ export function CategoryFilter() {
 
   return (
     <Select
-      onValueChange={(value) => setTransactionFilters({ category: value })}
+      onValueChange={(value) => {
+        setTransactionFilters({ category: value })
+        setPagination({ page: 1 })
+      }}
       value={transactionFilters.category || undefined}
       open={isOpen}
       onOpenChange={setIsOpen}

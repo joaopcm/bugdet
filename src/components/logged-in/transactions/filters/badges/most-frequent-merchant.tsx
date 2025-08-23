@@ -9,6 +9,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useMostFrequentMerchant } from '@/hooks/use-most-frequent-merchant'
+import { usePagination } from '@/hooks/use-pagination'
 import { useHotkeys } from 'react-hotkeys-hook'
 import { useTransactionsFilters } from '../search-params'
 
@@ -17,6 +18,7 @@ const MOST_FREQUENT_MERCHANT_SHORTCUT = '5'
 export function MostFrequentMerchant() {
   const { data: merchant, isLoading } = useMostFrequentMerchant()
   const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
+  const { setPagination } = usePagination()
 
   useHotkeys(MOST_FREQUENT_MERCHANT_SHORTCUT, () => handleClick())
 
@@ -44,6 +46,8 @@ export function MostFrequentMerchant() {
     if (!merchant) {
       return
     }
+
+    setPagination({ page: 1 })
 
     if (transactionFilters.query === merchant.merchantName) {
       setTransactionFilters({

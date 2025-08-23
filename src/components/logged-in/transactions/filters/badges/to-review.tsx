@@ -9,6 +9,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useCountToReview } from '@/hooks/use-count-to-review'
+import { usePagination } from '@/hooks/use-pagination'
 import { cn } from '@/lib/utils'
 import { useHotkeys } from 'react-hotkeys-hook'
 import { useTransactionsFilters } from '../search-params'
@@ -18,6 +19,7 @@ const TO_REVIEW_SHORTCUT = '1'
 export function ToReview() {
   const { data: transactions, isLoading } = useCountToReview()
   const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
+  const { setPagination } = usePagination()
 
   useHotkeys(TO_REVIEW_SHORTCUT, () => handleClick())
 
@@ -42,6 +44,8 @@ export function ToReview() {
   }
 
   function handleClick() {
+    setPagination({ page: 1 })
+
     if (transactionFilters.ids.length > 0) {
       setTransactionFilters({
         ids: [],

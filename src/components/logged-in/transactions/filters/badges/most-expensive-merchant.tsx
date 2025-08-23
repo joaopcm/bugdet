@@ -9,6 +9,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useMostExpensiveMerchant } from '@/hooks/use-most-expensive-merchant'
+import { usePagination } from '@/hooks/use-pagination'
 import { formatCurrency } from '@/lib/utils'
 import { useHotkeys } from 'react-hotkeys-hook'
 import { useTransactionsFilters } from '../search-params'
@@ -18,6 +19,7 @@ const MOST_EXPENSIVE_MERCHANT_SHORTCUT = '2'
 export function MostExpensiveMerchant() {
   const { data: merchant, isLoading } = useMostExpensiveMerchant()
   const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
+  const { setPagination } = usePagination()
 
   useHotkeys(MOST_EXPENSIVE_MERCHANT_SHORTCUT, () => handleClick())
 
@@ -45,6 +47,8 @@ export function MostExpensiveMerchant() {
     if (!merchant) {
       return
     }
+
+    setPagination({ page: 1 })
 
     if (transactionFilters.query === merchant.merchantName) {
       setTransactionFilters({

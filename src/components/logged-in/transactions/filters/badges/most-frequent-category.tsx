@@ -9,6 +9,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useMostFrequentCategory } from '@/hooks/use-most-frequent-category'
+import { usePagination } from '@/hooks/use-pagination'
 import { useHotkeys } from 'react-hotkeys-hook'
 import { useTransactionsFilters } from '../search-params'
 
@@ -17,6 +18,7 @@ const MOST_FREQUENT_CATEGORY_SHORTCUT = '4'
 export function MostFrequentCategory() {
   const { data: category, isLoading } = useMostFrequentCategory()
   const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
+  const { setPagination } = usePagination()
 
   useHotkeys(MOST_FREQUENT_CATEGORY_SHORTCUT, () => handleClick())
 
@@ -44,6 +46,8 @@ export function MostFrequentCategory() {
     if (!category) {
       return
     }
+
+    setPagination({ page: 1 })
 
     if (transactionFilters.category === category.categoryId) {
       setTransactionFilters({

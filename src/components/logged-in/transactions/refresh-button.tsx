@@ -40,7 +40,8 @@ export function RefreshButton() {
         </Button>
       </TooltipTrigger>
       <TooltipContent>
-        Or press <Kbd variant="outline">{REFRESH_SHORTCUT}</Kbd> to refresh
+        Or press <Kbd variant="outline">{REFRESH_SHORTCUT}</Kbd> to refresh the
+        transaction list
       </TooltipContent>
     </Tooltip>
   )

@@ -7,6 +7,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { usePagination } from '@/hooks/use-pagination'
 import { SearchIcon } from 'lucide-react'
 import { useRef } from 'react'
 import { useHotkeys } from 'react-hotkeys-hook'
@@ -17,12 +18,13 @@ const SEARCH_SHORTCUT = 'S'
 
 export function SearchFilter() {
   const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
+  const { setPagination } = usePagination()
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const debouncedSetSearchParams = useDebounceCallback(
-    (value: string) => setTransactionFilters({ query: value }),
-    500,
-  )
+  const debouncedSetSearchParams = useDebounceCallback((value: string) => {
+    setTransactionFilters({ query: value })
+    setPagination({ page: 1 })
+  }, 500)
 
   useHotkeys(SEARCH_SHORTCUT, (e) => {
     e.preventDefault()

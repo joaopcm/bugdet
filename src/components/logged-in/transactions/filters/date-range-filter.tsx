@@ -13,6 +13,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { usePagination } from '@/hooks/use-pagination'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 import { CalendarIcon, XIcon } from 'lucide-react'
@@ -24,6 +25,7 @@ const DATE_RANGE_SHORTCUT = 'D'
 
 export function DateRangeFilter() {
   const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
+  const { setPagination } = usePagination()
   const [isOpen, setIsOpen] = useState(false)
 
   const hasValues = !!transactionFilters.from && !!transactionFilters.to
@@ -34,6 +36,7 @@ export function DateRangeFilter() {
       from: null,
       to: null,
     })
+    setPagination({ page: 1 })
   }
 
   useHotkeys(DATE_RANGE_SHORTCUT, (e) => {
@@ -103,6 +106,7 @@ export function DateRangeFilter() {
                 to: value.to,
               })
             }
+            setPagination({ page: 1 })
           }}
           captionLayout="dropdown"
         />

@@ -9,6 +9,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useMostExpensiveCategory } from '@/hooks/use-most-expensive-category'
+import { usePagination } from '@/hooks/use-pagination'
 import { formatCurrency } from '@/lib/utils'
 import { useHotkeys } from 'react-hotkeys-hook'
 import { useTransactionsFilters } from '../search-params'
@@ -18,6 +19,7 @@ const MOST_EXPENSIVE_CATEGORY_SHORTCUT = '3'
 export function MostExpensiveCategory() {
   const { data: category, isLoading } = useMostExpensiveCategory()
   const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
+  const { setPagination } = usePagination()
 
   useHotkeys(MOST_EXPENSIVE_CATEGORY_SHORTCUT, () => handleClick())
 
@@ -45,6 +47,8 @@ export function MostExpensiveCategory() {
     if (!category) {
       return
     }
+
+    setPagination({ page: 1 })
 
     if (transactionFilters.category === category.categoryId) {
       setTransactionFilters({
