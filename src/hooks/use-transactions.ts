@@ -10,5 +10,6 @@ export function useTransactions() {
     from: searchParams.from ? format(searchParams.from, 'yyyy-MM-dd') : null,
     to: searchParams.to ? format(searchParams.to, 'yyyy-MM-dd') : null,
     query: searchParams.query || null,
+    ids: searchParams.ids || [],
   })
 }

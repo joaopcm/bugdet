@@ -1,5 +1,6 @@
 'use client'
 
+import { Badge } from '@/components/ui/badge'
 import {
   Table,
   TableBody,
@@ -10,6 +11,7 @@ import {
 import { TableHeader } from '@/components/ui/table'
 import { useTransactions } from '@/hooks/use-transactions'
 import { EmptyState } from '../empty-state'
+import { ToReview } from './filters/badges/to-review'
 import { CategoryFilter } from './filters/category-filter'
 import { DateRangeFilter } from './filters/date-range-filter'
 import { SearchFilter } from './filters/search-filter'
@@ -25,6 +27,12 @@ export function TransactionsTable() {
         <SearchFilter />
         <DateRangeFilter />
         <CategoryFilter />
+      </div>
+      <div className="flex items-center gap-2">
+        <ToReview />
+        <Badge variant="outline">Most frequent category</Badge>
+        <Badge variant="outline">Most frequent merchant</Badge>
+        <Badge variant="outline">Total amount based on active filters:</Badge>
       </div>
       <Table>
         <TableHeader>

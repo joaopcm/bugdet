@@ -1,7 +1,17 @@
+import { CONFIDENCE_THRESHOLD } from '@/constants/transactions'
 import { db } from '@/db'
 import { category, merchantCategory, transaction } from '@/db/schema'
 import { TRPCError } from '@trpc/server'
-import { type SQL, and, between, desc, eq, ilike } from 'drizzle-orm'
+import {
+  type SQL,
+  and,
+  between,
+  desc,
+  eq,
+  ilike,
+  inArray,
+  lt,
+} from 'drizzle-orm'
 import { z } from 'zod'
 import { protectedProcedure, router } from '../trpc'
 
@@ -28,6 +38,7 @@ export const transactionsRouter = router({
   list: protectedProcedure
     .input(
       z.object({
+        ids: z.array(z.string().uuid()).nullable(),
         categoryId: z.string().uuid().nullable(),
         from: z.string().date().nullable(),
         to: z.string().date().nullable(),
@@ -39,6 +50,10 @@ export const transactionsRouter = router({
         eq(transaction.userId, ctx.user.id),
         eq(transaction.deleted, false),
       ]
+
+      if (input.ids && input.ids.length > 0) {
+        whereClauses.push(inArray(transaction.id, input.ids))
+      }
 
       if (input.categoryId) {
         whereClauses.push(eq(transaction.categoryId, input.categoryId))
@@ -174,4 +189,18 @@ export const transactionsRouter = router({
         }
       })
     }),
+  countToReview: protectedProcedure.query(async ({ ctx }) => {
+    const transactions = await db
+      .select({ id: transaction.id })
+      .from(transaction)
+      .where(
+        and(
+          eq(transaction.userId, ctx.user.id),
+          eq(transaction.deleted, false),
+          lt(transaction.confidence, CONFIDENCE_THRESHOLD),
+        ),
+      )
+
+    return transactions
+  }),
 })

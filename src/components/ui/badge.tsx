@@ -4,7 +4,7 @@ import { type VariantProps, cva } from 'class-variance-authority'
 import type * as React from 'react'
 
 const badgeVariants = cva(
-  'inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden',
+  'inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive transition-[color,box-shadow] overflow-hidden data-[clickable=true]:hover:cursor-pointer',
   {
     variants: {
       variant: {
@@ -15,7 +15,7 @@ const badgeVariants = cva(
         destructive:
           'border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60',
         outline:
-          'text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground',
+          'text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground data-[clickable=true]:hover:bg-accent data-[clickable=true]:hover:text-accent-foreground data-[clickable=true]:dark:hover:bg-input/50',
       },
     },
     defaultVariants: {
@@ -24,18 +24,26 @@ const badgeVariants = cva(
   },
 )
 
+interface BadgeProps
+  extends React.ComponentProps<'span'>,
+    VariantProps<typeof badgeVariants> {
+  asChild?: boolean
+  clickable?: boolean
+}
+
 function Badge({
   className,
   variant,
   asChild = false,
+  clickable = false,
   ...props
-}: React.ComponentProps<'span'> &
-  VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
+}: BadgeProps) {
   const Comp = asChild ? Slot : 'span'
 
   return (
     <Comp
       data-slot="badge"
+      data-clickable={clickable}
       className={cn(badgeVariants({ variant }), className)}
       {...props}
     />
