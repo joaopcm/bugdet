@@ -17,7 +17,8 @@ const kbdVariants = cva(
           'bg-primary border border-primary-border shadow-primary text-primary-foreground',
         destructive:
           'bg-destructive text-white border border-destructive-border shadow-destructive-border dark:bg-destructive/60',
-        outline: 'border bg-card shadow-xs dark:bg-input/30 dark:border-input',
+        outline:
+          'border bg-card text-card-foreground shadow-xs dark:bg-input/30 dark:border-input',
         secondary: 'bg-secondary text-secondary-foreground',
       },
     },
