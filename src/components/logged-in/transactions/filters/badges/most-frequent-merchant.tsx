@@ -10,25 +10,25 @@ import {
 import { trpc } from '@/lib/trpc/client'
 import { useTransactionsFilters } from '../search-params'
 
-export function MostFrequentCategory() {
-  const { data: category, isLoading } =
-    trpc.categories.getMostFrequentCategory.useQuery()
+export function MostFrequentMerchant() {
+  const { data: merchant, isLoading } =
+    trpc.transactions.getMostFrequentMerchant.useQuery()
   const { searchParams, setSearchParams } = useTransactionsFilters()
 
   if (isLoading) {
     return <Skeleton className="w-[151px] h-[24px]" />
   }
 
-  if (!category) {
+  if (!merchant) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
           <Badge variant="secondary" className="select-none">
-            Most frequent category
+            Most frequent merchant
           </Badge>
         </TooltipTrigger>
         <TooltipContent side="bottom" className="max-w-64 text-pretty">
-          I couldn't find the most frequent category in the last 45 days. Sorry
+          I couldn't find the most frequent merchant in the last 45 days. Sorry
           about that.
         </TooltipContent>
       </Tooltip>
@@ -36,28 +36,28 @@ export function MostFrequentCategory() {
   }
 
   function handleClick() {
-    if (!category) {
+    if (!merchant) {
       return
     }
 
-    if (searchParams.category === category.categoryId) {
+    if (searchParams.query === merchant.merchantName) {
       setSearchParams({
-        category: 'all',
+        query: null,
       })
       return
     }
 
     setSearchParams({
-      category: category.categoryId,
+      query: merchant.merchantName,
       // Reset all other filters
       ids: [],
       from: null,
       to: null,
-      query: null,
+      category: 'all',
     })
   }
 
-  const isSelected = searchParams.category === category.categoryId
+  const isSelected = searchParams.query === merchant.merchantName
 
   return (
     <Tooltip>
@@ -68,13 +68,13 @@ export function MostFrequentCategory() {
             onClick={handleClick}
             className="transition-none"
           >
-            Most frequent category
+            Most frequent merchant
           </button>
         </Badge>
       </TooltipTrigger>
       <TooltipContent side="bottom" className="max-w-64 text-pretty">
-        Filter transactions by "{category.categoryName}", the most frequent
-        category in the last 45 days.
+        Filter transactions by "{merchant.merchantName}", the most frequent
+        merchant in the last 45 days.
       </TooltipContent>
     </Tooltip>
   )

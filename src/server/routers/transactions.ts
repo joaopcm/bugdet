@@ -2,15 +2,18 @@ import { CONFIDENCE_THRESHOLD } from '@/constants/transactions'
 import { db } from '@/db'
 import { category, merchantCategory, transaction } from '@/db/schema'
 import { TRPCError } from '@trpc/server'
+import { format, subDays } from 'date-fns'
 import {
   type SQL,
   and,
   between,
   desc,
   eq,
+  gte,
   ilike,
   inArray,
   lt,
+  sql,
 } from 'drizzle-orm'
 import { z } from 'zod'
 import { protectedProcedure, router } from '../trpc'
@@ -202,5 +205,26 @@ export const transactionsRouter = router({
       )
 
     return transactions
+  }),
+  getMostFrequentMerchant: protectedProcedure.query(async ({ ctx }) => {
+    const fortyFiveDaysAgo = subDays(new Date(), 45)
+
+    const result = await db
+      .select({
+        merchantName: transaction.merchantName,
+      })
+      .from(transaction)
+      .where(
+        and(
+          eq(transaction.userId, ctx.user.id),
+          eq(transaction.deleted, false),
+          gte(transaction.date, format(fortyFiveDaysAgo, 'yyyy-MM-dd')),
+        ),
+      )
+      .groupBy(transaction.merchantName)
+      .orderBy(desc(sql<number>`count(*)`))
+      .limit(1)
+
+    return result[0] || null
   }),
 })

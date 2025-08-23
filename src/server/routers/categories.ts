@@ -119,9 +119,10 @@ export const categoriesRouter = router({
     const result = await db
       .select({
         categoryId: transaction.categoryId,
-        count: sql<number>`count(*)`.as('count'),
+        categoryName: category.name,
       })
       .from(transaction)
+      .leftJoin(category, eq(transaction.categoryId, category.id))
       .where(
         and(
           eq(transaction.userId, ctx.user.id),
@@ -130,7 +131,7 @@ export const categoriesRouter = router({
           isNotNull(transaction.categoryId),
         ),
       )
-      .groupBy(transaction.categoryId)
+      .groupBy(transaction.categoryId, category.name)
       .orderBy(desc(sql<number>`count(*)`))
       .limit(1)
 
