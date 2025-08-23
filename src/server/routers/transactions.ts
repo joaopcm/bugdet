@@ -90,6 +90,8 @@ export const transactionsRouter = router({
         )
       }
 
+      const offset = (input.pagination.page - 1) * input.pagination.limit
+
       const transactions = await db
         .select({
           id: transaction.id,
@@ -108,8 +110,13 @@ export const transactionsRouter = router({
         .leftJoin(category, eq(transaction.categoryId, category.id))
         .where(and(...whereClauses))
         .orderBy(desc(transaction.date), desc(transaction.id))
+        .limit(input.pagination.limit + 1)
+        .offset(offset)
 
-      return transactions
+      return {
+        data: transactions.slice(0, input.pagination.limit),
+        hasMore: transactions.length > input.pagination.limit,
+      }
     }),
   delete: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))

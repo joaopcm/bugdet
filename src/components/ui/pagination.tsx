@@ -1,4 +1,5 @@
 import { type Button, buttonVariants } from '@/components/ui/button'
+import { LIMIT_PER_PAGE_OPTIONS } from '@/constants/pagination'
 import { cn } from '@/lib/utils'
 import {
   ChevronLeftIcon,
@@ -6,13 +7,21 @@ import {
   MoreHorizontalIcon,
 } from 'lucide-react'
 import type * as React from 'react'
+import { Label } from './label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './select'
 
 function Pagination({ className, ...props }: React.ComponentProps<'nav'>) {
   return (
     <nav
       aria-label="pagination"
       data-slot="pagination"
-      className={cn('mx-auto flex w-full justify-center', className)}
+      className={cn('flex justify-center', className)}
       {...props}
     />
   )
@@ -114,6 +123,36 @@ function PaginationEllipsis({
   )
 }
 
+interface PaginationPageSizeProps {
+  value: number
+  onChange: (size: number) => void
+}
+
+function PaginationPageSize({ value, onChange }: PaginationPageSizeProps) {
+  return (
+    <div className="flex items-center gap-2">
+      <Label htmlFor="pagination-page-size" className="hidden md:flex">
+        Items per page
+      </Label>
+      <Select
+        value={value.toString()}
+        onValueChange={(value) => onChange(Number(value))}
+      >
+        <SelectTrigger size="sm" id="pagination-page-size">
+          <SelectValue placeholder="Select a page size" />
+        </SelectTrigger>
+        <SelectContent>
+          {LIMIT_PER_PAGE_OPTIONS.map((option) => (
+            <SelectItem key={option} value={option.toString()}>
+              {option}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  )
+}
+
 export {
   Pagination,
   PaginationContent,
@@ -122,4 +161,5 @@ export {
   PaginationPrevious,
   PaginationNext,
   PaginationEllipsis,
+  PaginationPageSize,
 }

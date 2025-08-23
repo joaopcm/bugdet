@@ -1,4 +1,5 @@
 'use client'
+
 import {
   Table,
   TableBody,
@@ -19,8 +20,9 @@ import { DateRangeFilter } from './filters/date-range-filter'
 import { SearchFilter } from './filters/search-filter'
 import { LoadingState } from './loading-state'
 import { TransactionItem } from './transaction-item'
+import { TransactionsPagination } from './transactions-pagination'
 
-export function TransactionsTable() {
+export const TransactionsTable = () => {
   const { data: transactions, isLoading } = useTransactions()
 
   return (
@@ -50,11 +52,11 @@ export function TransactionsTable() {
         <TableBody>
           {isLoading && <LoadingState />}
 
-          {transactions?.map((transaction) => (
+          {transactions?.data?.map((transaction) => (
             <TransactionItem key={transaction.id} transaction={transaction} />
           ))}
 
-          {transactions?.length === 0 && (
+          {transactions?.data?.length === 0 && (
             <TableRow>
               <TableCell colSpan={5} className="py-10">
                 <EmptyState
@@ -66,6 +68,8 @@ export function TransactionsTable() {
           )}
         </TableBody>
       </Table>
+
+      <TransactionsPagination hasMore={!!transactions?.hasMore} />
     </div>
   )
 }

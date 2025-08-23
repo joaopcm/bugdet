@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/dialog'
 import { CONFIDENCE_THRESHOLD } from '@/constants/transactions'
 import type { transaction } from '@/db/schema'
-import { useCategories } from '@/hooks/use-categories'
 import { useTransactions } from '@/hooks/use-transactions'
 import { trpc } from '@/lib/trpc/client'
 import { formatCurrency, getCurrencySymbol, parseCurrency } from '@/lib/utils'
@@ -37,7 +36,6 @@ export function EditTransactionDialog({
   transaction,
 }: EditTransactionDialogProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const { data: categories } = useCategories()
   const { refetch: refetchTransactions } = useTransactions()
 
   const { mutate: updateTransaction, isPending: isUpdating } =
