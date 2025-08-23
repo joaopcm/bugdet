@@ -1,3 +1,4 @@
+import { PLATFORM_MODIFIERS } from '@/constants/platforms'
 import { type ClassValue, clsx } from 'clsx'
 import { format } from 'date-fns'
 import { createParser } from 'nuqs/server'
@@ -87,3 +88,52 @@ export const parseAsLocalDate = createParser({
     return format(value, 'yyyy-MM-dd')
   },
 })
+
+type Platform = 'mac' | 'windows' | 'linux' | 'unknown'
+
+export function detectPlatform(): Platform {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
+    return 'unknown'
+  }
+
+  const userAgent = navigator.userAgent.toLowerCase()
+  const platform = navigator.platform?.toLowerCase() || ''
+
+  if (
+    platform.includes('mac') ||
+    userAgent.includes('mac os') ||
+    userAgent.includes('macos') ||
+    platform.includes('darwin')
+  ) {
+    return 'mac'
+  }
+
+  if (
+    platform.includes('win') ||
+    userAgent.includes('windows') ||
+    userAgent.includes('win32') ||
+    userAgent.includes('win64')
+  ) {
+    return 'windows'
+  }
+
+  if (
+    platform.includes('linux') ||
+    userAgent.includes('linux') ||
+    userAgent.includes('x11')
+  ) {
+    return 'linux'
+  }
+
+  return 'unknown'
+}
+
+export function getPlatformModifiers() {
+  const platform = detectPlatform()
+
+  if (platform === 'unknown') {
+    return PLATFORM_MODIFIERS.mac
+  }
+
+  return PLATFORM_MODIFIERS[platform]
+}

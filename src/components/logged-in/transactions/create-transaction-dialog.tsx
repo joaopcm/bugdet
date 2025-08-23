@@ -9,12 +9,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import { Kbd } from '@/components/ui/kbd'
 import { useTransactions } from '@/hooks/use-transactions'
 import { trpc } from '@/lib/trpc/client'
 import { getCurrencyCode, parseCurrency } from '@/lib/utils'
 import { useState } from 'react'
+import { useHotkeys } from 'react-hotkeys-hook'
 import { toast } from 'sonner'
 import { TransactionForm, type TransactionFormValues } from './transaction-form'
+
+const NEW_TRANSACTION_SHORTCUT = 'N'
 
 export function CreateTransactionDialog() {
   const [isOpen, setIsOpen] = useState(false)
@@ -32,6 +36,8 @@ export function CreateTransactionDialog() {
       },
     })
 
+  useHotkeys(NEW_TRANSACTION_SHORTCUT, () => setIsOpen(true))
+
   function onSubmit(values: TransactionFormValues) {
     createTransaction({
       ...values,
@@ -43,7 +49,12 @@ export function CreateTransactionDialog() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button>New transaction</Button>
+        <Button>
+          New transaction
+          <Kbd variant="default" className="-mr-2">
+            {NEW_TRANSACTION_SHORTCUT}
+          </Kbd>
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
