@@ -17,7 +17,7 @@ export function CategoryFilter() {
   return (
     <Select
       onValueChange={(value) => setSearchParams({ category: value })}
-      defaultValue={searchParams.category || undefined}
+      value={searchParams.category || undefined}
     >
       <SelectTrigger id="categoryId" className="w-full">
         <SelectValue placeholder="Select a category" />
