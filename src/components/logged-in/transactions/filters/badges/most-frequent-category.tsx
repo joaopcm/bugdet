@@ -1,6 +1,7 @@
 'use client'
 
 import { Badge } from '@/components/ui/badge'
+import { Kbd } from '@/components/ui/kbd'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Tooltip,
@@ -8,11 +9,16 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useMostFrequentCategory } from '@/hooks/use-most-frequent-category'
+import { useHotkeys } from 'react-hotkeys-hook'
 import { useTransactionsFilters } from '../search-params'
+
+const MOST_FREQUENT_CATEGORY_SHORTCUT = '4'
 
 export function MostFrequentCategory() {
   const { data: category, isLoading } = useMostFrequentCategory()
   const { searchParams, setSearchParams } = useTransactionsFilters()
+
+  useHotkeys(MOST_FREQUENT_CATEGORY_SHORTCUT, () => handleClick())
 
   if (isLoading) {
     return <Skeleton className="w-[151px] h-[24px]" />
@@ -74,6 +80,10 @@ export function MostFrequentCategory() {
       <TooltipContent side="bottom" className="max-w-64 text-pretty">
         Filter transactions by "{category.categoryName}", the most frequent
         category in the last 45 days.
+        <br />
+        <br />
+        Press <Kbd variant="outline">{MOST_FREQUENT_CATEGORY_SHORTCUT}</Kbd> to
+        activate this filter.
       </TooltipContent>
     </Tooltip>
   )

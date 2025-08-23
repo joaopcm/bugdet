@@ -1,6 +1,7 @@
 'use client'
 
 import { Badge } from '@/components/ui/badge'
+import { Kbd } from '@/components/ui/kbd'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Tooltip,
@@ -9,11 +10,16 @@ import {
 } from '@/components/ui/tooltip'
 import { useCountToReview } from '@/hooks/use-count-to-review'
 import { cn } from '@/lib/utils'
+import { useHotkeys } from 'react-hotkeys-hook'
 import { useTransactionsFilters } from '../search-params'
+
+const TO_REVIEW_SHORTCUT = '1'
 
 export function ToReview() {
   const { data: transactions, isLoading } = useCountToReview()
   const { searchParams, setSearchParams } = useTransactionsFilters()
+
+  useHotkeys(TO_REVIEW_SHORTCUT, () => handleClick())
 
   if (isLoading) {
     return <Skeleton className="w-[98px] h-[24px]" />
@@ -86,6 +92,10 @@ export function ToReview() {
         <br />
         <br />
         I'll improve my classification skills over time as you review them.
+        <br />
+        <br />
+        Press <Kbd variant="outline">{TO_REVIEW_SHORTCUT}</Kbd> to activate this
+        filter.
       </TooltipContent>
     </Tooltip>
   )

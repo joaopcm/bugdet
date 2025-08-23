@@ -9,7 +9,7 @@ export const SHORTCUTS_VALUES = {
 }
 
 const kbdVariants = cva(
-  'font-normal inline-flex h-5 min-w-5 px-1 select-none items-center justify-center rounded-md text-base',
+  'font-normal inline-flex h-5 min-w-5 px-1 select-none items-center justify-center rounded-md text-xs',
   {
     variants: {
       variant: {
@@ -41,8 +41,6 @@ export function Kbd({
     <kbd
       {...props}
       className={cn(kbdVariants({ variant, className }), {
-        // Make it smaller when it's alphanumeric character
-        'text-xs': childrenString === 'esc' || /[a-z]+/.test(childrenString),
         uppercase: childrenString.length === 1,
       })}
     >

@@ -1,6 +1,7 @@
 'use client'
 
 import { Badge } from '@/components/ui/badge'
+import { Kbd } from '@/components/ui/kbd'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Tooltip,
@@ -8,11 +9,16 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useMostFrequentMerchant } from '@/hooks/use-most-frequent-merchant'
+import { useHotkeys } from 'react-hotkeys-hook'
 import { useTransactionsFilters } from '../search-params'
+
+const MOST_FREQUENT_MERCHANT_SHORTCUT = '5'
 
 export function MostFrequentMerchant() {
   const { data: merchant, isLoading } = useMostFrequentMerchant()
   const { searchParams, setSearchParams } = useTransactionsFilters()
+
+  useHotkeys(MOST_FREQUENT_MERCHANT_SHORTCUT, () => handleClick())
 
   if (isLoading) {
     return <Skeleton className="w-[151px] h-[24px]" />
@@ -74,6 +80,10 @@ export function MostFrequentMerchant() {
       <TooltipContent side="bottom" className="max-w-64 text-pretty">
         Filter transactions by "{merchant.merchantName}", the most frequent
         merchant in the last 45 days.
+        <br />
+        <br />
+        Press <Kbd variant="outline">{MOST_FREQUENT_MERCHANT_SHORTCUT}</Kbd> to
+        activate this filter.
       </TooltipContent>
     </Tooltip>
   )

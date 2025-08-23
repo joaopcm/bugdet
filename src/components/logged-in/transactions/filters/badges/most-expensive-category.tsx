@@ -1,6 +1,7 @@
 'use client'
 
 import { Badge } from '@/components/ui/badge'
+import { Kbd } from '@/components/ui/kbd'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Tooltip,
@@ -9,11 +10,16 @@ import {
 } from '@/components/ui/tooltip'
 import { useMostExpensiveCategory } from '@/hooks/use-most-expensive-category'
 import { formatCurrency } from '@/lib/utils'
+import { useHotkeys } from 'react-hotkeys-hook'
 import { useTransactionsFilters } from '../search-params'
+
+const MOST_EXPENSIVE_CATEGORY_SHORTCUT = '3'
 
 export function MostExpensiveCategory() {
   const { data: category, isLoading } = useMostExpensiveCategory()
   const { searchParams, setSearchParams } = useTransactionsFilters()
+
+  useHotkeys(MOST_EXPENSIVE_CATEGORY_SHORTCUT, () => handleClick())
 
   if (isLoading) {
     return <Skeleton className="w-[151px] h-[24px]" />
@@ -76,6 +82,10 @@ export function MostExpensiveCategory() {
         Filter transactions by "{category.categoryName}", the most expensive
         category in the last 45 days. You've spent{' '}
         {formatCurrency(category.totalAmount, category.currency)} on them.
+        <br />
+        <br />
+        Press <Kbd variant="outline">{MOST_EXPENSIVE_CATEGORY_SHORTCUT}</Kbd> to
+        activate this filter.
       </TooltipContent>
     </Tooltip>
   )
