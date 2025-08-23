@@ -6,9 +6,12 @@ import { useMostExpensiveCategory } from './use-most-expensive-category'
 import { useMostExpensiveMerchant } from './use-most-expensive-merchant'
 import { useMostFrequentCategory } from './use-most-frequent-category'
 import { useMostFrequentMerchant } from './use-most-frequent-merchant'
+import { usePagination } from './use-pagination'
 
 export function useTransactions() {
-  const { searchParams } = useTransactionsFilters()
+  const { transactionFilters } = useTransactionsFilters()
+  const { pagination } = usePagination()
+
   const { refetch: refetchCountToReview } = useCountToReview()
   const { refetch: refetchMostFrequentMerchant } = useMostFrequentMerchant()
   const { refetch: refetchMostFrequentCategory } = useMostFrequentCategory()
@@ -17,12 +20,24 @@ export function useTransactions() {
 
   const { refetch: refetchTransactions, ...context } =
     trpc.transactions.list.useQuery({
-      categoryId:
-        searchParams.category === 'all' ? null : searchParams.category,
-      from: searchParams.from ? format(searchParams.from, 'yyyy-MM-dd') : null,
-      to: searchParams.to ? format(searchParams.to, 'yyyy-MM-dd') : null,
-      query: searchParams.query || null,
-      ids: searchParams.ids || [],
+      filters: {
+        categoryId:
+          transactionFilters.category === 'all'
+            ? null
+            : transactionFilters.category,
+        from: transactionFilters.from
+          ? format(transactionFilters.from, 'yyyy-MM-dd')
+          : null,
+        to: transactionFilters.to
+          ? format(transactionFilters.to, 'yyyy-MM-dd')
+          : null,
+        query: transactionFilters.query || null,
+        ids: transactionFilters.ids || [],
+      },
+      pagination: {
+        page: pagination.page,
+        limit: pagination.limit,
+      },
     })
 
   function refetch() {

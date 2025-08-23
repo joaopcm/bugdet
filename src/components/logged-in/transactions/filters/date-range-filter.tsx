@@ -23,14 +23,14 @@ import { useTransactionsFilters } from './search-params'
 const DATE_RANGE_SHORTCUT = 'D'
 
 export function DateRangeFilter() {
-  const { searchParams, setSearchParams } = useTransactionsFilters()
+  const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
   const [isOpen, setIsOpen] = useState(false)
 
-  const hasValues = !!searchParams.from && !!searchParams.to
+  const hasValues = !!transactionFilters.from && !!transactionFilters.to
 
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation() // Prevent popover from opening
-    setSearchParams({
+    setTransactionFilters({
       from: null,
       to: null,
     })
@@ -53,8 +53,8 @@ export function DateRangeFilter() {
                 !hasValues && 'text-muted-foreground',
               )}
             >
-              {!!searchParams.from && !!searchParams.to ? (
-                `${format(searchParams.from, 'PP')} - ${format(searchParams.to, 'PP')}`
+              {!!transactionFilters.from && !!transactionFilters.to ? (
+                `${format(transactionFilters.from, 'PP')} - ${format(transactionFilters.to, 'PP')}`
               ) : (
                 <span>Pick a date range</span>
               )}
@@ -85,17 +85,21 @@ export function DateRangeFilter() {
         <Calendar
           mode="range"
           selected={{
-            from: searchParams.from ? new Date(searchParams.from) : undefined,
-            to: searchParams.to ? new Date(searchParams.to) : undefined,
+            from: transactionFilters.from
+              ? new Date(transactionFilters.from)
+              : undefined,
+            to: transactionFilters.to
+              ? new Date(transactionFilters.to)
+              : undefined,
           }}
           onSelect={(value) => {
             if (value?.from) {
-              setSearchParams({
+              setTransactionFilters({
                 from: value.from,
               })
             }
             if (value?.to) {
-              setSearchParams({
+              setTransactionFilters({
                 to: value.to,
               })
             }

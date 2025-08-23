@@ -17,7 +17,7 @@ const MOST_EXPENSIVE_CATEGORY_SHORTCUT = '3'
 
 export function MostExpensiveCategory() {
   const { data: category, isLoading } = useMostExpensiveCategory()
-  const { searchParams, setSearchParams } = useTransactionsFilters()
+  const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
 
   useHotkeys(MOST_EXPENSIVE_CATEGORY_SHORTCUT, () => handleClick())
 
@@ -46,14 +46,14 @@ export function MostExpensiveCategory() {
       return
     }
 
-    if (searchParams.category === category.categoryId) {
-      setSearchParams({
+    if (transactionFilters.category === category.categoryId) {
+      setTransactionFilters({
         category: 'all',
       })
       return
     }
 
-    setSearchParams({
+    setTransactionFilters({
       category: category.categoryId,
       // Reset all other filters
       ids: [],
@@ -63,7 +63,7 @@ export function MostExpensiveCategory() {
     })
   }
 
-  const isSelected = searchParams.category === category.categoryId
+  const isSelected = transactionFilters.category === category.categoryId
 
   return (
     <Tooltip>

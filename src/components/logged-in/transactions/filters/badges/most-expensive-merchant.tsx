@@ -17,7 +17,7 @@ const MOST_EXPENSIVE_MERCHANT_SHORTCUT = '2'
 
 export function MostExpensiveMerchant() {
   const { data: merchant, isLoading } = useMostExpensiveMerchant()
-  const { searchParams, setSearchParams } = useTransactionsFilters()
+  const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
 
   useHotkeys(MOST_EXPENSIVE_MERCHANT_SHORTCUT, () => handleClick())
 
@@ -46,14 +46,14 @@ export function MostExpensiveMerchant() {
       return
     }
 
-    if (searchParams.query === merchant.merchantName) {
-      setSearchParams({
+    if (transactionFilters.query === merchant.merchantName) {
+      setTransactionFilters({
         query: null,
       })
       return
     }
 
-    setSearchParams({
+    setTransactionFilters({
       query: merchant.merchantName,
       // Reset all other filters
       ids: [],
@@ -63,7 +63,7 @@ export function MostExpensiveMerchant() {
     })
   }
 
-  const isSelected = searchParams.query === merchant.merchantName
+  const isSelected = transactionFilters.query === merchant.merchantName
 
   return (
     <Tooltip>

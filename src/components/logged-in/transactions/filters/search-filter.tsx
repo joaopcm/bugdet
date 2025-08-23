@@ -16,11 +16,11 @@ import { useTransactionsFilters } from './search-params'
 const SEARCH_SHORTCUT = 'S'
 
 export function SearchFilter() {
-  const { searchParams, setSearchParams } = useTransactionsFilters()
+  const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
   const inputRef = useRef<HTMLInputElement>(null)
 
   const debouncedSetSearchParams = useDebounceCallback(
-    (value: string) => setSearchParams({ query: value }),
+    (value: string) => setTransactionFilters({ query: value }),
     500,
   )
 
@@ -37,7 +37,7 @@ export function SearchFilter() {
           <Input
             placeholder="Search by merchant name..."
             className="pl-9"
-            defaultValue={searchParams.query || ''}
+            defaultValue={transactionFilters.query || ''}
             onChange={(e) => debouncedSetSearchParams(e.target.value)}
             ref={inputRef}
           />

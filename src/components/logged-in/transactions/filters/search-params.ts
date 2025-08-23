@@ -2,7 +2,7 @@ import { parseAsLocalDate } from '@/lib/utils'
 import { parseAsArrayOf, parseAsString, useQueryStates } from 'nuqs'
 
 export function useTransactionsFilters() {
-  const [searchParams, setSearchParams] = useQueryStates({
+  const [transactionFilters, setTransactionFilters] = useQueryStates({
     category: parseAsString.withDefault('all'),
     from: parseAsLocalDate,
     to: parseAsLocalDate,
@@ -11,7 +11,7 @@ export function useTransactionsFilters() {
   })
 
   return {
-    searchParams,
-    setSearchParams,
+    transactionFilters,
+    setTransactionFilters,
   }
 }

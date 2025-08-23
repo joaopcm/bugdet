@@ -16,7 +16,7 @@ const MOST_FREQUENT_CATEGORY_SHORTCUT = '4'
 
 export function MostFrequentCategory() {
   const { data: category, isLoading } = useMostFrequentCategory()
-  const { searchParams, setSearchParams } = useTransactionsFilters()
+  const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
 
   useHotkeys(MOST_FREQUENT_CATEGORY_SHORTCUT, () => handleClick())
 
@@ -45,14 +45,14 @@ export function MostFrequentCategory() {
       return
     }
 
-    if (searchParams.category === category.categoryId) {
-      setSearchParams({
+    if (transactionFilters.category === category.categoryId) {
+      setTransactionFilters({
         category: 'all',
       })
       return
     }
 
-    setSearchParams({
+    setTransactionFilters({
       category: category.categoryId,
       // Reset all other filters
       ids: [],
@@ -62,7 +62,7 @@ export function MostFrequentCategory() {
     })
   }
 
-  const isSelected = searchParams.category === category.categoryId
+  const isSelected = transactionFilters.category === category.categoryId
 
   return (
     <Tooltip>

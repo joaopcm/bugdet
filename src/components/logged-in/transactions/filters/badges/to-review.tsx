@@ -17,7 +17,7 @@ const TO_REVIEW_SHORTCUT = '1'
 
 export function ToReview() {
   const { data: transactions, isLoading } = useCountToReview()
-  const { searchParams, setSearchParams } = useTransactionsFilters()
+  const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
 
   useHotkeys(TO_REVIEW_SHORTCUT, () => handleClick())
 
@@ -42,14 +42,14 @@ export function ToReview() {
   }
 
   function handleClick() {
-    if (searchParams.ids.length > 0) {
-      setSearchParams({
+    if (transactionFilters.ids.length > 0) {
+      setTransactionFilters({
         ids: [],
       })
       return
     }
 
-    setSearchParams({
+    setTransactionFilters({
       ids: transactions?.map((transaction) => transaction.id) ?? [],
       // Reset all other filters
       category: 'all',
@@ -59,7 +59,7 @@ export function ToReview() {
     })
   }
 
-  const isSelected = searchParams.ids.length > 0
+  const isSelected = transactionFilters.ids.length > 0
 
   return (
     <Tooltip>

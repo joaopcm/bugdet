@@ -22,7 +22,7 @@ const CATEGORY_SHORTCUT = 'C'
 
 export function CategoryFilter() {
   const { data: categories } = useCategories()
-  const { searchParams, setSearchParams } = useTransactionsFilters()
+  const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
   const [isOpen, setIsOpen] = useState(false)
 
   useHotkeys(CATEGORY_SHORTCUT, (e) => {
@@ -32,8 +32,8 @@ export function CategoryFilter() {
 
   return (
     <Select
-      onValueChange={(value) => setSearchParams({ category: value })}
-      value={searchParams.category || undefined}
+      onValueChange={(value) => setTransactionFilters({ category: value })}
+      value={transactionFilters.category || undefined}
       open={isOpen}
       onOpenChange={setIsOpen}
     >

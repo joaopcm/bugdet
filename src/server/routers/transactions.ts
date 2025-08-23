@@ -1,3 +1,7 @@
+import {
+  DEFAULT_LIMIT_PER_PAGE,
+  MAX_LIMIT_PER_PAGE,
+} from '@/constants/pagination'
 import { SUGGESTED_TRANSACTION_FILTERS_DAYS } from '@/constants/suggested-transaction-filters'
 import { CONFIDENCE_THRESHOLD } from '@/constants/transactions'
 import { db } from '@/db'
@@ -43,11 +47,21 @@ export const transactionsRouter = router({
   list: protectedProcedure
     .input(
       z.object({
-        ids: z.array(z.string().uuid()).nullable(),
-        categoryId: z.string().uuid().nullable(),
-        from: z.string().date().nullable(),
-        to: z.string().date().nullable(),
-        query: z.string().min(1).max(255).nullable(),
+        filters: z.object({
+          ids: z.array(z.string().uuid()).nullable(),
+          categoryId: z.string().uuid().nullable(),
+          from: z.string().date().nullable(),
+          to: z.string().date().nullable(),
+          query: z.string().min(1).max(255).nullable(),
+        }),
+        pagination: z.object({
+          page: z.number().min(1).default(1),
+          limit: z
+            .number()
+            .min(1)
+            .max(MAX_LIMIT_PER_PAGE)
+            .default(DEFAULT_LIMIT_PER_PAGE),
+        }),
       }),
     )
     .query(async ({ ctx, input }) => {
@@ -56,20 +70,24 @@ export const transactionsRouter = router({
         eq(transaction.deleted, false),
       ]
 
-      if (input.ids && input.ids.length > 0) {
-        whereClauses.push(inArray(transaction.id, input.ids))
+      if (input.filters.ids && input.filters.ids.length > 0) {
+        whereClauses.push(inArray(transaction.id, input.filters.ids))
       }
 
-      if (input.categoryId) {
-        whereClauses.push(eq(transaction.categoryId, input.categoryId))
+      if (input.filters.categoryId) {
+        whereClauses.push(eq(transaction.categoryId, input.filters.categoryId))
       }
 
-      if (input.from && input.to) {
-        whereClauses.push(between(transaction.date, input.from, input.to))
+      if (input.filters.from && input.filters.to) {
+        whereClauses.push(
+          between(transaction.date, input.filters.from, input.filters.to),
+        )
       }
 
-      if (input.query) {
-        whereClauses.push(ilike(transaction.merchantName, `%${input.query}%`))
+      if (input.filters.query) {
+        whereClauses.push(
+          ilike(transaction.merchantName, `%${input.filters.query}%`),
+        )
       }
 
       const transactions = await db

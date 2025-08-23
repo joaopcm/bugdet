@@ -16,7 +16,7 @@ const MOST_FREQUENT_MERCHANT_SHORTCUT = '5'
 
 export function MostFrequentMerchant() {
   const { data: merchant, isLoading } = useMostFrequentMerchant()
-  const { searchParams, setSearchParams } = useTransactionsFilters()
+  const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
 
   useHotkeys(MOST_FREQUENT_MERCHANT_SHORTCUT, () => handleClick())
 
@@ -45,14 +45,14 @@ export function MostFrequentMerchant() {
       return
     }
 
-    if (searchParams.query === merchant.merchantName) {
-      setSearchParams({
+    if (transactionFilters.query === merchant.merchantName) {
+      setTransactionFilters({
         query: null,
       })
       return
     }
 
-    setSearchParams({
+    setTransactionFilters({
       query: merchant.merchantName,
       // Reset all other filters
       ids: [],
@@ -62,7 +62,7 @@ export function MostFrequentMerchant() {
     })
   }
 
-  const isSelected = searchParams.query === merchant.merchantName
+  const isSelected = transactionFilters.query === merchant.merchantName
 
   return (
     <Tooltip>
