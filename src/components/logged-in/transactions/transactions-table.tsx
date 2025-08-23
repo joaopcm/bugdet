@@ -11,6 +11,7 @@ import {
 import { TableHeader } from '@/components/ui/table'
 import { useTransactions } from '@/hooks/use-transactions'
 import { EmptyState } from '../empty-state'
+import { MostFrequentCategory } from './filters/badges/most-frequent-category'
 import { ToReview } from './filters/badges/to-review'
 import { CategoryFilter } from './filters/category-filter'
 import { DateRangeFilter } from './filters/date-range-filter'
@@ -30,7 +31,7 @@ export function TransactionsTable() {
       </div>
       <div className="flex items-center gap-2">
         <ToReview />
-        <Badge variant="outline">Most frequent category</Badge>
+        <MostFrequentCategory />
         <Badge variant="outline">Most frequent merchant</Badge>
         <Badge variant="outline">Total amount based on active filters:</Badge>
       </div>

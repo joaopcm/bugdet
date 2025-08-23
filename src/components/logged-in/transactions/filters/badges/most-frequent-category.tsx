@@ -8,53 +8,56 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { trpc } from '@/lib/trpc/client'
-import { cn } from '@/lib/utils'
 import { useTransactionsFilters } from '../search-params'
 
-export function ToReview() {
-  const { data: transactions, isLoading } =
-    trpc.transactions.countToReview.useQuery()
+export function MostFrequentCategory() {
+  const { data: category, isLoading } =
+    trpc.categories.getMostFrequentCategory.useQuery()
   const { searchParams, setSearchParams } = useTransactionsFilters()
 
   if (isLoading) {
-    return <Skeleton className="w-[98px] h-[24px]" />
+    return <Skeleton className="w-[151px] h-[24px]" />
   }
 
-  if (!transactions?.length) {
+  if (!category) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
           <Badge variant="secondary" className="select-none">
-            To review
+            Most frequent category
           </Badge>
         </TooltipTrigger>
         <TooltipContent side="bottom" className="max-w-64 text-pretty">
-          There are no transactions to review. I'm pretty confident in my
-          classifications.
+          I couldn't find the most frequent category in the last 45 days. Sorry
+          about that.
         </TooltipContent>
       </Tooltip>
     )
   }
 
   function handleClick() {
-    if (searchParams.ids.length > 0) {
+    if (!category) {
+      return
+    }
+
+    if (searchParams.category === category.categoryId) {
       setSearchParams({
-        ids: [],
+        category: 'all',
       })
       return
     }
 
     setSearchParams({
-      ids: transactions?.map((transaction) => transaction.id) ?? [],
+      category: category.categoryId,
       // Reset all other filters
-      category: 'all',
+      ids: [],
       from: null,
       to: null,
       query: null,
     })
   }
 
-  const isSelected = searchParams.ids.length > 0
+  const isSelected = searchParams.category === category.categoryId
 
   return (
     <Tooltip>
@@ -65,24 +68,12 @@ export function ToReview() {
             onClick={handleClick}
             className="transition-none"
           >
-            To review{' '}
-            <div
-              className={cn(
-                'rounded-full size-4 flex items-center justify-center text-xs ml-1',
-                {
-                  'bg-primary text-primary-foreground': !isSelected,
-                  'bg-muted text-muted-foreground': isSelected,
-                },
-              )}
-            >
-              {transactions?.length}
-            </div>
+            Most frequent category
           </button>
         </Badge>
       </TooltipTrigger>
       <TooltipContent side="bottom" className="max-w-64 text-pretty">
-        I wasn't entirely sure when classifying {transactions?.length}{' '}
-        transactions. Click to list and review them.
+        Filter transactions by the most frequent category in the last 45 days.
       </TooltipContent>
     </Tooltip>
   )
