@@ -68,7 +68,6 @@ export function NameWithPreview({ id, name }: NameWithPreviewProps) {
                   {transactionsGroupedByDate[date].map((transaction) => (
                     <TransactionPreviewItem
                       key={transaction.id}
-                      date={transaction.date}
                       merchantName={transaction.merchantName}
                       amount={transaction.amount}
                       currency={transaction.currency}
@@ -78,12 +77,14 @@ export function NameWithPreview({ id, name }: NameWithPreviewProps) {
               </li>
             ))}
 
+            {!dates.length && <li>No transactions yet</li>}
+
             {lastTransactions?.length &&
-              lastTransactions.length >= MAX_TRANSACTIONS_PREVIEW && (
-                <li>
-                  <span className="text-muted">More transactions...</span>
-                </li>
-              )}
+            lastTransactions.length > MAX_TRANSACTIONS_PREVIEW ? (
+              <li>
+                <span className="text-muted">More transactions...</span>
+              </li>
+            ) : null}
           </ul>
         </div>
       </TooltipContent>
@@ -92,14 +93,12 @@ export function NameWithPreview({ id, name }: NameWithPreviewProps) {
 }
 
 interface TransactionPreviewItemProps {
-  date: string
   merchantName: string
   amount: number
   currency: string
 }
 
 function TransactionPreviewItem({
-  date,
   merchantName,
   amount,
   currency,
