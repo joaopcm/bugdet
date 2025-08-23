@@ -13,6 +13,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { Kbd, SHORTCUTS_VALUES } from '@/components/ui/kbd'
 import {
   Popover,
   PopoverContent,
@@ -35,7 +36,9 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod'
 import { format } from 'date-fns'
 import { CalendarIcon } from 'lucide-react'
+import { useRef } from 'react'
 import { useForm } from 'react-hook-form'
+import { useHotkeys } from 'react-hotkeys-hook'
 import z from 'zod'
 
 const transactionSchema = z.object({
@@ -63,6 +66,24 @@ export function TransactionForm({
   currencySymbol = getCurrencySymbol(),
 }: TransactionFormProps) {
   const { data: categories } = useCategories()
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const submitButtonRef = useRef<HTMLButtonElement>(null)
+
+  useHotkeys(['esc'], () => {
+    if (!closeButtonRef.current) {
+      return
+    }
+
+    closeButtonRef.current.click()
+  })
+
+  useHotkeys(['meta+enter'], () => {
+    if (isLoading || !submitButtonRef.current) {
+      return
+    }
+
+    submitButtonRef.current.click()
+  })
 
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionSchema),
@@ -186,10 +207,15 @@ export function TransactionForm({
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline">Cancel</Button>
+            <Button variant="outline" ref={closeButtonRef}>
+              Cancel <Kbd variant="outline">{SHORTCUTS_VALUES.ESC}</Kbd>
+            </Button>
           </DialogClose>
-          <Button type="submit" disabled={isLoading}>
+          <Button type="submit" disabled={isLoading} ref={submitButtonRef}>
             Save
+            <Kbd>
+              {SHORTCUTS_VALUES.CMD} + {SHORTCUTS_VALUES.ENTER}
+            </Kbd>
           </Button>
         </DialogFooter>
       </form>
