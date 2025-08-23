@@ -276,4 +276,29 @@ export const transactionsRouter = router({
 
     return result[0] || null
   }),
+  getMostExpensiveCategory: protectedProcedure.query(async ({ ctx }) => {
+    const dateRange = subDays(new Date(), 45)
+
+    const result = await db
+      .select({
+        categoryId: transaction.categoryId,
+        categoryName: category.name,
+        totalAmount: sql<number>`sum(${transaction.amount})`,
+        currency: transaction.currency,
+      })
+      .from(transaction)
+      .leftJoin(category, eq(transaction.categoryId, category.id))
+      .where(
+        and(
+          eq(transaction.userId, ctx.user.id),
+          eq(transaction.deleted, false),
+          gte(transaction.date, format(dateRange, 'yyyy-MM-dd')),
+        ),
+      )
+      .groupBy(transaction.categoryId, category.name, transaction.currency)
+      .orderBy(desc(sql<number>`sum(${transaction.amount})`))
+      .limit(1)
+
+    return result[0] || null
+  }),
 })

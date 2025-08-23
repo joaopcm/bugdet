@@ -7,13 +7,12 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { trpc } from '@/lib/trpc/client'
+import { useCountToReview } from '@/hooks/use-count-to-review'
 import { cn } from '@/lib/utils'
 import { useTransactionsFilters } from '../search-params'
 
 export function ToReview() {
-  const { data: transactions, isLoading } =
-    trpc.transactions.countToReview.useQuery()
+  const { data: transactions, isLoading } = useCountToReview()
   const { searchParams, setSearchParams } = useTransactionsFilters()
 
   if (isLoading) {

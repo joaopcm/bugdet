@@ -7,11 +7,12 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { useMostFrequentCategory } from '@/hooks/use-most-frequent-category'
+import { useMostExpensiveCategory } from '@/hooks/use-most-expensive-category'
+import { formatCurrency } from '@/lib/utils'
 import { useTransactionsFilters } from '../search-params'
 
-export function MostFrequentCategory() {
-  const { data: category, isLoading } = useMostFrequentCategory()
+export function MostExpensiveCategory() {
+  const { data: category, isLoading } = useMostExpensiveCategory()
   const { searchParams, setSearchParams } = useTransactionsFilters()
 
   if (isLoading) {
@@ -23,11 +24,11 @@ export function MostFrequentCategory() {
       <Tooltip>
         <TooltipTrigger asChild>
           <Badge variant="secondary" className="select-none">
-            Most frequent category
+            Most expensive category
           </Badge>
         </TooltipTrigger>
         <TooltipContent side="bottom" className="max-w-64 text-pretty">
-          I couldn't find the most frequent category in the last 45 days. Sorry
+          I couldn't find the most expensive category in the last 45 days. Sorry
           about that.
         </TooltipContent>
       </Tooltip>
@@ -67,13 +68,14 @@ export function MostFrequentCategory() {
             onClick={handleClick}
             className="transition-none"
           >
-            Most frequent category
+            Most expensive category
           </button>
         </Badge>
       </TooltipTrigger>
       <TooltipContent side="bottom" className="max-w-64 text-pretty">
-        Filter transactions by "{category.categoryName}", the most frequent
-        category in the last 45 days.
+        Filter transactions by "{category.categoryName}", the most expensive
+        category in the last 45 days. You've spent{' '}
+        {formatCurrency(category.totalAmount, category.currency)} on them.
       </TooltipContent>
     </Tooltip>
   )

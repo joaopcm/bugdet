@@ -1,6 +1,4 @@
 'use client'
-
-import { Badge } from '@/components/ui/badge'
 import {
   Table,
   TableBody,
@@ -11,6 +9,7 @@ import {
 import { TableHeader } from '@/components/ui/table'
 import { useTransactions } from '@/hooks/use-transactions'
 import { EmptyState } from '../empty-state'
+import { MostExpensiveCategory } from './filters/badges/most-expensive-category'
 import { MostExpensiveMerchant } from './filters/badges/most-expensive-merchant'
 import { MostFrequentCategory } from './filters/badges/most-frequent-category'
 import { MostFrequentMerchant } from './filters/badges/most-frequent-merchant'
@@ -31,12 +30,12 @@ export function TransactionsTable() {
         <DateRangeFilter />
         <CategoryFilter />
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <ToReview />
         <MostExpensiveMerchant />
+        <MostExpensiveCategory />
         <MostFrequentCategory />
         <MostFrequentMerchant />
-        <Badge variant="outline">Total amount based on active filters:</Badge>
       </div>
       <Table>
         <TableHeader>

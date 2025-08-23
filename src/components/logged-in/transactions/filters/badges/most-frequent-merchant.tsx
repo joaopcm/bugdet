@@ -7,12 +7,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { trpc } from '@/lib/trpc/client'
+import { useMostFrequentMerchant } from '@/hooks/use-most-frequent-merchant'
 import { useTransactionsFilters } from '../search-params'
 
 export function MostFrequentMerchant() {
-  const { data: merchant, isLoading } =
-    trpc.transactions.getMostFrequentMerchant.useQuery()
+  const { data: merchant, isLoading } = useMostFrequentMerchant()
   const { searchParams, setSearchParams } = useTransactionsFilters()
 
   if (isLoading) {

@@ -7,13 +7,12 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { trpc } from '@/lib/trpc/client'
+import { useMostExpensiveMerchant } from '@/hooks/use-most-expensive-merchant'
 import { formatCurrency } from '@/lib/utils'
 import { useTransactionsFilters } from '../search-params'
 
 export function MostExpensiveMerchant() {
-  const { data: merchant, isLoading } =
-    trpc.transactions.getMostExpensiveMerchant.useQuery()
+  const { data: merchant, isLoading } = useMostExpensiveMerchant()
   const { searchParams, setSearchParams } = useTransactionsFilters()
 
   if (isLoading) {
