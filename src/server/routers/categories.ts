@@ -1,8 +1,12 @@
 import { MAX_TRANSACTIONS_PREVIEW } from '@/constants/categories'
+import {
+  DEFAULT_LIMIT_PER_PAGE,
+  MAX_LIMIT_PER_PAGE,
+} from '@/constants/pagination'
 import { db } from '@/db'
 import { category, transaction } from '@/db/schema'
 import { TRPCError } from '@trpc/server'
-import { and, count, desc, eq } from 'drizzle-orm'
+import { and, count, desc, eq, ilike } from 'drizzle-orm'
 import { z } from 'zod'
 import { protectedProcedure, router } from '../trpc'
 
@@ -25,28 +29,57 @@ async function getExistingCategory(id: string, userId: string) {
 }
 
 export const categoriesRouter = router({
-  list: protectedProcedure.query(async ({ ctx }) => {
-    const categories = await db
-      .select({
-        id: category.id,
-        name: category.name,
-        createdAt: category.createdAt,
-        transactionCount: count(transaction.id),
-      })
-      .from(category)
-      .leftJoin(
-        transaction,
-        and(
-          eq(category.id, transaction.categoryId),
-          eq(transaction.deleted, false),
-        ),
-      )
-      .where(and(eq(category.userId, ctx.user.id), eq(category.deleted, false)))
-      .groupBy(category.id, category.name, category.createdAt)
-      .orderBy(desc(category.createdAt))
+  list: protectedProcedure
+    .input(
+      z.object({
+        filters: z.object({
+          query: z.string().min(1).max(255).nullable(),
+        }),
+        pagination: z.object({
+          page: z.number().min(1).default(1),
+          limit: z
+            .number()
+            .min(1)
+            .max(MAX_LIMIT_PER_PAGE)
+            .default(DEFAULT_LIMIT_PER_PAGE),
+        }),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const whereClauses = [
+        eq(category.userId, ctx.user.id),
+        eq(category.deleted, false),
+      ]
 
-    return categories
-  }),
+      if (input.filters.query) {
+        whereClauses.push(ilike(category.name, `%${input.filters.query}%`))
+      }
+
+      const offset = (input.pagination.page - 1) * input.pagination.limit
+
+      const categories = await db
+        .select({
+          id: category.id,
+          name: category.name,
+          createdAt: category.createdAt,
+          transactionCount: count(transaction.id),
+        })
+        .from(category)
+        .leftJoin(
+          transaction,
+          and(
+            eq(category.id, transaction.categoryId),
+            eq(transaction.deleted, false),
+          ),
+        )
+        .where(and(...whereClauses))
+        .groupBy(category.id, category.name, category.createdAt)
+        .orderBy(desc(category.createdAt))
+        .limit(input.pagination.limit + 1)
+        .offset(offset)
+
+      return categories
+    }),
   preview: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {

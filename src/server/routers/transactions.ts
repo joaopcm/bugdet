@@ -9,7 +9,6 @@ import { category, merchantCategory, transaction } from '@/db/schema'
 import { TRPCError } from '@trpc/server'
 import { format, subDays } from 'date-fns'
 import {
-  type SQL,
   and,
   between,
   desc,
@@ -65,7 +64,7 @@ export const transactionsRouter = router({
       }),
     )
     .query(async ({ ctx, input }) => {
-      const whereClauses: (SQL<unknown> | undefined)[] = [
+      const whereClauses = [
         eq(transaction.userId, ctx.user.id),
         eq(transaction.deleted, false),
       ]
