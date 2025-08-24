@@ -78,7 +78,10 @@ export const categoriesRouter = router({
         .limit(input.pagination.limit + 1)
         .offset(offset)
 
-      return categories
+      return {
+        data: categories.slice(0, input.pagination.limit),
+        hasMore: categories.length > input.pagination.limit,
+      }
     }),
   preview: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))

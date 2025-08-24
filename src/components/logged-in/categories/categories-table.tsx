@@ -10,6 +10,7 @@ import {
 import { TableHeader } from '@/components/ui/table'
 import { useCategories } from '@/hooks/use-categories'
 import { EmptyState } from '../empty-state'
+import { CategoriesPagination } from './categories-pagination'
 import { CategoryItem } from './category-item'
 import { CategoriesFilters } from './filters'
 import { LoadingState } from './loading-state'
@@ -31,11 +32,11 @@ export function CategoriesTable() {
         <TableBody>
           {isLoading && <LoadingState />}
 
-          {categories?.map((category) => (
+          {categories?.data.map((category) => (
             <CategoryItem key={category.id} category={category} />
           ))}
 
-          {categories?.length === 0 && (
+          {categories?.data.length === 0 && (
             <TableRow>
               <TableCell colSpan={3} className="py-10">
                 <EmptyState
@@ -47,6 +48,8 @@ export function CategoriesTable() {
           )}
         </TableBody>
       </Table>
+
+      <CategoriesPagination hasMore={!!categories?.hasMore} />
     </div>
   )
 }
