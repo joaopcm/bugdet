@@ -2,13 +2,13 @@ import { useCategoriesFilters } from '@/components/logged-in/categories/filters/
 import { trpc } from '@/lib/trpc/client'
 import { usePagination } from './use-pagination'
 
-export function useCategories() {
+export function useCategories(params: { ignoreFilters?: boolean } = {}) {
   const { categoryFilters } = useCategoriesFilters()
   const { pagination } = usePagination()
 
   return trpc.categories.list.useQuery({
     filters: {
-      query: categoryFilters.query || null,
+      query: params.ignoreFilters ? null : categoryFilters.query || null,
     },
     pagination: {
       page: pagination.page,
