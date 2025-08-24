@@ -77,7 +77,7 @@ export function NameWithPreview({ id, name }: NameWithPreviewProps) {
               </li>
             ))}
 
-            {!dates.length && <li>No transactions yet</li>}
+            {!dates.length && !isLoading && <li>No transactions yet</li>}
 
             {lastTransactions?.length &&
             lastTransactions.length > MAX_TRANSACTIONS_PREVIEW ? (
