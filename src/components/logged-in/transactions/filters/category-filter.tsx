@@ -55,7 +55,7 @@ export function CategoryFilter() {
       </Tooltip>
       <SelectContent>
         <SelectItem value="all">All categories</SelectItem>
-        {categories?.map((category) => (
+        {categories?.data.map((category) => (
           <SelectItem key={category.id} value={category.id}>
             {category.name}
           </SelectItem>
