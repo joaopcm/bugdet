@@ -29,7 +29,7 @@ export function CategoryFilter() {
 
   useHotkeys(CATEGORY_SHORTCUT, (e) => {
     e.preventDefault()
-    setIsOpen(true)
+    setIsOpen(!isOpen)
   })
 
   return (

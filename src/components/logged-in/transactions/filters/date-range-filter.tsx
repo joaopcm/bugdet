@@ -41,14 +41,14 @@ export function DateRangeFilter() {
 
   useHotkeys(DATE_RANGE_SHORTCUT, (e) => {
     e.preventDefault()
-    setIsOpen(true)
+    setIsOpen(!isOpen)
   })
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger>
-        <Tooltip>
-          <TooltipTrigger asChild>
+    <Tooltip>
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <TooltipTrigger asChild>
+          <PopoverTrigger asChild>
             <Button
               variant="outline"
               className={cn(
@@ -77,40 +77,40 @@ export function DateRangeFilter() {
                 )}
               </div>
             </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            Or press <Kbd variant="outline">{DATE_RANGE_SHORTCUT}</Kbd> to pick
-            a date range
-          </TooltipContent>
-        </Tooltip>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="start">
-        <Calendar
-          mode="range"
-          selected={{
-            from: transactionFilters.from
-              ? new Date(transactionFilters.from)
-              : undefined,
-            to: transactionFilters.to
-              ? new Date(transactionFilters.to)
-              : undefined,
-          }}
-          onSelect={(value) => {
-            if (value?.from) {
-              setTransactionFilters({
-                from: value.from,
-              })
-            }
-            if (value?.to) {
-              setTransactionFilters({
-                to: value.to,
-              })
-            }
-            setPagination({ page: 1 })
-          }}
-          captionLayout="dropdown"
-        />
-      </PopoverContent>
-    </Popover>
+          </PopoverTrigger>
+        </TooltipTrigger>
+        <PopoverContent className="w-auto p-0" align="start">
+          <Calendar
+            mode="range"
+            selected={{
+              from: transactionFilters.from
+                ? new Date(transactionFilters.from)
+                : undefined,
+              to: transactionFilters.to
+                ? new Date(transactionFilters.to)
+                : undefined,
+            }}
+            onSelect={(value) => {
+              if (value?.from) {
+                setTransactionFilters({
+                  from: value.from,
+                })
+              }
+              if (value?.to) {
+                setTransactionFilters({
+                  to: value.to,
+                })
+              }
+              setPagination({ page: 1 })
+            }}
+            captionLayout="dropdown"
+          />
+        </PopoverContent>
+      </Popover>
+      <TooltipContent>
+        Or press <Kbd variant="outline">{DATE_RANGE_SHORTCUT}</Kbd> to pick a
+        date range
+      </TooltipContent>
+    </Tooltip>
   )
 }
