@@ -1,11 +1,15 @@
 import { randomUUID } from 'node:crypto'
+import {
+  DEFAULT_LIMIT_PER_PAGE,
+  MAX_LIMIT_PER_PAGE,
+} from '@/constants/pagination'
 import { CANCELLABLE_STATUSES, DELETABLE_STATUSES } from '@/constants/uploads'
 import { db } from '@/db'
 import { upload } from '@/db/schema'
 import { createClient } from '@/lib/supabase/server'
 import { uploadBreakdownTask } from '@/trigger/upload-breakdown'
 import { TRPCError } from '@trpc/server'
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, ilike } from 'drizzle-orm'
 import { z } from 'zod'
 import { protectedProcedure, router } from '../trpc'
 
@@ -111,24 +115,56 @@ export const uploadsRouter = router({
         })),
       )
     }),
-  list: protectedProcedure.query(async ({ ctx }) => {
-    const uploads = await db
-      .select({
-        id: upload.id,
-        fileName: upload.fileName,
-        filePath: upload.filePath,
-        fileSize: upload.fileSize,
-        status: upload.status,
-        failedReason: upload.failedReason,
-        metadata: upload.metadata,
-        createdAt: upload.createdAt,
-      })
-      .from(upload)
-      .where(and(eq(upload.userId, ctx.user.id), eq(upload.deleted, false)))
-      .orderBy(desc(upload.createdAt))
+  list: protectedProcedure
+    .input(
+      z.object({
+        filters: z.object({
+          query: z.string().min(1).max(255).nullable(),
+        }),
+        pagination: z.object({
+          page: z.number().min(1).default(1),
+          limit: z
+            .number()
+            .min(1)
+            .max(MAX_LIMIT_PER_PAGE)
+            .default(DEFAULT_LIMIT_PER_PAGE),
+        }),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const whereClauses = [
+        eq(upload.userId, ctx.user.id),
+        eq(upload.deleted, false),
+      ]
 
-    return uploads
-  }),
+      if (input.filters.query) {
+        whereClauses.push(ilike(upload.fileName, `%${input.filters.query}%`))
+      }
+
+      const offset = (input.pagination.page - 1) * input.pagination.limit
+
+      const uploads = await db
+        .select({
+          id: upload.id,
+          fileName: upload.fileName,
+          filePath: upload.filePath,
+          fileSize: upload.fileSize,
+          status: upload.status,
+          failedReason: upload.failedReason,
+          metadata: upload.metadata,
+          createdAt: upload.createdAt,
+        })
+        .from(upload)
+        .where(and(...whereClauses))
+        .orderBy(desc(upload.createdAt))
+        .limit(input.pagination.limit + 1)
+        .offset(offset)
+
+      return {
+        data: uploads.slice(0, input.pagination.limit),
+        hasMore: uploads.length > input.pagination.limit,
+      }
+    }),
   cancel: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ input, ctx }) => {
