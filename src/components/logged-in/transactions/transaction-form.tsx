@@ -65,7 +65,7 @@ export function TransactionForm({
   currencyCode = getCurrencyCode(),
   currencySymbol = getCurrencySymbol(),
 }: TransactionFormProps) {
-  const { data: categories } = useCategories()
+  const { data: categories } = useCategories({ ignoreFilters: true })
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const submitButtonRef = useRef<HTMLButtonElement>(null)
 
