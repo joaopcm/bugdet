@@ -65,7 +65,6 @@ export const categorizeAndImportTransactionsTask = task({
       .leftJoin(category, eq(merchantCategory.categoryId, category.id))
       .where(eq(merchantCategory.userId, userId))
       .orderBy(desc(merchantCategory.updatedAt))
-      .limit(50)
     logger.info(
       `Found ${merchantCategories.length} merchant categories for the user ${userId}:`,
       {
@@ -124,7 +123,7 @@ export const categorizeAndImportTransactionsTask = task({
         {
           role: 'system',
           content:
-            'You are a bank statement expert. You are given a bank statement and you need to extract the transactions from it following a JSON schema. Your main goal is to extract the transactions from the bank statement and return them in the correct JSON format.',
+            "You are a bank statement expert. You are given a bank statement and you need to extract the transactions from it following a JSON schema. Avoid extracting duplicated transactions. In the merchant name, do not include any unrelated information like the date, installments, etc. Only include the merchant's name.",
         },
         {
           role: 'user',
