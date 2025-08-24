@@ -22,7 +22,7 @@ import { useTransactionsFilters } from './search-params'
 const CATEGORY_SHORTCUT = 'C'
 
 export function CategoryFilter() {
-  const { data: categories } = useCategories()
+  const { data: categories } = useCategories({ ignoreFilters: true })
   const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
   const { setPagination } = usePagination()
   const [isOpen, setIsOpen] = useState(false)
