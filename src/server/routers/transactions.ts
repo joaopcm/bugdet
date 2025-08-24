@@ -164,6 +164,7 @@ export const transactionsRouter = router({
         date: z.string().date(),
         merchantName: z.string().min(1).max(255),
         amount: z.number().max(Number.MAX_SAFE_INTEGER / 100),
+        updateCategoryForSimilarTransactions: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -185,6 +186,21 @@ export const transactionsRouter = router({
               eq(transaction.userId, ctx.user.id),
             ),
           )
+
+        if (input.updateCategoryForSimilarTransactions) {
+          await tx
+            .update(transaction)
+            .set({
+              categoryId: input.categoryId,
+            })
+            .where(
+              and(
+                eq(transaction.merchantName, input.merchantName),
+                eq(transaction.userId, ctx.user.id),
+                eq(transaction.deleted, false),
+              ),
+            )
+        }
 
         if (input.categoryId) {
           const [existingMerchantCategory] = await tx

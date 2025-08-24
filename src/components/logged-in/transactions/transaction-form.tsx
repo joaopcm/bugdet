@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
+import { Checkbox } from '@/components/ui/checkbox'
 import { CurrencyInput } from '@/components/ui/currency-input'
 import { DialogClose, DialogFooter } from '@/components/ui/dialog'
 import {
@@ -46,6 +47,7 @@ const transactionSchema = z.object({
   date: z.string().date(),
   merchantName: z.string().min(1).max(255),
   amount: z.string().min(3),
+  updateCategoryForSimilarTransactions: z.boolean().optional(),
 })
 
 export type TransactionFormValues = z.infer<typeof transactionSchema>
@@ -97,6 +99,8 @@ export function TransactionForm({
       amount: '',
     },
   })
+
+  const hasChangedCategory = form.formState.dirtyFields.categoryId
 
   return (
     <Form {...form}>
@@ -166,6 +170,25 @@ export function TransactionForm({
                 </SelectContent>
               </Select>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="updateCategoryForSimilarTransactions"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center gap-2">
+              <FormControl>
+                <Checkbox
+                  id="updateCategoryForSimilarTransactions"
+                  checked={field.value ?? false}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormLabel htmlFor="updateCategoryForSimilarTransactions">
+                Update category for similar transactions
+              </FormLabel>
             </FormItem>
           )}
         />
