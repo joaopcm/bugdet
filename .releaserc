@@ -1,0 +1,24 @@
+{
+  "branches": [
+    "main",
+    {
+      "name": "staging",
+      "prerelease": true
+    }
+  ],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/changelog",
+    "@semantic-release/npm",
+    [
+      "@semantic-release/git",
+      {
+        "assets": [
+          "package.json"
+        ],
+        "message": "release: ${nextRelease.version} \n\n${nextRelease.notes} [skip ci]"
+      }
+    ],
+    "@semantic-release/github"
+  ]
+}
