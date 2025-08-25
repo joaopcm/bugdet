@@ -52,7 +52,7 @@ export function TransactionCountWithPreview({
     <Tooltip>
       <TooltipTrigger
         ref={hoverRef}
-        className="cursor-pointer underline decoration-dashed underline-offset-2"
+        className="underline decoration-dashed underline-offset-2"
       >
         {transactionCount} transaction
         {transactionCount === 1 ? '' : 's'}
