@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import { InternalLink } from '@/components/ui/internal-link'
 import { TableCell, TableRow } from '@/components/ui/table'
 import type { category } from '@/db/schema'
 import { useCategories } from '@/hooks/use-categories'
@@ -8,7 +9,7 @@ import { trpc } from '@/lib/trpc/client'
 import { toast } from 'sonner'
 import { DoubleConfirmationAlertDialog } from '../double-confirmation-alert-dialog'
 import { EditCategoryDialog } from './edit-category-dialog'
-import { NameWithPreview } from './name-with-preview'
+import { TransactionCountWithPreview } from './transaction-count-with-preview'
 
 interface CategoryItemProps {
   category: Pick<typeof category.$inferSelect, 'id' | 'name' | 'createdAt'> & {
@@ -33,11 +34,15 @@ export function CategoryItem({ category }: CategoryItemProps) {
   return (
     <TableRow>
       <TableCell>
-        <NameWithPreview id={category.id} name={category.name} />
+        <InternalLink href={`/transactions?category=${category.id}`}>
+          {category.name}
+        </InternalLink>
       </TableCell>
       <TableCell>
-        {category.transactionCount} transaction
-        {category.transactionCount === 1 ? '' : 's'}
+        <TransactionCountWithPreview
+          id={category.id}
+          transactionCount={category.transactionCount}
+        />
       </TableCell>
       <TableCell className="flex items-center gap-2">
         <DoubleConfirmationAlertDialog

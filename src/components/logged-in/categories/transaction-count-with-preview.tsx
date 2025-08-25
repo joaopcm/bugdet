@@ -12,12 +12,15 @@ import { format } from 'date-fns'
 import { type RefObject, useMemo, useRef } from 'react'
 import { useHover } from 'usehooks-ts'
 
-interface NameWithPreviewProps {
+interface TransactionCountWithPreviewProps {
   id: string
-  name: string
+  transactionCount: number
 }
 
-export function NameWithPreview({ id, name }: NameWithPreviewProps) {
+export function TransactionCountWithPreview({
+  id,
+  transactionCount,
+}: TransactionCountWithPreviewProps) {
   const hoverRef = useRef<HTMLButtonElement | null>(null)
   const isHovering = useHover(hoverRef as RefObject<HTMLButtonElement>)
 
@@ -43,6 +46,7 @@ export function NameWithPreview({ id, name }: NameWithPreviewProps) {
   }, [lastTransactions])
 
   const dates = Object.keys(transactionsGroupedByDate ?? {})
+  const missingTransactions = transactionCount - (lastTransactions?.length ?? 0)
 
   return (
     <Tooltip>
@@ -50,7 +54,8 @@ export function NameWithPreview({ id, name }: NameWithPreviewProps) {
         ref={hoverRef}
         className="cursor-pointer underline decoration-dashed underline-offset-2"
       >
-        {name}
+        {transactionCount} transaction
+        {transactionCount === 1 ? '' : 's'}
       </TooltipTrigger>
       <TooltipContent side="right" className="p-0">
         <div className="px-3 py-1.5 overflow-y-auto max-h-48">
@@ -80,9 +85,12 @@ export function NameWithPreview({ id, name }: NameWithPreviewProps) {
             {!dates.length && !isLoading && <li>No transactions yet</li>}
 
             {lastTransactions?.length &&
-            lastTransactions.length > MAX_TRANSACTIONS_PREVIEW ? (
+            lastTransactions.length >= MAX_TRANSACTIONS_PREVIEW ? (
               <li>
-                <span className="text-muted">More transactions...</span>
+                <span className="text-muted">
+                  {missingTransactions} more transaction
+                  {missingTransactions === 1 ? '' : 's'}
+                </span>
               </li>
             ) : null}
           </ul>
