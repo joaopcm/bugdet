@@ -14,7 +14,7 @@ export function FileName({ fileName, metadata }: FileNameProps) {
   if (metadata) {
     return (
       <Tooltip>
-        <TooltipTrigger className="cursor-pointer underline decoration-dashed underline-offset-2">
+        <TooltipTrigger className="underline decoration-dashed underline-offset-2">
           {fileName}
         </TooltipTrigger>
         <TooltipContent side="right">
