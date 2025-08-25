@@ -20,6 +20,7 @@ interface DoubleConfirmationAlertDialogProps {
   title: string
   description: string
   onConfirm: () => void | Promise<void>
+  body?: React.ReactNode
 }
 
 export function DoubleConfirmationAlertDialog({
@@ -27,6 +28,7 @@ export function DoubleConfirmationAlertDialog({
   title,
   description,
   onConfirm,
+  body,
 }: DoubleConfirmationAlertDialogProps) {
   const [isOpen, setIsOpen] = useState(false)
 
@@ -51,6 +53,9 @@ export function DoubleConfirmationAlertDialog({
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
+
+        {body}
+
         <AlertDialogFooter>
           <AlertDialogCancel>
             Cancel <Kbd variant="outline">{SHORTCUTS_VALUES.ESC}</Kbd>

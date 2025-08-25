@@ -91,7 +91,7 @@ export const transactionsRouter = router({
 
       const offset = (input.pagination.page - 1) * input.pagination.limit
 
-      const transactions = await db
+      const transactions = await ctx.db
         .select({
           id: transaction.id,
           uploadId: transaction.uploadId,
@@ -118,14 +118,19 @@ export const transactionsRouter = router({
       }
     }),
   delete: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        deleteRelatedTransactions: z.boolean().optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const existingTransaction = await getExistingTransaction(
         input.id,
         ctx.user.id,
       )
 
-      await db
+      await ctx.db
         .update(transaction)
         .set({ deleted: true })
         .where(
@@ -146,7 +151,7 @@ export const transactionsRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await db.insert(transaction).values({
+      await ctx.db.insert(transaction).values({
         amount: input.amount,
         categoryId: input.categoryId,
         date: input.date,
@@ -173,7 +178,7 @@ export const transactionsRouter = router({
         ctx.user.id,
       )
 
-      await db.transaction(async (tx) => {
+      await ctx.db.transaction(async (tx) => {
         await tx
           .update(transaction)
           .set({
@@ -235,7 +240,7 @@ export const transactionsRouter = router({
       })
     }),
   countToReview: protectedProcedure.query(async ({ ctx }) => {
-    const transactions = await db
+    const transactions = await ctx.db
       .select({ id: transaction.id })
       .from(transaction)
       .where(
@@ -251,7 +256,7 @@ export const transactionsRouter = router({
   getMostFrequentMerchant: protectedProcedure.query(async ({ ctx }) => {
     const dateRange = subDays(new Date(), SUGGESTED_TRANSACTION_FILTERS_DAYS)
 
-    const result = await db
+    const result = await ctx.db
       .select({
         merchantName: transaction.merchantName,
       })
@@ -272,7 +277,7 @@ export const transactionsRouter = router({
   getMostFrequentCategory: protectedProcedure.query(async ({ ctx }) => {
     const dateRange = subDays(new Date(), SUGGESTED_TRANSACTION_FILTERS_DAYS)
 
-    const result = await db
+    const result = await ctx.db
       .select({
         categoryId: transaction.categoryId,
         categoryName: category.name,
@@ -296,7 +301,7 @@ export const transactionsRouter = router({
   getMostExpensiveMerchant: protectedProcedure.query(async ({ ctx }) => {
     const dateRange = subDays(new Date(), SUGGESTED_TRANSACTION_FILTERS_DAYS)
 
-    const result = await db
+    const result = await ctx.db
       .select({
         merchantName: transaction.merchantName,
         totalAmount: sql<number>`sum(${transaction.amount})`,

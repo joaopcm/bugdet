@@ -5,7 +5,7 @@ import {
 } from '@/constants/pagination'
 import { CANCELLABLE_STATUSES, DELETABLE_STATUSES } from '@/constants/uploads'
 import { db } from '@/db'
-import { upload } from '@/db/schema'
+import { transaction, upload } from '@/db/schema'
 import { createClient } from '@/lib/supabase/server'
 import { uploadBreakdownTask } from '@/trigger/upload-breakdown'
 import { TRPCError } from '@trpc/server'
@@ -185,7 +185,12 @@ export const uploadsRouter = router({
         .where(eq(upload.id, existingUpload.id))
     }),
   delete: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        deleteRelatedTransactions: z.boolean().optional(),
+      }),
+    )
     .mutation(async ({ input, ctx }) => {
       const { id } = input
 
@@ -211,10 +216,29 @@ export const uploadsRouter = router({
         })
       }
 
-      await ctx.db
-        .update(upload)
-        .set({ deleted: true })
-        .where(eq(upload.id, existingUpload.id))
+      await ctx.db.transaction(async (tx) => {
+        await tx
+          .update(upload)
+          .set({ deleted: true })
+          .where(
+            and(
+              eq(upload.id, existingUpload.id),
+              eq(upload.userId, ctx.user.id),
+            ),
+          )
+
+        if (input.deleteRelatedTransactions) {
+          await tx
+            .update(transaction)
+            .set({ deleted: true })
+            .where(
+              and(
+                eq(transaction.uploadId, existingUpload.id),
+                eq(transaction.userId, ctx.user.id),
+              ),
+            )
+        }
+      })
     }),
   download: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))

@@ -1,6 +1,8 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
 import { TableCell, TableRow } from '@/components/ui/table'
 import { CANCELLABLE_STATUSES, DELETABLE_STATUSES } from '@/constants/uploads'
 import type { upload } from '@/db/schema'
@@ -8,6 +10,7 @@ import { useUploads } from '@/hooks/use-uploads'
 import { trpc } from '@/lib/trpc/client'
 import { formatBytes } from '@/lib/utils'
 import { format } from 'date-fns'
+import { useState } from 'react'
 import { toast } from 'sonner'
 import { DoubleConfirmationAlertDialog } from '../double-confirmation-alert-dialog'
 import { FileName } from './file-name'
@@ -28,6 +31,8 @@ interface UploadItemProps {
 
 export function UploadItem({ upload }: UploadItemProps) {
   const { refetch: refetchUploads } = useUploads()
+  const [deleteRelatedTransactions, setDeleteRelatedTransactions] =
+    useState(false)
 
   const { mutate: cancelUpload, isPending: isCancelling } =
     trpc.uploads.cancel.useMutation({
@@ -104,7 +109,25 @@ export function UploadItem({ upload }: UploadItemProps) {
           <DoubleConfirmationAlertDialog
             title="Delete this upload?"
             description="Are you sure you want to delete this upload? This action cannot be undone."
-            onConfirm={() => deleteUpload({ id: upload.id })}
+            onConfirm={() =>
+              deleteUpload({ id: upload.id, deleteRelatedTransactions })
+            }
+            body={
+              <div className="flex flex-row items-center gap-2">
+                <Checkbox
+                  id="deleteRelatedTransactions"
+                  checked={deleteRelatedTransactions}
+                  onCheckedChange={(checked) =>
+                    setDeleteRelatedTransactions(
+                      checked === 'indeterminate' ? false : checked,
+                    )
+                  }
+                />
+                <Label htmlFor="deleteRelatedTransactions">
+                  Delete related transactions
+                </Label>
+              </div>
+            }
           >
             <Button variant="destructive" size="sm" disabled={isDeleting}>
               Delete
