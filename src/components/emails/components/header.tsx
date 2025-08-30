@@ -5,7 +5,7 @@ interface HeaderProps extends PropsWithChildren {
   title?: string
 }
 
-export function Header({ title = 'Budget.co' }: HeaderProps) {
+export function Header({ title = 'Budget' }: HeaderProps) {
   return (
     <Section className="bg-[#999A5E] px-[24px] py-[32px]">
       <Heading className="text-[28px] text-white font-bold text-center m-0">

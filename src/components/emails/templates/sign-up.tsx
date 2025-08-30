@@ -9,9 +9,7 @@ export default function SignUpEmail({ confirmationLink }: SignUpEmailProps) {
   return (
     <Layout preview="Verify your email address">
       <Section className="px-[24px] py-[32px] bg-white">
-        <Text className="text-[16px] text-gray-800 mb-[24px]">
-          Dear Budget Planner,
-        </Text>
+        <Text className="text-[16px] text-gray-800 mb-[24px]">Hi,</Text>
 
         <Text className="text-[16px] text-gray-800 mb-[24px]">
           Thank you for signing up with Budget.co! We're excited to help you
@@ -60,7 +58,7 @@ export default function SignUpEmail({ confirmationLink }: SignUpEmailProps) {
           }}
         >
           <Text className="text-[18px] font-bold text-[#76773C] mb-[16px]">
-            What You'll Get with Budget.co
+            What you'll get with Budget.co
           </Text>
           <Text className="text-[16px] text-gray-800 mb-[8px] m-0">
             • AI-powered transaction categorization
@@ -81,7 +79,7 @@ export default function SignUpEmail({ confirmationLink }: SignUpEmailProps) {
 
       <Section className="px-[24px] py-[32px] bg-[#F9F9F5]">
         <Text className="text-[18px] font-bold text-[#76773C] mb-[16px]">
-          Getting Started Is Easy
+          Getting started is easy
         </Text>
 
         <Section className="pl-[16px] mb-[0px]">

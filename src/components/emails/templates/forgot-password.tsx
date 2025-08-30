@@ -11,9 +11,7 @@ export default function ForgotPasswordEmail({
   return (
     <Layout preview="Reset your password">
       <Section className="px-[24px] py-[32px] bg-white">
-        <Text className="text-[16px] text-gray-800 mb-[24px]">
-          Dear Budget Planner,
-        </Text>
+        <Text className="text-[16px] text-gray-800 mb-[24px]">Hi,</Text>
 
         <Text className="text-[16px] text-gray-800 mb-[24px]">
           We received a request to reset your password for your Budget.co
@@ -62,7 +60,7 @@ export default function ForgotPasswordEmail({
           }}
         >
           <Text className="text-[18px] font-bold text-[#76773C] mb-[16px]">
-            Important Security Information
+            Important security information
           </Text>
           <Text className="text-[16px] text-gray-800 mb-[8px] m-0">
             • This link will expire in 24 hours

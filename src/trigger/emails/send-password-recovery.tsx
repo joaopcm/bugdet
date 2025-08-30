@@ -1,18 +1,18 @@
-import SignUpEmail from '@/components/emails/templates/sign-up'
+import ForgotPasswordEmail from '@/components/emails/templates/forgot-password'
 import { resend } from '@/lib/resend'
 import { logger, task } from '@trigger.dev/sdk/v3'
 
-export const sendAccountConfirmationTask = task({
-  id: 'send-account-confirmation',
+export const sendPasswordRecoveryTask = task({
+  id: 'send-password-recovery',
   run: async (payload: { to: string; url: string }, { ctx }) => {
-    logger.info(`Sending account confirmation email to ${payload.to}...`, {
+    logger.info(`Sending password recovery email to ${payload.to}...`, {
       payload,
       ctx,
     })
     const email = await resend.sendEmail({
       to: payload.to,
-      subject: 'Verify your email address',
-      react: <SignUpEmail confirmationLink={payload.url} />,
+      subject: 'Reset your password',
+      react: <ForgotPasswordEmail resetPasswordLink={payload.url} />,
     })
     logger.info(`Email sent to ${payload.to}`, { email })
 
