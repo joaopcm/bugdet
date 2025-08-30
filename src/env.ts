@@ -15,7 +15,7 @@ export const env = createEnv({
     SUPABASE_SERVICE_ROLE_KEY: z.string(),
     SUPABASE_URL: z.string().url(),
     TRIGGER_SECRET_KEY: z.string(),
-    TRIGGER_PROJECT_ID: z.string(),
+    TRIGGER_PROJECT_ID: z.string(), // even tough we can't use this file in the trigger.config.ts we should validate the existance of the env that will be used on the file itself
     UPSTASH_REDIS_REST_TOKEN: z.string(),
     UPSTASH_REDIS_REST_URL: z.string().url(),
   },

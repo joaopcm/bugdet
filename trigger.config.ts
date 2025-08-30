@@ -1,8 +1,7 @@
-import { env } from '@/env'
 import { defineConfig } from '@trigger.dev/sdk/v3'
 
 export default defineConfig({
-  project: env.TRIGGER_PROJECT_ID,
+  project: process.env.TRIGGER_PROJECT_ID ?? '', // we can't use the env.ts file in here cuz trigger lives outside of the project startup flow
   runtime: 'node',
   logLevel: 'log',
   maxDuration: 300,
