@@ -47,10 +47,12 @@ export function SignInForm() {
       password: values.password,
       callbackURL: '/dashboard',
     })
+
     if (error) {
       toast.error(error.message)
-      setIsLoading(false)
     }
+
+    setIsLoading(false)
   }
 
   return (

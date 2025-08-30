@@ -33,7 +33,7 @@ export default function SignUpEmail({ confirmationLink }: SignUpEmailProps) {
             boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
           }}
         >
-          Confirm My Account
+          Confirm my account
         </Button>
 
         <Text className="text-[14px] text-gray-600 text-left mt-[16px] mb-[24px]">

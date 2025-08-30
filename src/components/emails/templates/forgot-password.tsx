@@ -35,7 +35,7 @@ export default function ForgotPasswordEmail({
             boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
           }}
         >
-          Reset My Password
+          Reset my password
         </Button>
 
         <Text className="text-[14px] text-gray-600 text-left mt-[16px] mb-[24px]">
@@ -63,7 +63,7 @@ export default function ForgotPasswordEmail({
             Important security information
           </Text>
           <Text className="text-[16px] text-gray-800 mb-[8px] m-0">
-            • This link will expire in 24 hours
+            • This link will expire in 30 minutes
           </Text>
           <Text className="text-[16px] text-gray-800 mb-[8px] m-0">
             • Create a strong, unique password

@@ -38,12 +38,14 @@ export function ForgotPasswordForm() {
   async function onSubmit(values: ForgotPasswordFormValues) {
     setIsLoading(true)
 
-    const { error } = await authClient.forgetPassword({
+    const { error } = await authClient.requestPasswordReset({
       email: values.email,
       redirectTo: '/reset-password',
     })
     if (error) {
       toast.error(error.message)
+      setIsLoading(false)
+      return
     }
 
     setIsLoading(false)
@@ -53,7 +55,7 @@ export function ForgotPasswordForm() {
   async function reSendEmail() {
     setIsLoading(true)
 
-    const { error } = await authClient.forgetPassword({
+    const { error } = await authClient.requestPasswordReset({
       email: form.getValues('email'),
       redirectTo: '/reset-password',
     })

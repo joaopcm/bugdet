@@ -34,8 +34,10 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
-    minPasswordLength: 8,
+    minPasswordLength: 6,
     maxPasswordLength: 128,
+    revokeSessionsOnPasswordReset: true,
+    resetPasswordTokenExpiresIn: 1_800, // 30 minutes in seconds
     sendResetPassword: async ({ user, url }) => {
       await sendPasswordRecoveryTask.trigger({
         to: user.email,

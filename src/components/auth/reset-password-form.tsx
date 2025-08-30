@@ -19,10 +19,8 @@ import { toast } from 'sonner'
 import { z } from 'zod'
 import { AuthContainer, AuthContainerHeader } from './container'
 
-const signUpSchema = z
+const resetPasswordSchema = z
   .object({
-    name: z.string().min(1, { message: 'Name is required' }).max(255),
-    email: z.string().email({ message: 'Please enter a valid email address' }),
     password: z
       .string()
       .min(6, { message: 'Password must be at least 6 characters' }),
@@ -35,30 +33,30 @@ const signUpSchema = z
     message: 'Passwords do not match',
   })
 
-type SignUpFormValues = z.infer<typeof signUpSchema>
+type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>
 
-export function SignUpForm() {
+interface ResetPasswordFormProps {
+  token: string
+}
+
+export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
 
-  const form = useForm<SignUpFormValues>({
-    resolver: zodResolver(signUpSchema),
+  const form = useForm<ResetPasswordFormValues>({
+    resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
-      name: '',
-      email: '',
       password: '',
       confirmPassword: '',
     },
   })
 
-  async function onSubmit(values: SignUpFormValues) {
+  async function onSubmit(values: ResetPasswordFormValues) {
     setIsLoading(true)
 
-    const { error } = await authClient.signUp.email({
-      name: values.name,
-      email: values.email,
-      password: values.password,
-      callbackURL: '/dashboard',
+    const { error } = await authClient.resetPassword({
+      newPassword: values.password,
+      token,
     })
     if (error) {
       toast.error(error.message)
@@ -70,43 +68,18 @@ export function SignUpForm() {
     setIsSubmitted(true)
   }
 
-  async function reSendVerificationEmail() {
-    setIsLoading(true)
-
-    const { error } = await authClient.sendVerificationEmail({
-      email: form.getValues('email'),
-      callbackURL: '/dashboard',
-    })
-    if (error) {
-      toast.error(error.message)
-      setIsLoading(false)
-      return
-    }
-
-    setIsLoading(false)
-    toast.success('Verification email sent')
-  }
-
   if (isSubmitted) {
     return (
       <AuthContainer>
         <div className="p-6 md:p-8">
           <div className="flex flex-col gap-6">
             <AuthContainerHeader
-              title="Check your inbox"
-              description="We just sent you a verification email"
+              title="You're all set"
+              description="Your password has been reset. You can now login with your new password."
             />
 
-            <p className="text-center">
-              Please check your inbox and click the link to verify your account.
-            </p>
-
-            <Button
-              className="w-full"
-              onClick={reSendVerificationEmail}
-              disabled={isLoading}
-            >
-              Re-send verification email
+            <Button className="w-full" asChild>
+              <Link href="/sign-in">Login</Link>
             </Button>
           </div>
         </div>
@@ -120,40 +93,8 @@ export function SignUpForm() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="p-6 md:p-8">
           <div className="flex flex-col gap-6">
             <AuthContainerHeader
-              title="Create an account"
-              description="Create your Bugdet account to get started"
-            />
-
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel htmlFor="name">Name</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="Theo" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel htmlFor="email">Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="m@example.com"
-                      type="email"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              title="Reset your password"
+              description="Enter your new password"
             />
 
             <FormField
@@ -187,15 +128,8 @@ export function SignUpForm() {
             />
 
             <Button type="submit" className="w-full" disabled={isLoading}>
-              Sign up
+              Reset password
             </Button>
-
-            <div className="text-center text-sm">
-              Already have an account?{' '}
-              <Link href="/sign-in" className="underline underline-offset-4">
-                Sign in
-              </Link>
-            </div>
           </div>
         </form>
       </Form>
