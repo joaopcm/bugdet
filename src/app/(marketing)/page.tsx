@@ -1,3 +1,5 @@
+import { redirect } from 'next/navigation'
+
 export default function MarketingPage() {
-  return <h1>Marketing Page</h1>
+  return redirect('/sign-in')
 }
