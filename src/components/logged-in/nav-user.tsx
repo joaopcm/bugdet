@@ -16,8 +16,9 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { authClient } from '@/lib/auth/client'
-import { IconDotsVertical, IconLogout } from '@tabler/icons-react'
+import { IconDotsVertical, IconLogout, IconSettings } from '@tabler/icons-react'
 import type { User } from 'better-auth'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 interface NavUserProps {
@@ -79,6 +80,13 @@ export function NavUser({ user }: NavUserProps) {
                 </div>
               </div>
             </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout} asChild>
+              <Link href="/settings">
+                <IconSettings />
+                Settings
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               <IconLogout />

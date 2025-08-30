@@ -5,6 +5,8 @@ import { sendAccountConfirmationTask } from '@/trigger/emails/send-account-confi
 import { sendPasswordRecoveryTask } from '@/trigger/emails/send-password-recovery'
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { twoFactorClient } from 'better-auth/client/plugins'
+import { twoFactor } from 'better-auth/plugins'
 
 export const auth = betterAuth({
   appName: 'Bugdet.co',
@@ -45,4 +47,5 @@ export const auth = betterAuth({
       })
     },
   },
+  plugins: [twoFactor(), twoFactorClient()],
 })

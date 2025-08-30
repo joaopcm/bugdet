@@ -148,6 +148,13 @@
       "when": 1755904621165,
       "tag": "0020_colorful_quentin_quire",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1756573151511,
+      "tag": "0021_boring_champions",
+      "breakpoints": true
     }
   ]
 }
