@@ -84,7 +84,7 @@ export default function SignUpEmail({ confirmationLink }: SignUpEmailProps) {
           Getting Started Is Easy
         </Text>
 
-        <Section className="pl-[16px] mb-[24px]">
+        <Section className="pl-[16px] mb-[0px]">
           <Text className="text-[16px] text-gray-800 mb-[8px] m-0">
             1. Confirm your account
           </Text>
@@ -95,12 +95,6 @@ export default function SignUpEmail({ confirmationLink }: SignUpEmailProps) {
             3. Let our AI organize your finances
           </Text>
         </Section>
-
-        <Text className="text-[16px] text-gray-800 mb-[0px]">
-          After confirming your account, you'll be guided through a simple setup
-          process to connect your financial data and start seeing insights right
-          away.
-        </Text>
       </Section>
     </Layout>
   )
