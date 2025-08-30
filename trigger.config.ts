@@ -1,7 +1,8 @@
+import { env } from '@/env'
 import { defineConfig } from '@trigger.dev/sdk/v3'
 
 export default defineConfig({
-  project: 'proj_yewubdlbjccxwzskauad',
+  project: env.TRIGGER_PROJECT_ID,
   runtime: 'node',
   logLevel: 'log',
   maxDuration: 300,

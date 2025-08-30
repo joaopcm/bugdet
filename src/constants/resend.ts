@@ -1,1 +1,3 @@
-export const FROM_EMAIL_ADDRESS = 'Bugdet <hi@t.bugdet.co>'
+import { env } from '@/env'
+
+export const FROM_EMAIL_ADDRESS = `Bugdet ${env.EMAIL_DOMAIN}>`
