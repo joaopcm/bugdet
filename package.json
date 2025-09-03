@@ -3,7 +3,7 @@
   "version": "1.8.0",
   "private": true,
   "scripts": {
-    "trigger:dev": "npx trigger.dev@4.0.1 dev",
+    "trigger:dev": "npx --env-file=.env trigger.dev@4.0.1 dev",
     "deploy:trigger:production": "npx trigger.dev@4.0.1 deploy",
     "deploy:trigger:staging": "npx trigger.dev@4.0.1 deploy --env staging",
     "dev": "npx concurrently --kill-others --names \"next,trigger\" --prefix-colors \"yellow,blue\" \"next dev --turbopack\" \"npm run trigger:dev\"",
