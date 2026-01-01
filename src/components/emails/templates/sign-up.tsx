@@ -49,7 +49,7 @@ export default function SignUpEmail({ confirmationLink }: SignUpEmailProps) {
         </Text>
 
         <Section
-          className="bg-[#F4F4F0] p-[24px] mb-[24px] rounded-[8px]"
+          className="bg-[#F4F4F0] p-[24px] pt-0 mb-[24px] rounded-[8px]"
           style={{
             borderTop: '1px solid #999A5E',
             borderLeft: '1px solid #999A5E',

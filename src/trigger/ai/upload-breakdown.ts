@@ -1,5 +1,7 @@
 import { db } from '@/db'
-import { upload } from '@/db/schema'
+import { upload, user } from '@/db/schema'
+import { env } from '@/env'
+import { sendUploadFailedTask } from '@/trigger/emails/send-upload-failed'
 import { logger, task } from '@trigger.dev/sdk/v3'
 import { and, eq, ne } from 'drizzle-orm'
 import { categorizeAndImportTransactionsTask } from './categorize-and-import-transactions'
@@ -30,6 +32,11 @@ export const uploadBreakdownTask = task({
         { review },
       )
 
+      const [failedUpload] = await db
+        .select({ fileName: upload.fileName, userId: upload.userId })
+        .from(upload)
+        .where(eq(upload.id, payload.uploadId))
+
       await db
         .update(upload)
         .set({
@@ -37,6 +44,21 @@ export const uploadBreakdownTask = task({
           failedReason: review.reason,
         })
         .where(eq(upload.id, payload.uploadId))
+
+      if (failedUpload) {
+        const [uploadUser] = await db
+          .select({ email: user.email })
+          .from(user)
+          .where(eq(user.id, failedUpload.userId))
+
+        if (uploadUser) {
+          await sendUploadFailedTask.trigger({
+            to: uploadUser.email,
+            fileName: failedUpload.fileName,
+            uploadsLink: `${env.NEXT_PUBLIC_APP_URL}/uploads`,
+          })
+        }
+      }
 
       return { success: true }
     }
@@ -63,6 +85,11 @@ export const uploadBreakdownTask = task({
       error,
     })
 
+    const [failedUpload] = await db
+      .select({ fileName: upload.fileName, userId: upload.userId })
+      .from(upload)
+      .where(eq(upload.id, payload.uploadId))
+
     await db
       .update(upload)
       .set({
@@ -73,6 +100,21 @@ export const uploadBreakdownTask = task({
       .where(
         and(eq(upload.id, payload.uploadId), ne(upload.status, 'cancelled')),
       )
+
+    if (failedUpload) {
+      const [uploadUser] = await db
+        .select({ email: user.email })
+        .from(user)
+        .where(eq(user.id, failedUpload.userId))
+
+      if (uploadUser) {
+        await sendUploadFailedTask.trigger({
+          to: uploadUser.email,
+          fileName: failedUpload.fileName,
+          uploadsLink: `${env.NEXT_PUBLIC_APP_URL}/uploads`,
+        })
+      }
+    }
 
     return {
       skipRetrying: true,
