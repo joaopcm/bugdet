@@ -10,7 +10,9 @@ const PUBLIC_PATHS = [
 ]
 
 export async function middleware(request: NextRequest) {
-  const sessionCookie = getSessionCookie(request)
+  const sessionCookie = getSessionCookie(request, {
+    cookiePrefix: 'bugdet',
+  })
 
   if (!sessionCookie && !PUBLIC_PATHS.includes(request.nextUrl.pathname)) {
     return NextResponse.redirect(new URL('/sign-in', request.url))

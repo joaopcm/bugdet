@@ -31,7 +31,7 @@ export function AuthContainer({
         </CardContent>
       </Card>
 
-      <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4">
+      <div className="text-muted-foreground text-center text-xs text-balance *:[a]:hover:text-primary *:[a]:underline *:[a]:underline-offset-4">
         By clicking continue, you agree to our{' '}
         <Link href={`${env.NEXT_PUBLIC_APP_URL}/terms-of-service`}>
           Terms of Service

@@ -163,7 +163,7 @@ export function NavMain({ items }: NavMainProps) {
               onClick={handleImportClick}
               disabled={isUploading}
             >
-              Import Bank Statement
+              Import bank statement
               <Kbd variant="default" className="-mr-2">
                 {IMPORT_BANK_STATEMENT_SHORTCUT}
               </Kbd>

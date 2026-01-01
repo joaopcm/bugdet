@@ -1,12 +1,17 @@
 import { db } from '@/db'
-import { account, session, user, verification } from '@/db/schema'
+import {
+  account,
+  session,
+  twoFactor as twoFactorSchema,
+  user,
+  verification,
+} from '@/db/schema'
 import { env } from '@/env'
 import { sendAccountConfirmationTask } from '@/trigger/emails/send-account-confirmation'
 import { sendPasswordRecoveryTask } from '@/trigger/emails/send-password-recovery'
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import { twoFactorClient } from 'better-auth/client/plugins'
-import { twoFactor } from 'better-auth/plugins'
+import { haveIBeenPwned, twoFactor } from 'better-auth/plugins'
 
 export const auth = betterAuth({
   appName: 'Bugdet.co',
@@ -21,6 +26,7 @@ export const auth = betterAuth({
       account,
       session,
       verification,
+      twoFactor: twoFactorSchema,
     },
   }),
   emailVerification: {
@@ -47,5 +53,9 @@ export const auth = betterAuth({
       })
     },
   },
-  plugins: [twoFactor(), twoFactorClient()],
+  plugins: [twoFactor({ issuer: 'bugdet.co' }), haveIBeenPwned()],
+  advanced: {
+    cookiePrefix: 'bugdet',
+    useSecureCookies: env.NODE_ENV === 'production',
+  },
 })

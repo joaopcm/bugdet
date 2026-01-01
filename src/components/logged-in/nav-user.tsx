@@ -81,7 +81,7 @@ export function NavUser({ user }: NavUserProps) {
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} asChild>
+            <DropdownMenuItem asChild>
               <Link href="/settings">
                 <IconSettings />
                 Settings
