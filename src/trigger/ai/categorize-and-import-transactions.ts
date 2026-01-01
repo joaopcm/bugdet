@@ -1,5 +1,14 @@
 import { db } from '@/db'
-import { category, merchantCategory, transaction, upload } from '@/db/schema'
+import {
+  category,
+  merchantCategory,
+  transaction,
+  upload,
+  user,
+} from '@/db/schema'
+import { env } from '@/env'
+import { sendUploadCompletedTask } from '@/trigger/emails/send-upload-completed'
+import { sendUploadFailedTask } from '@/trigger/emails/send-upload-failed'
 import { openai } from '@ai-sdk/openai'
 import { AbortTaskRunError, logger, retry, task } from '@trigger.dev/sdk/v3'
 import { generateObject } from 'ai'
@@ -175,9 +184,18 @@ export const categorizeAndImportTransactionsTask = task({
     })
     logger.info('AI analysis complete', { transactions: result.object })
 
+    let transactionCount = 0
+    let categoriesCreated = 0
+    let uploadUserId: string | null = null
+    let uploadFileName: string | null = null
+
     await db.transaction(async (tx) => {
       const [upToDateUpload] = await tx
-        .select({ status: upload.status, userId: upload.userId })
+        .select({
+          status: upload.status,
+          userId: upload.userId,
+          fileName: upload.fileName,
+        })
         .from(upload)
         .where(eq(upload.id, payload.uploadId))
 
@@ -264,7 +282,29 @@ export const categorizeAndImportTransactionsTask = task({
           status: 'completed',
         })
         .where(eq(upload.id, payload.uploadId))
+
+      transactionCount = result.object.transactions.length
+      categoriesCreated = newCategories.length
+      uploadUserId = upToDateUpload.userId
+      uploadFileName = upToDateUpload.fileName
     })
+
+    if (uploadUserId && uploadFileName) {
+      const [uploadUser] = await db
+        .select({ email: user.email })
+        .from(user)
+        .where(eq(user.id, uploadUserId))
+
+      if (uploadUser) {
+        await sendUploadCompletedTask.trigger({
+          to: uploadUser.email,
+          fileName: uploadFileName,
+          transactionCount,
+          categoriesCreated,
+          uploadsLink: `${env.NEXT_PUBLIC_APP_URL}/uploads`,
+        })
+      }
+    }
 
     return {
       success: true,
@@ -276,6 +316,11 @@ export const categorizeAndImportTransactionsTask = task({
       error,
     })
 
+    const [failedUpload] = await db
+      .select({ fileName: upload.fileName, userId: upload.userId })
+      .from(upload)
+      .where(eq(upload.id, payload.uploadId))
+
     await db
       .update(upload)
       .set({
@@ -286,6 +331,21 @@ export const categorizeAndImportTransactionsTask = task({
       .where(
         and(eq(upload.id, payload.uploadId), ne(upload.status, 'cancelled')),
       )
+
+    if (failedUpload) {
+      const [uploadUser] = await db
+        .select({ email: user.email })
+        .from(user)
+        .where(eq(user.id, failedUpload.userId))
+
+      if (uploadUser) {
+        await sendUploadFailedTask.trigger({
+          to: uploadUser.email,
+          fileName: failedUpload.fileName,
+          uploadsLink: `${env.NEXT_PUBLIC_APP_URL}/uploads`,
+        })
+      }
+    }
 
     return {
       skipRetrying: true,

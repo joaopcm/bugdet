@@ -1,32 +1,33 @@
 import { Button, Link, Section, Text } from '@react-email/components'
 import { Layout } from '../components/layout'
 
-interface ForgotPasswordEmailProps {
-  resetPasswordLink: string
+interface UploadFailedEmailProps {
+  fileName: string
+  uploadsLink: string
 }
 
-export default function ForgotPasswordEmail({
-  resetPasswordLink,
-}: ForgotPasswordEmailProps) {
+export default function UploadFailedEmail({
+  fileName = 'mybankstatement.pdf',
+  uploadsLink = 'https://bugdet.co/uploads',
+}: UploadFailedEmailProps) {
   return (
-    <Layout preview="Reset your password">
+    <Layout preview="Your bank statement couldn't be processed">
       <Section className="px-[24px] py-[32px] bg-white">
         <Text className="text-[16px] text-gray-800 mb-[24px]">Hi,</Text>
 
         <Text className="text-[16px] text-gray-800 mb-[24px]">
-          We received a request to reset your password for your Budget.co
-          account. If you didn't make this request, you can safely ignore this
-          email.
+          We weren't able to process your bank statement{' '}
+          <strong>{fileName}</strong>. This can happen if the file is corrupted,
+          not a valid bank statement, or in an unsupported format.
         </Text>
 
         <Text className="text-[16px] text-gray-800 mb-[24px]">
-          To reset your password and regain access to your account, please click
-          the button below:
+          You can try uploading the file again or delete it from your uploads:
         </Text>
 
         <Button
           className="bg-[#999A5E] text-white font-bold py-[12px] px-[24px] rounded-[8px] text-[16px] no-underline text-center block box-border"
-          href={resetPasswordLink}
+          href={uploadsLink}
           style={{
             borderTop: '1px solid #999A5E',
             borderLeft: '1px solid #999A5E',
@@ -35,7 +36,7 @@ export default function ForgotPasswordEmail({
             boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
           }}
         >
-          Reset my password
+          View my uploads
         </Button>
 
         <Text className="text-[14px] text-gray-600 text-left mt-[16px] mb-[24px]">
@@ -43,10 +44,10 @@ export default function ForgotPasswordEmail({
           browser:
           <br />
           <Link
-            href={resetPasswordLink}
+            href={uploadsLink}
             className="text-[#76773C] font-medium break-all"
           >
-            {resetPasswordLink}
+            {uploadsLink}
           </Link>
         </Text>
 
@@ -60,16 +61,19 @@ export default function ForgotPasswordEmail({
           }}
         >
           <Text className="text-[18px] font-bold text-[#76773C] mb-[16px]">
-            Important security information
+            Tips for successful uploads
           </Text>
           <Text className="text-[16px] text-gray-800 mb-[8px] m-0">
-            • This link will expire in 30 minutes
+            • Use PDF files exported directly from your bank
           </Text>
           <Text className="text-[16px] text-gray-800 mb-[8px] m-0">
-            • Create a strong, unique password
+            • Avoid screenshots or scanned documents
           </Text>
           <Text className="text-[16px] text-gray-800 mb-[8px] m-0">
-            • Never share your password with anyone
+            • Ensure the file is not password-protected
+          </Text>
+          <Text className="text-[16px] text-gray-800 mb-[0px] m-0">
+            • Check that the file is not corrupted
           </Text>
         </Section>
       </Section>
