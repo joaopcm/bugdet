@@ -202,7 +202,7 @@ export function BackupCodesDialog({
                 disabled={isLoading}
               >
                 <IconRefresh className="size-4" />
-                {isLoading ? 'Regenerating...' : 'Regenerate Codes'}
+                {isLoading ? 'Regenerating...' : 'Regenerate codes'}
               </Button>
             </div>
             <DialogFooter>
