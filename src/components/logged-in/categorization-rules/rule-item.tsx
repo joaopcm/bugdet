@@ -2,6 +2,7 @@
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { TableCell, TableRow } from '@/components/ui/table'
 import type { RuleAction, RuleCondition } from '@/db/schema'
 import { useRefetchCategorizationRules } from '@/hooks/use-categorization-rules'
@@ -23,6 +24,8 @@ interface RuleItemProps {
     actions: RuleAction[]
     enabled: boolean
   }
+  isSelected?: boolean
+  onSelect?: (id: string, event: React.MouseEvent) => void
 }
 
 function formatConditions(
@@ -65,7 +68,11 @@ function formatActions(actions: RuleAction[]): string {
     .join(', ')
 }
 
-export function RuleItem({ rule }: RuleItemProps) {
+export function RuleItem({
+  rule,
+  isSelected = false,
+  onSelect,
+}: RuleItemProps) {
   const refetchRules = useRefetchCategorizationRules()
 
   const {
@@ -95,8 +102,14 @@ export function RuleItem({ rule }: RuleItemProps) {
     })
 
   return (
-    <TableRow ref={setNodeRef} style={style}>
-      <TableCell className="w-[40px]">
+    <TableRow ref={setNodeRef} style={style} className="group">
+      <TableCell className="relative w-[40px]">
+        <Checkbox
+          checked={isSelected}
+          onClick={(e) => onSelect?.(rule.id, e)}
+          className="absolute -left-8 top-3 opacity-0 group-hover:opacity-100 data-[state=checked]:opacity-100"
+          aria-label={`Select rule ${rule.name}`}
+        />
         <button
           type="button"
           className="cursor-grab touch-none"

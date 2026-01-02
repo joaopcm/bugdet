@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { TableCell, TableRow } from '@/components/ui/table'
 import { CONFIDENCE_THRESHOLD } from '@/constants/transactions'
 import type { transaction } from '@/db/schema'
@@ -30,9 +31,15 @@ interface TransactionItemProps {
   > & {
     categoryName: string | null
   }
+  isSelected?: boolean
+  onSelect?: (id: string, event: React.MouseEvent) => void
 }
 
-export function TransactionItem({ transaction }: TransactionItemProps) {
+export function TransactionItem({
+  transaction,
+  isSelected = false,
+  onSelect,
+}: TransactionItemProps) {
   const { refetch: refetchTransactions } = useTransactions()
 
   const { mutate: deleteTransaction, isPending: isDeleting } =
@@ -49,8 +56,16 @@ export function TransactionItem({ transaction }: TransactionItemProps) {
     })
 
   return (
-    <TableRow>
-      <TableCell>{format(parseISO(transaction.date), 'MMM d, yyyy')}</TableCell>
+    <TableRow className="group">
+      <TableCell className="relative">
+        <Checkbox
+          checked={isSelected}
+          onClick={(e) => onSelect?.(transaction.id, e)}
+          className="absolute -left-8 top-3 opacity-0 group-hover:opacity-100 data-[state=checked]:opacity-100"
+          aria-label={`Select transaction ${transaction.merchantName}`}
+        />
+        {format(parseISO(transaction.date), 'MMM d, yyyy')}
+      </TableCell>
       <TableCell>
         <Category
           categoryName={transaction.categoryName}

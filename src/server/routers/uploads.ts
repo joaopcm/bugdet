@@ -9,7 +9,7 @@ import { transaction, upload } from '@/db/schema'
 import { createClient } from '@/lib/supabase/server'
 import { uploadBreakdownTask } from '@/trigger/ai/upload-breakdown'
 import { TRPCError } from '@trpc/server'
-import { and, desc, eq, ilike } from 'drizzle-orm'
+import { and, desc, eq, ilike, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 import { protectedProcedure, router } from '../trpc'
 
@@ -239,6 +239,66 @@ export const uploadsRouter = router({
             )
         }
       })
+    }),
+  deleteMany: protectedProcedure
+    .input(
+      z.object({
+        ids: z.array(z.string().uuid()).min(1).max(100),
+        deleteRelatedTransactions: z.boolean().default(false),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Fetch uploads that are deletable and belong to user
+      const uploadsToDelete = await ctx.db
+        .select({
+          id: upload.id,
+          filePath: upload.filePath,
+        })
+        .from(upload)
+        .where(
+          and(
+            inArray(upload.id, input.ids),
+            eq(upload.userId, ctx.user.id),
+            eq(upload.deleted, false),
+            inArray(upload.status, DELETABLE_STATUSES),
+          ),
+        )
+
+      if (uploadsToDelete.length === 0) {
+        return { deletedCount: 0 }
+      }
+
+      // Delete files from Supabase storage
+      const supabase = await createClient({ admin: true })
+      await supabase.storage
+        .from('bank-statements')
+        .remove(uploadsToDelete.map((u) => u.filePath))
+
+      // Soft delete uploads and optionally transactions
+      const uploadIds = uploadsToDelete.map((u) => u.id)
+
+      await ctx.db.transaction(async (tx) => {
+        await tx
+          .update(upload)
+          .set({ deleted: true })
+          .where(
+            and(inArray(upload.id, uploadIds), eq(upload.userId, ctx.user.id)),
+          )
+
+        if (input.deleteRelatedTransactions) {
+          await tx
+            .update(transaction)
+            .set({ deleted: true })
+            .where(
+              and(
+                inArray(transaction.uploadId, uploadIds),
+                eq(transaction.userId, ctx.user.id),
+              ),
+            )
+        }
+      })
+
+      return { deletedCount: uploadsToDelete.length }
     }),
   download: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
