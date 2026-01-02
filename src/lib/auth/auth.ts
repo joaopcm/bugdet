@@ -5,13 +5,16 @@ import {
   twoFactor as twoFactorSchema,
   user,
   verification,
+  waitlist,
 } from '@/db/schema'
 import { env } from '@/env'
 import { sendAccountConfirmationTask } from '@/trigger/emails/send-account-confirmation'
 import { sendPasswordRecoveryTask } from '@/trigger/emails/send-password-recovery'
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
+import { APIError, createAuthMiddleware } from 'better-auth/api'
 import { haveIBeenPwned, twoFactor } from 'better-auth/plugins'
+import { eq } from 'drizzle-orm'
 
 export const auth = betterAuth({
   appName: 'Bugdet.co',
@@ -54,6 +57,27 @@ export const auth = betterAuth({
     },
   },
   plugins: [twoFactor({ issuer: 'bugdet.co' }), haveIBeenPwned()],
+  hooks: {
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path === '/sign-up/email') {
+        const email = ctx.body?.email?.toLowerCase().trim()
+        if (!email) return
+
+        const [entry] = await db
+          .select({ grantedAccess: waitlist.grantedAccess })
+          .from(waitlist)
+          .where(eq(waitlist.email, email))
+          .limit(1)
+
+        if (!entry?.grantedAccess) {
+          throw new APIError('FORBIDDEN', {
+            message:
+              "You're on the waitlist. We'll notify you when access is granted.",
+          })
+        }
+      }
+    }),
+  },
   advanced: {
     cookiePrefix: 'bugdet',
     useSecureCookies: env.NODE_ENV === 'production',

@@ -31,6 +31,35 @@ async function sendEmail({ to, subject, react }: SendEmailProps) {
   return data
 }
 
+async function createContactWithSegment(email: string, segmentId: string) {
+  const { data, error } = await resendClient.contacts.create({
+    email,
+    unsubscribed: false,
+    audienceId: segmentId,
+  })
+
+  if (error) {
+    logger.error('Error creating contact with segment', error)
+    throw new Error(error.message)
+  }
+
+  return data
+}
+
+async function removeContactFromSegment(email: string, segmentId: string) {
+  const { error } = await resendClient.contacts.segments.remove({
+    email,
+    segmentId,
+  })
+
+  if (error) {
+    logger.error('Error removing contact from segment', error)
+    throw new Error(error.message)
+  }
+}
+
 export const resend = {
   sendEmail,
+  createContactWithSegment,
+  removeContactFromSegment,
 }

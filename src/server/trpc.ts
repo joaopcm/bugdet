@@ -11,6 +11,7 @@ export async function createTRPCContext(opts: { headers: Headers }) {
 
   return {
     db,
+    headers: opts.headers,
     user: authSession?.user,
   }
 }

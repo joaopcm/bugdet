@@ -71,6 +71,25 @@ export const twoFactor = pgTable('two_factor', {
     .references(() => user.id, { onDelete: 'cascade' }),
 })
 
+export type Waitlist = typeof waitlist.$inferSelect
+
+export const waitlist = pgTable(
+  'waitlist',
+  {
+    id: uuid('id').defaultRandom().notNull().primaryKey(),
+    email: text('email').notNull().unique(),
+    grantedAccess: boolean('granted_access').notNull().default(false),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    grantedAt: timestamp('granted_at'),
+  },
+  (table) => ({
+    emailIdx: index('waitlist_email_idx').on(table.email),
+    grantedAccessIdx: index('waitlist_granted_access_idx').on(
+      table.grantedAccess,
+    ),
+  }),
+)
+
 export const uploadStatusEnum = pgEnum('upload_status', [
   'queued',
   'processing',
