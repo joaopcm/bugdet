@@ -1,6 +1,6 @@
 import { CONFIDENCE_THRESHOLD } from '@/constants/transactions'
 import { category, transaction } from '@/db/schema'
-import { and, between, countDistinct, desc, eq, lt, sql } from 'drizzle-orm'
+import { and, between, countDistinct, desc, eq, gt, lt, sql } from 'drizzle-orm'
 import { z } from 'zod'
 import { protectedProcedure, router } from '../trpc'
 
@@ -47,6 +47,7 @@ export const dashboardRouter = router({
             eq(transaction.userId, ctx.user.id),
             eq(transaction.deleted, false),
             eq(transaction.currency, primaryCurrency),
+            gt(transaction.amount, 0),
             between(transaction.date, input.from, input.to),
           ),
         )
@@ -97,6 +98,7 @@ export const dashboardRouter = router({
             eq(transaction.userId, ctx.user.id),
             eq(transaction.deleted, false),
             eq(transaction.currency, primaryCurrency),
+            gt(transaction.amount, 0),
             between(transaction.date, input.from, input.to),
           ),
         )
@@ -156,6 +158,7 @@ export const dashboardRouter = router({
             eq(transaction.userId, ctx.user.id),
             eq(transaction.deleted, false),
             eq(transaction.currency, primaryCurrency),
+            gt(transaction.amount, 0),
             between(transaction.date, input.from, input.to),
           ),
         )
@@ -205,6 +208,7 @@ export const dashboardRouter = router({
             eq(transaction.userId, ctx.user.id),
             eq(transaction.deleted, false),
             eq(transaction.currency, primaryCurrency),
+            gt(transaction.amount, 0),
             between(transaction.date, input.from, input.to),
           ),
         )

@@ -67,7 +67,7 @@ export function DashboardFilters() {
             {filters.preset === 'custom' && filters.from && filters.to ? (
               `${format(filters.from, 'MMM d')} - ${format(filters.to, 'MMM d')}`
             ) : (
-              <span>Custom</span>
+              <span>Pick a date range</span>
             )}
           </Button>
         </PopoverTrigger>

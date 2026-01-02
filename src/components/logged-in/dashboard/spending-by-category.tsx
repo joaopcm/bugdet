@@ -20,6 +20,13 @@ const CHART_COLORS = [
   'var(--chart-3)',
   'var(--chart-4)',
   'var(--chart-5)',
+  'oklch(0.55 0.15 280)',
+  'oklch(0.70 0.18 140)',
+  'oklch(0.60 0.20 340)',
+  'oklch(0.75 0.12 230)',
+  'oklch(0.58 0.22 25)',
+  'oklch(0.65 0.14 110)',
+  'oklch(0.72 0.16 320)',
 ]
 
 export function SpendingByCategory() {

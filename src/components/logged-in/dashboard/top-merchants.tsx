@@ -1,12 +1,9 @@
 'use client'
-
-import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { trpc } from '@/lib/trpc/client'
 import { formatCurrency } from '@/lib/utils'
 import { format } from 'date-fns'
-import { StoreIcon } from 'lucide-react'
 import { getDateRangeFromPreset, useDashboardFilters } from './search-params'
 
 function MerchantSkeleton() {
@@ -38,10 +35,7 @@ export function TopMerchants() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <StoreIcon className="size-4" />
-          Top Merchants
-        </CardTitle>
+        <CardTitle>Top merchants</CardTitle>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -63,22 +57,14 @@ export function TopMerchants() {
                 key={merchant.merchantName}
                 className="flex items-center justify-between"
               >
-                <div className="flex items-center gap-3">
-                  <Badge
-                    variant="outline"
-                    className="flex size-6 items-center justify-center rounded-full p-0 text-xs"
-                  >
-                    {index + 1}
-                  </Badge>
-                  <div>
-                    <p className="text-sm font-medium leading-none">
-                      {merchant.merchantName}
-                    </p>
-                    <p className="text-muted-foreground text-xs">
-                      {merchant.transactionCount} transaction
-                      {merchant.transactionCount !== 1 ? 's' : ''}
-                    </p>
-                  </div>
+                <div>
+                  <p className="text-sm font-medium leading-none">
+                    {merchant.merchantName}
+                  </p>
+                  <p className="text-muted-foreground text-xs">
+                    {merchant.transactionCount} transaction
+                    {merchant.transactionCount !== 1 ? 's' : ''}
+                  </p>
                 </div>
                 <span className="text-sm font-medium">
                   {formatCurrency(merchant.totalAmount, data.currency)}
