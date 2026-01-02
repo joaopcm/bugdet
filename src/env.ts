@@ -4,12 +4,14 @@ import { z } from 'zod'
 
 export const env = createEnv({
   server: {
+    BACKOFFICE_API_KEY: z.string(),
     BETTER_AUTH_SECRET: z.string(),
     BETTER_AUTH_URL: z.string().url(),
     DATABASE_URL: z.string().url(),
     GOOGLE_GENERATIVE_AI_API_KEY: z.string(),
     OPENAI_API_KEY: z.string(),
     RESEND_API_KEY: z.string(),
+    RESEND_WAITLIST_SEGMENT_ID: z.string(),
     SUPABASE_ANON_KEY: z.string(),
     SUPABASE_SERVICE_ROLE_KEY: z.string(),
     SUPABASE_URL: z.string().url(),
@@ -23,6 +25,7 @@ export const env = createEnv({
     NODE_ENV: z.enum(['development', 'production']),
   },
   runtimeEnv: {
+    BACKOFFICE_API_KEY: process.env.BACKOFFICE_API_KEY,
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
     DATABASE_URL: process.env.DATABASE_URL,
@@ -31,6 +34,7 @@ export const env = createEnv({
     NODE_ENV: process.env.NODE_ENV,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
+    RESEND_WAITLIST_SEGMENT_ID: process.env.RESEND_WAITLIST_SEGMENT_ID,
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     SUPABASE_URL: process.env.SUPABASE_URL,
