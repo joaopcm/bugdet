@@ -172,6 +172,25 @@ export const categorizationRulesRouter = router({
         )
     }),
 
+  deleteMany: protectedProcedure
+    .input(
+      z.object({
+        ids: z.array(z.string().uuid()).min(1).max(100),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db
+        .update(categorizationRule)
+        .set({ deleted: true })
+        .where(
+          and(
+            inArray(categorizationRule.id, input.ids),
+            eq(categorizationRule.userId, ctx.user.id),
+            eq(categorizationRule.deleted, false),
+          ),
+        )
+    }),
+
   reorder: protectedProcedure
     .input(
       z.object({

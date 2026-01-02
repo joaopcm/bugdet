@@ -140,6 +140,24 @@ export const transactionsRouter = router({
           ),
         )
     }),
+  deleteMany: protectedProcedure
+    .input(
+      z.object({
+        ids: z.array(z.string().uuid()).min(1).max(100),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db
+        .update(transaction)
+        .set({ deleted: true })
+        .where(
+          and(
+            inArray(transaction.id, input.ids),
+            eq(transaction.userId, ctx.user.id),
+            eq(transaction.deleted, false),
+          ),
+        )
+    }),
   create: protectedProcedure
     .input(
       z.object({

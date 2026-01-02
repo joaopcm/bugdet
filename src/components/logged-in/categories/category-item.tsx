@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { InternalLink } from '@/components/ui/internal-link'
 import { TableCell, TableRow } from '@/components/ui/table'
 import type { category } from '@/db/schema'
@@ -15,9 +16,15 @@ interface CategoryItemProps {
   category: Pick<typeof category.$inferSelect, 'id' | 'name' | 'createdAt'> & {
     transactionCount: number
   }
+  isSelected?: boolean
+  onSelect?: (id: string, event: React.MouseEvent) => void
 }
 
-export function CategoryItem({ category }: CategoryItemProps) {
+export function CategoryItem({
+  category,
+  isSelected = false,
+  onSelect,
+}: CategoryItemProps) {
   const { refetch: refetchCategories } = useCategories()
 
   const { mutate: deleteCategory, isPending: isDeleting } =
@@ -32,8 +39,14 @@ export function CategoryItem({ category }: CategoryItemProps) {
     })
 
   return (
-    <TableRow>
-      <TableCell>
+    <TableRow className="group">
+      <TableCell className="relative">
+        <Checkbox
+          checked={isSelected}
+          onClick={(e) => onSelect?.(category.id, e)}
+          className="absolute -left-8 top-3 opacity-0 group-hover:opacity-100 data-[state=checked]:opacity-100"
+          aria-label={`Select category ${category.name}`}
+        />
         <InternalLink href={`/transactions?category=${category.id}`}>
           {category.name}
         </InternalLink>

@@ -31,7 +31,7 @@ interface NavMainProps {
 }
 
 export function NavMain({ items }: NavMainProps) {
-  const [files, setFiles] = useState<FileList | null>(null)
+  const [files, setFiles] = useState<File[] | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
@@ -134,9 +134,11 @@ export function NavMain({ items }: NavMainProps) {
     const newFiles = event.target.files
 
     if (newFiles && newFiles.length > 0) {
-      setFiles(newFiles)
+      // Convert to Array before resetting input (FileList is a live reference)
+      const filesArray = Array.from(newFiles)
+      setFiles(filesArray)
       createSignedUploadUrls({
-        fileNames: Array.from(newFiles).map((file) => file.name),
+        fileNames: filesArray.map((file) => file.name),
       })
     }
 

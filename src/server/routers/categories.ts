@@ -6,7 +6,7 @@ import {
 import { db } from '@/db'
 import { category, transaction } from '@/db/schema'
 import { TRPCError } from '@trpc/server'
-import { and, count, desc, eq, ilike } from 'drizzle-orm'
+import { and, count, desc, eq, ilike, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 import { protectedProcedure, router } from '../trpc'
 
@@ -14,11 +14,12 @@ async function getExistingCategory(id: string, userId: string) {
   const [existingCategory] = await db
     .select({
       id: category.id,
+      deleted: category.deleted,
     })
     .from(category)
     .where(and(eq(category.id, id), eq(category.userId, userId)))
 
-  if (!existingCategory) {
+  if (!existingCategory || existingCategory.deleted) {
     throw new TRPCError({
       code: 'NOT_FOUND',
       message: 'Category not found.',
@@ -115,11 +116,30 @@ export const categoriesRouter = router({
       const existingCategory = await getExistingCategory(input.id, ctx.user.id)
 
       await db
-        .delete(category)
+        .update(category)
+        .set({ deleted: true })
         .where(
           and(
             eq(category.id, existingCategory.id),
             eq(category.userId, ctx.user.id),
+          ),
+        )
+    }),
+  deleteMany: protectedProcedure
+    .input(
+      z.object({
+        ids: z.array(z.string().uuid()).min(1).max(100),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db
+        .update(category)
+        .set({ deleted: true })
+        .where(
+          and(
+            inArray(category.id, input.ids),
+            eq(category.userId, ctx.user.id),
+            eq(category.deleted, false),
           ),
         )
     }),

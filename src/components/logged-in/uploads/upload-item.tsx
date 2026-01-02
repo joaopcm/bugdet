@@ -34,9 +34,15 @@ interface UploadItemProps {
     | 'fileSize'
     | 'metadata'
   >
+  isSelected?: boolean
+  onSelect?: (id: string, event: React.MouseEvent) => void
 }
 
-export function UploadItem({ upload }: UploadItemProps) {
+export function UploadItem({
+  upload,
+  isSelected = false,
+  onSelect,
+}: UploadItemProps) {
   const { refetch: refetchUploads } = useUploads()
   const [deleteRelatedTransactions, setDeleteRelatedTransactions] =
     useState(false)
@@ -76,8 +82,14 @@ export function UploadItem({ upload }: UploadItemProps) {
     })
 
   return (
-    <TableRow>
-      <TableCell>
+    <TableRow className="group">
+      <TableCell className="relative">
+        <Checkbox
+          checked={isSelected}
+          onClick={(e) => onSelect?.(upload.id, e)}
+          className="absolute -left-8 top-3 opacity-0 group-hover:opacity-100 data-[state=checked]:opacity-100"
+          aria-label={`Select upload ${upload.fileName}`}
+        />
         <FileName fileName={upload.fileName} metadata={upload.metadata} />
       </TableCell>
       <TableCell>{formatBytes(upload.fileSize)}</TableCell>
