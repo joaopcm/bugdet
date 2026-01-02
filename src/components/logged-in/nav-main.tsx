@@ -119,6 +119,8 @@ export function NavMain({ items }: NavMainProps) {
     onSuccess: () => {
       toast.success('Bank statements uploaded successfully', {
         id: 'upload-bank-statement',
+        description:
+          'You will be notified via email when an update about the processing is available.',
       })
       refetchUploads()
       router.push('/uploads')

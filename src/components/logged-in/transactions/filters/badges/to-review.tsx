@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/tooltip'
 import { useCountToReview } from '@/hooks/use-count-to-review'
 import { usePagination } from '@/hooks/use-pagination'
-import { cn } from '@/lib/utils'
 import { useHotkeys } from 'react-hotkeys-hook'
 import { useTransactionsFilters } from '../search-params'
 
@@ -74,18 +73,7 @@ export function ToReview() {
             onClick={handleClick}
             className="transition-none"
           >
-            To review{' '}
-            <div
-              className={cn(
-                'rounded-full size-4 flex items-center justify-center text-xs ml-1',
-                {
-                  'bg-primary text-primary-foreground': !isSelected,
-                  'bg-muted text-muted-foreground': isSelected,
-                },
-              )}
-            >
-              {transactions?.length}
-            </div>
+            To review ({transactions?.length})
           </button>
         </Badge>
       </TooltipTrigger>

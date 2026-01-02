@@ -1,6 +1,7 @@
 import { db } from '@/db'
 import { migrate } from 'drizzle-orm/node-postgres/migrator'
 import { categoriesRouter } from './routers/categories'
+import { dashboardRouter } from './routers/dashboard'
 import { transactionsRouter } from './routers/transactions'
 import { uploadsRouter } from './routers/uploads'
 import { router } from './trpc'
@@ -13,6 +14,7 @@ export const appRouter = router({
   uploads: uploadsRouter,
   transactions: transactionsRouter,
   categories: categoriesRouter,
+  dashboard: dashboardRouter,
 })
 
 export type AppRouter = typeof appRouter
