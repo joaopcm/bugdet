@@ -46,7 +46,20 @@ async function createContactWithSegment(email: string, segmentId: string) {
   return data
 }
 
+async function removeContactFromSegment(email: string, segmentId: string) {
+  const { error } = await resendClient.contacts.segments.remove({
+    email,
+    segmentId,
+  })
+
+  if (error) {
+    logger.error('Error removing contact from segment', error)
+    throw new Error(error.message)
+  }
+}
+
 export const resend = {
   sendEmail,
   createContactWithSegment,
+  removeContactFromSegment,
 }

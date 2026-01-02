@@ -2,6 +2,7 @@ import { db } from '@/db'
 import { waitlist } from '@/db/schema'
 import { env } from '@/env'
 import { ratelimit } from '@/lib/ratelimit'
+import { resend } from '@/lib/resend'
 import { sendBetaAccessGrantedTask } from '@/trigger/emails/send-beta-access-granted'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
@@ -57,6 +58,8 @@ export async function POST(request: Request) {
     .update(waitlist)
     .set({ grantedAccess: true, grantedAt: new Date() })
     .where(eq(waitlist.id, entry.id))
+
+  await resend.removeContactFromSegment(email, env.RESEND_WAITLIST_SEGMENT_ID)
 
   await sendBetaAccessGrantedTask.trigger({ to: email })
 
