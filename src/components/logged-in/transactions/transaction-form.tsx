@@ -27,6 +27,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { useCategories } from '@/hooks/use-categories'
 import {
   cn,
@@ -35,6 +40,7 @@ import {
   getCurrencySymbol,
 } from '@/lib/utils'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { IconInfoCircle } from '@tabler/icons-react'
 import { format } from 'date-fns'
 import { CalendarIcon } from 'lucide-react'
 import { useRef } from 'react'
@@ -186,8 +192,23 @@ export function TransactionForm({
                   onCheckedChange={field.onChange}
                 />
               </FormControl>
-              <FormLabel htmlFor="updateCategoryForSimilarTransactions">
+              <FormLabel
+                htmlFor="updateCategoryForSimilarTransactions"
+                className="flex items-center gap-1"
+              >
                 Update category for similar transactions
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <IconInfoCircle className="text-muted-foreground h-4 w-4" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="max-w-[240px]">
+                      Updates all existing transactions from this merchant to
+                      use the selected category, and saves the preference for
+                      future imports.
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
               </FormLabel>
             </FormItem>
           )}

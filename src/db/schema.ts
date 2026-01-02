@@ -229,3 +229,46 @@ export const merchantCategory = pgTable(
       .concurrently(),
   }),
 )
+
+export type RuleCondition = {
+  field: 'merchant_name' | 'amount'
+  operator: 'contains' | 'gt' | 'lt' | 'gte' | 'lte' | 'eq'
+  value: string | number
+}
+
+export type RuleAction = {
+  type: 'set_sign' | 'set_category' | 'ignore'
+  value?: 'positive' | 'negative' | string
+}
+
+export type CategorizationRule = typeof categorizationRule.$inferSelect
+
+export const categorizationRule = pgTable(
+  'categorization_rule',
+  {
+    id: uuid('id').defaultRandom().notNull().primaryKey(),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    priority: integer('priority').notNull().default(0),
+    logicOperator: text('logic_operator')
+      .$type<'and' | 'or'>()
+      .notNull()
+      .default('and'),
+    conditions: jsonb('conditions').$type<RuleCondition[]>().notNull(),
+    actions: jsonb('actions').$type<RuleAction[]>().notNull(),
+    enabled: boolean('enabled').notNull().default(true),
+    deleted: boolean('deleted').notNull().default(false),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at')
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => ({
+    userIdIdx: index('categorization_rule_user_id_idx').on(table.userId),
+    priorityIdx: index('categorization_rule_priority_idx').on(table.priority),
+    deletedIdx: index('categorization_rule_deleted_idx').on(table.deleted),
+  }),
+)

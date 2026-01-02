@@ -1,0 +1,221 @@
+import {
+  DEFAULT_LIMIT_PER_PAGE,
+  MAX_LIMIT_PER_PAGE,
+} from '@/constants/pagination'
+import { db } from '@/db'
+import { categorizationRule } from '@/db/schema'
+import { TRPCError } from '@trpc/server'
+import { and, desc, eq, ilike, inArray } from 'drizzle-orm'
+import { z } from 'zod'
+import { protectedProcedure, router } from '../trpc'
+
+const ruleConditionSchema = z.object({
+  field: z.enum(['merchant_name', 'amount']),
+  operator: z.enum(['contains', 'gt', 'lt', 'gte', 'lte', 'eq']),
+  value: z.union([z.string(), z.number()]),
+})
+
+const ruleActionSchema = z.object({
+  type: z.enum(['set_sign', 'set_category', 'ignore']),
+  value: z.string().optional(),
+})
+
+async function getExistingRule(id: string, userId: string) {
+  const [existingRule] = await db
+    .select({
+      id: categorizationRule.id,
+    })
+    .from(categorizationRule)
+    .where(
+      and(
+        eq(categorizationRule.id, id),
+        eq(categorizationRule.userId, userId),
+        eq(categorizationRule.deleted, false),
+      ),
+    )
+
+  if (!existingRule) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: 'Rule not found.',
+    })
+  }
+
+  return existingRule
+}
+
+export const categorizationRulesRouter = router({
+  list: protectedProcedure
+    .input(
+      z.object({
+        filters: z.object({
+          query: z.string().min(1).max(255).nullable(),
+          enabled: z.boolean().nullable(),
+        }),
+        pagination: z.object({
+          page: z.number().min(1).default(1),
+          limit: z
+            .number()
+            .min(1)
+            .max(MAX_LIMIT_PER_PAGE)
+            .default(DEFAULT_LIMIT_PER_PAGE),
+        }),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const whereClauses = [
+        eq(categorizationRule.userId, ctx.user.id),
+        eq(categorizationRule.deleted, false),
+      ]
+
+      if (input.filters.query) {
+        whereClauses.push(
+          ilike(categorizationRule.name, `%${input.filters.query}%`),
+        )
+      }
+
+      if (input.filters.enabled !== null) {
+        whereClauses.push(eq(categorizationRule.enabled, input.filters.enabled))
+      }
+
+      const offset = (input.pagination.page - 1) * input.pagination.limit
+
+      const rules = await db
+        .select({
+          id: categorizationRule.id,
+          name: categorizationRule.name,
+          priority: categorizationRule.priority,
+          logicOperator: categorizationRule.logicOperator,
+          conditions: categorizationRule.conditions,
+          actions: categorizationRule.actions,
+          enabled: categorizationRule.enabled,
+          createdAt: categorizationRule.createdAt,
+        })
+        .from(categorizationRule)
+        .where(and(...whereClauses))
+        .orderBy(
+          desc(categorizationRule.priority),
+          categorizationRule.createdAt,
+        )
+        .limit(input.pagination.limit + 1)
+        .offset(offset)
+
+      return {
+        data: rules.slice(0, input.pagination.limit),
+        hasMore: rules.length > input.pagination.limit,
+      }
+    }),
+
+  create: protectedProcedure
+    .input(
+      z.object({
+        name: z.string().min(1).max(255),
+        priority: z.number().int().min(0).max(1000).default(0),
+        logicOperator: z.enum(['and', 'or']).default('and'),
+        conditions: z.array(ruleConditionSchema).min(1),
+        actions: z.array(ruleActionSchema).min(1),
+        enabled: z.boolean().default(true),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const [rule] = await db
+        .insert(categorizationRule)
+        .values({
+          ...input,
+          userId: ctx.user.id,
+        })
+        .returning({ id: categorizationRule.id })
+
+      return rule
+    }),
+
+  update: protectedProcedure
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        name: z.string().min(1).max(255).optional(),
+        priority: z.number().int().min(0).max(1000).optional(),
+        logicOperator: z.enum(['and', 'or']).optional(),
+        conditions: z.array(ruleConditionSchema).min(1).optional(),
+        actions: z.array(ruleActionSchema).min(1).optional(),
+        enabled: z.boolean().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const existingRule = await getExistingRule(input.id, ctx.user.id)
+      const { id, ...updateData } = input
+
+      await db
+        .update(categorizationRule)
+        .set(updateData)
+        .where(
+          and(
+            eq(categorizationRule.id, existingRule.id),
+            eq(categorizationRule.userId, ctx.user.id),
+          ),
+        )
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const existingRule = await getExistingRule(input.id, ctx.user.id)
+
+      await db
+        .update(categorizationRule)
+        .set({ deleted: true })
+        .where(
+          and(
+            eq(categorizationRule.id, existingRule.id),
+            eq(categorizationRule.userId, ctx.user.id),
+          ),
+        )
+    }),
+
+  reorder: protectedProcedure
+    .input(
+      z.object({
+        rules: z.array(
+          z.object({
+            id: z.string().uuid(),
+            priority: z.number().int().min(0),
+          }),
+        ),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const ruleIds = input.rules.map((r) => r.id)
+
+      const existingRules = await db
+        .select({ id: categorizationRule.id })
+        .from(categorizationRule)
+        .where(
+          and(
+            inArray(categorizationRule.id, ruleIds),
+            eq(categorizationRule.userId, ctx.user.id),
+            eq(categorizationRule.deleted, false),
+          ),
+        )
+
+      if (existingRules.length !== ruleIds.length) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'One or more rules not found.',
+        })
+      }
+
+      await Promise.all(
+        input.rules.map((rule) =>
+          db
+            .update(categorizationRule)
+            .set({ priority: rule.priority })
+            .where(
+              and(
+                eq(categorizationRule.id, rule.id),
+                eq(categorizationRule.userId, ctx.user.id),
+              ),
+            ),
+        ),
+      )
+    }),
+})

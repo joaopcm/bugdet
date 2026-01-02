@@ -10,6 +10,7 @@ export const sendUploadCompletedTask = task({
       fileName: string
       transactionCount: number
       categoriesCreated: number
+      rulesApplied: number
       uploadsLink: string
     },
     { ctx },
@@ -26,6 +27,7 @@ export const sendUploadCompletedTask = task({
           fileName={payload.fileName}
           transactionCount={payload.transactionCount}
           categoriesCreated={payload.categoriesCreated}
+          rulesApplied={payload.rulesApplied}
           uploadsLink={payload.uploadsLink}
         />
       ),
