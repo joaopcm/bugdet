@@ -9,10 +9,16 @@ const PUBLIC_PATHS = [
   '/reset-password',
 ]
 
+const AUTH_REDIRECT_PATHS = ['/', '/sign-in', '/sign-up']
+
 export async function middleware(request: NextRequest) {
   const sessionCookie = getSessionCookie(request, {
     cookiePrefix: 'bugdet',
   })
+
+  if (sessionCookie && AUTH_REDIRECT_PATHS.includes(request.nextUrl.pathname)) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
 
   if (!sessionCookie && !PUBLIC_PATHS.includes(request.nextUrl.pathname)) {
     return NextResponse.redirect(new URL('/sign-in', request.url))
