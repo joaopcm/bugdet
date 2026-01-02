@@ -14,6 +14,7 @@ import {
 import {
   IconCategory,
   IconDashboard,
+  IconFilter,
   IconList,
   IconUpload,
 } from '@tabler/icons-react'
@@ -37,6 +38,11 @@ const routes = [
     title: 'Categories',
     url: '/categories',
     icon: IconCategory,
+  },
+  {
+    title: 'Rules',
+    url: '/categorization-rules',
+    icon: IconFilter,
   },
   {
     title: 'Uploads',

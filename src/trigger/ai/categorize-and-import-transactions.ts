@@ -1,5 +1,6 @@
 import { db } from '@/db'
 import {
+  categorizationRule,
   category,
   merchantCategory,
   transaction,
@@ -7,6 +8,7 @@ import {
   user,
 } from '@/db/schema'
 import { env } from '@/env'
+import { applyRules } from '@/lib/rules/apply-rules'
 import { sendUploadCompletedTask } from '@/trigger/emails/send-upload-completed'
 import { sendUploadFailedTask } from '@/trigger/emails/send-upload-failed'
 import { openai } from '@ai-sdk/openai'
@@ -80,6 +82,19 @@ export const categorizeAndImportTransactionsTask = task({
         merchantCategories,
       },
     )
+
+    const rules = await db
+      .select()
+      .from(categorizationRule)
+      .where(
+        and(
+          eq(categorizationRule.userId, userId),
+          eq(categorizationRule.deleted, false),
+          eq(categorizationRule.enabled, true),
+        ),
+      )
+      .orderBy(desc(categorizationRule.priority), categorizationRule.createdAt)
+    logger.info(`Found ${rules.length} categorization rules for user ${userId}`)
 
     logger.info('Extracting transactions from bank statement with AI...')
     const schema = z.object({
@@ -184,6 +199,32 @@ export const categorizeAndImportTransactionsTask = task({
     })
     logger.info('AI analysis complete', { transactions: result.object })
 
+    let totalRulesApplied = 0
+    const processedTransactions = result.object.transactions
+      .map((tx) => {
+        const ruleResult = applyRules(
+          { merchantName: tx.merchantName, amount: tx.amount },
+          rules,
+        )
+        totalRulesApplied += ruleResult.rulesApplied
+        if (ruleResult.skip) {
+          logger.info(
+            `Skipping transaction "${tx.merchantName}" due to ignore rule`,
+          )
+          return null
+        }
+        return {
+          ...tx,
+          amount: ruleResult.overrides.amount ?? tx.amount,
+          ruleCategoryId: ruleResult.overrides.categoryId,
+        }
+      })
+      .filter((tx): tx is NonNullable<typeof tx> => tx !== null)
+
+    logger.info(
+      `Processed ${processedTransactions.length} transactions after applying rules (${result.object.transactions.length - processedTransactions.length} skipped)`,
+    )
+
     let transactionCount = 0
     let categoriesCreated = 0
     let uploadUserId: string | null = null
@@ -208,7 +249,7 @@ export const categorizeAndImportTransactionsTask = task({
 
       const uniqueCategories = [
         ...new Set(
-          result.object.transactions
+          processedTransactions
             .map((transaction) => transaction.category)
             .filter((category): category is string => category !== null),
         ),
@@ -259,21 +300,23 @@ export const categorizeAndImportTransactionsTask = task({
       )
 
       await tx.insert(transaction).values(
-        result.object.transactions.map((transaction) => ({
+        processedTransactions.map((txn) => ({
           uploadId: payload.uploadId,
           userId: upToDateUpload.userId,
-          categoryId: transaction.category
-            ? (categoryNameToId.get(transaction.category) ?? null)
-            : null,
-          date: transaction.date,
-          merchantName: transaction.merchantName,
-          amount: transaction.amount,
-          currency: transaction.currency,
-          confidence: transaction.confidence,
+          categoryId:
+            txn.ruleCategoryId ??
+            (txn.category
+              ? (categoryNameToId.get(txn.category) ?? null)
+              : null),
+          date: txn.date,
+          merchantName: txn.merchantName,
+          amount: txn.amount,
+          currency: txn.currency,
+          confidence: txn.confidence,
         })),
       )
       logger.info(
-        `Imported ${result.object.transactions.length} transactions to the database for upload ${payload.uploadId}.`,
+        `Imported ${processedTransactions.length} transactions to the database for upload ${payload.uploadId}.`,
       )
 
       await tx
@@ -283,7 +326,7 @@ export const categorizeAndImportTransactionsTask = task({
         })
         .where(eq(upload.id, payload.uploadId))
 
-      transactionCount = result.object.transactions.length
+      transactionCount = processedTransactions.length
       categoriesCreated = newCategories.length
       uploadUserId = upToDateUpload.userId
       uploadFileName = upToDateUpload.fileName
@@ -301,6 +344,7 @@ export const categorizeAndImportTransactionsTask = task({
           fileName: uploadFileName,
           transactionCount,
           categoriesCreated,
+          rulesApplied: totalRulesApplied,
           uploadsLink: `${env.NEXT_PUBLIC_APP_URL}/uploads`,
         })
       }

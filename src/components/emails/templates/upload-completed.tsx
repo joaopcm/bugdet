@@ -5,6 +5,7 @@ interface UploadCompletedEmailProps {
   fileName: string
   transactionCount: number
   categoriesCreated: number
+  rulesApplied: number
   uploadsLink: string
 }
 
@@ -12,10 +13,13 @@ export default function UploadCompletedEmail({
   fileName = 'mybankstatement.pdf',
   transactionCount = 100,
   categoriesCreated = 10,
+  rulesApplied = 0,
   uploadsLink = 'https://bugdet.co/uploads',
 }: UploadCompletedEmailProps) {
   return (
-    <Layout preview="Your bank statement has been processed">
+    <Layout
+      preview={`Your bank statement ${fileName} has been processed successfully. Here's a summary of the results.`}
+    >
       <Section className="px-[24px] py-[32px] bg-white">
         <Text className="text-[16px] text-gray-800 mb-[24px]">Hi,</Text>
 
@@ -40,9 +44,13 @@ export default function UploadCompletedEmail({
             • <strong>{transactionCount}</strong> transaction
             {transactionCount !== 1 ? 's' : ''} imported
           </Text>
-          <Text className="text-[16px] text-gray-800 mb-[0px] m-0">
+          <Text className="text-[16px] text-gray-800 mb-[8px] m-0">
             • <strong>{categoriesCreated}</strong> new categor
             {categoriesCreated !== 1 ? 'ies' : 'y'} created
+          </Text>
+          <Text className="text-[16px] text-gray-800 mb-[0px] m-0">
+            • <strong>{rulesApplied}</strong> rule match
+            {rulesApplied !== 1 ? 'es' : ''}
           </Text>
         </Section>
 

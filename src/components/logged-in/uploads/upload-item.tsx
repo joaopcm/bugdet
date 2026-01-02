@@ -4,11 +4,18 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import { TableCell, TableRow } from '@/components/ui/table'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { CANCELLABLE_STATUSES, DELETABLE_STATUSES } from '@/constants/uploads'
 import type { upload } from '@/db/schema'
 import { useUploads } from '@/hooks/use-uploads'
 import { trpc } from '@/lib/trpc/client'
 import { formatBytes } from '@/lib/utils'
+import { IconInfoCircle } from '@tabler/icons-react'
 import { format } from 'date-fns'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -123,8 +130,24 @@ export function UploadItem({ upload }: UploadItemProps) {
                     )
                   }
                 />
-                <Label htmlFor="deleteRelatedTransactions">
+                <Label
+                  htmlFor="deleteRelatedTransactions"
+                  className="flex items-center gap-1"
+                >
                   Delete related transactions
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <IconInfoCircle className="text-muted-foreground h-4 w-4" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-[200px]">
+                          Also deletes all transactions that were imported from
+                          this upload.
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </Label>
               </div>
             }

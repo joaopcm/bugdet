@@ -139,6 +139,9 @@ export function NavMain({ items }: NavMainProps) {
         fileNames: Array.from(newFiles).map((file) => file.name),
       })
     }
+
+    // Reset input so same files can be selected again
+    event.target.value = ''
   }
 
   function handleImportClick() {
