@@ -29,6 +29,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { useMemo } from 'react'
+import { useHotkeys } from 'react-hotkeys-hook'
 import { toast } from 'sonner'
 import { FloatingActionBar } from '../bulk-actions/floating-action-bar'
 import { EmptyState } from '../empty-state'
@@ -65,8 +66,11 @@ export function CategorizationRulesTable() {
     isPartiallySelected,
     handleClick,
     toggleAll,
+    selectAll,
     clearSelection,
   } = useBulkSelection({ itemIds })
+
+  useHotkeys('mod+a', selectAll, { preventDefault: true })
 
   const { mutate: deleteMany, isPending: isDeleting } =
     trpc.categorizationRules.deleteMany.useMutation({
