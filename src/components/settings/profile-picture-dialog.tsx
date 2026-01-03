@@ -1,6 +1,5 @@
 'use client'
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -13,13 +12,20 @@ import {
 import {
   ALLOWED_PROFILE_PICTURE_TYPES,
   MAX_PROFILE_PICTURE_SIZE,
+  PROFILE_PICTURE_DIMENSIONS,
+  PROFILE_PICTURE_MAX_SIZE_KB,
 } from '@/constants/profile-pictures'
 import { authClient } from '@/lib/auth/client'
+import { compressImage, getCroppedImage } from '@/lib/image'
 import { trpc } from '@/lib/trpc/client'
 import { uploadProfilePictureAction } from '@/server/actions/profile-picture'
-import { IconPhoto, IconX } from '@tabler/icons-react'
+import { IconLoader2, IconPhoto } from '@tabler/icons-react'
 import { useCallback, useRef, useState } from 'react'
+import type { Area } from 'react-easy-crop'
 import { toast } from 'sonner'
+import { ImageCropper } from './image-cropper'
+
+type Step = 'select' | 'crop' | 'uploading'
 
 interface ProfilePictureDialogProps {
   open: boolean
@@ -30,10 +36,10 @@ export function ProfilePictureDialog({
   open,
   onOpenChange,
 }: ProfilePictureDialogProps) {
-  const { data: session, refetch: refetchSession } = authClient.useSession()
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const { refetch: refetchSession } = authClient.useSession()
+  const [step, setStep] = useState<Step>('select')
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const [isUploading, setIsUploading] = useState(false)
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -43,10 +49,16 @@ export function ProfilePictureDialog({
     trpc.users.updateProfilePicture.useMutation()
 
   function reset() {
-    setSelectedFile(null)
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl)
+    }
+    setStep('select')
     setPreviewUrl(null)
-    setIsUploading(false)
+    setCroppedAreaPixels(null)
     setIsDragging(false)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
   }
 
   function handleOpenChange(nextOpen: boolean) {
@@ -70,9 +82,9 @@ export function ProfilePictureDialog({
       return
     }
 
-    setSelectedFile(file)
     const url = URL.createObjectURL(file)
     setPreviewUrl(url)
+    setStep('crop')
   }, [])
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -104,33 +116,30 @@ export function ProfilePictureDialog({
     [handleFileSelect],
   )
 
-  function handleRemoveSelected() {
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl)
-    }
-    setSelectedFile(null)
-    setPreviewUrl(null)
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
+  function handleBack() {
+    reset()
   }
 
   async function handleUpload() {
-    if (!selectedFile) return
+    if (!previewUrl || !croppedAreaPixels) return
 
-    setIsUploading(true)
+    setStep('uploading')
 
     try {
+      const croppedBlob = await getCroppedImage(previewUrl, croppedAreaPixels)
+
+      const compressedFile = await compressImage(
+        croppedBlob,
+        PROFILE_PICTURE_MAX_SIZE_KB / 1_024,
+        PROFILE_PICTURE_DIMENSIONS,
+      )
+
       const { token, path } = await createUploadUrl({
-        fileType: selectedFile.type as
-          | 'image/jpeg'
-          | 'image/png'
-          | 'image/webp'
-          | 'image/gif',
-        fileSize: selectedFile.size,
+        fileType: 'image/webp',
+        fileSize: compressedFile.size,
       })
 
-      await uploadProfilePictureAction(path, token, selectedFile)
+      await uploadProfilePictureAction(path, token, compressedFile)
       await updateProfilePicture({ filePath: path })
       await refetchSession()
 
@@ -140,43 +149,29 @@ export function ProfilePictureDialog({
       const message =
         error instanceof Error ? error.message : 'Failed to upload image'
       toast.error(message)
-    } finally {
-      setIsUploading(false)
+      setStep('crop')
     }
   }
-
-  const userName = session?.user?.name || 'User'
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Change profile picture</DialogTitle>
+          <DialogTitle>
+            {step === 'select' && 'Change profile picture'}
+            {step === 'crop' && 'Crop your photo'}
+            {step === 'uploading' && 'Uploading...'}
+          </DialogTitle>
           <DialogDescription>
-            Upload a new profile picture. The maximum file size is 5MB.
+            {step === 'select' &&
+              'Upload a new profile picture. The maximum file size is 5MB.'}
+            {step === 'crop' && 'Drag to reposition, use slider to zoom.'}
+            {step === 'uploading' && 'Please wait while we process your image.'}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col items-center gap-4">
-          {previewUrl ? (
-            <div className="relative">
-              <Avatar className="h-32 w-32">
-                <AvatarImage src={previewUrl} alt="Preview" />
-                <AvatarFallback className="text-2xl">
-                  {userName.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-              <Button
-                variant="destructive"
-                size="icon"
-                className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-                onClick={handleRemoveSelected}
-                disabled={isUploading}
-              >
-                <IconX className="h-3 w-3" />
-              </Button>
-            </div>
-          ) : (
+          {step === 'select' && (
             <div
               className={`flex h-32 w-32 cursor-pointer flex-col items-center justify-center rounded-full border-2 border-dashed transition-colors ${
                 isDragging
@@ -195,6 +190,20 @@ export function ProfilePictureDialog({
             </div>
           )}
 
+          {step === 'crop' && previewUrl && (
+            <ImageCropper
+              imageSrc={previewUrl}
+              onCropComplete={setCroppedAreaPixels}
+              className="w-full"
+            />
+          )}
+
+          {step === 'uploading' && (
+            <div className="flex h-32 w-32 items-center justify-center">
+              <IconLoader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          )}
+
           <input
             ref={fileInputRef}
             type="file"
@@ -205,19 +214,24 @@ export function ProfilePictureDialog({
         </div>
 
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => handleOpenChange(false)}
-            disabled={isUploading}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleUpload}
-            disabled={!selectedFile || isUploading}
-          >
-            Upload
-          </Button>
+          {step === 'select' && (
+            <Button variant="outline" onClick={() => handleOpenChange(false)}>
+              Cancel
+            </Button>
+          )}
+
+          {step === 'crop' && (
+            <>
+              <Button variant="outline" onClick={handleBack}>
+                Back
+              </Button>
+              <Button onClick={handleUpload} disabled={!croppedAreaPixels}>
+                Upload
+              </Button>
+            </>
+          )}
+
+          {step === 'uploading' && <Button disabled>Upload</Button>}
         </DialogFooter>
       </DialogContent>
     </Dialog>
