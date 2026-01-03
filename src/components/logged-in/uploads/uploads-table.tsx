@@ -83,10 +83,10 @@ export function UploadsTable() {
         <Table containerClassName="overflow-visible">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[35%]">File Name</TableHead>
-              <TableHead className="w-[15%]">File Size</TableHead>
+              <TableHead className="w-[35%]">File name</TableHead>
+              <TableHead className="w-[15%]">File size</TableHead>
               <TableHead className="w-[15%]">Status</TableHead>
-              <TableHead className="w-[20%]">Uploaded At</TableHead>
+              <TableHead className="w-[20%]">Uploaded at</TableHead>
               <TableHead className="w-[15%]">Actions</TableHead>
             </TableRow>
           </TableHeader>

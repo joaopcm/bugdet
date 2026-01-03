@@ -151,7 +151,7 @@ export function BackupCodesDialog({
                 onClick={handleGetBackupCodes}
                 disabled={isLoading || !password}
               >
-                {isLoading ? 'Verifying...' : 'View Codes'}
+                {isLoading ? 'Verifying...' : 'View codes'}
               </Button>
             </DialogFooter>
           </>
