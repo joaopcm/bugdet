@@ -125,6 +125,7 @@ Create a `.env` file based on `.env.example`. Here are the required variables:
 | `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST token |
 | `BACKOFFICE_API_KEY` | API key for admin operations |
 | `NEXT_PUBLIC_APP_URL` | Public application URL |
+| `UPLOAD_PASSWORD_ENCRYPTION_KEY` | Encryption key used to store passwords for password-protected PDF files |
 
 ## Project Structure
 
