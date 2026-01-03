@@ -8,7 +8,7 @@ import { db } from '@/db'
 import { transaction, upload } from '@/db/schema'
 import { encryptPassword } from '@/lib/crypto'
 import { createClient } from '@/lib/supabase/server'
-import { uploadBreakdownTask } from '@/trigger/ai/upload-breakdown'
+import { tasks } from '@trigger.dev/sdk/v3'
 import { TRPCError } from '@trpc/server'
 import { and, desc, eq, ilike, inArray } from 'drizzle-orm'
 import { z } from 'zod'
@@ -108,10 +108,11 @@ export const uploadsRouter = router({
           id: upload.id,
         })
 
-      await uploadBreakdownTask.batchTrigger(
-        newUploads.map((upload) => ({
+      await tasks.batchTrigger(
+        'upload-breakdown',
+        newUploads.map((u) => ({
           payload: {
-            uploadId: upload.id,
+            uploadId: u.id,
           },
         })),
       )
@@ -369,9 +370,7 @@ export const uploadsRouter = router({
         })
         .where(eq(upload.id, uploadId))
 
-      await uploadBreakdownTask.trigger({
-        uploadId,
-      })
+      await tasks.trigger('upload-breakdown', { uploadId })
 
       return { success: true }
     }),

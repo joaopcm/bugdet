@@ -1,5 +1,3 @@
-'use client'
-
 import { DashboardFilters } from '@/components/logged-in/dashboard/dashboard-filters'
 import { SpendingByCategory } from '@/components/logged-in/dashboard/spending-by-category'
 import { SpendingOverTime } from '@/components/logged-in/dashboard/spending-over-time'
@@ -7,6 +5,11 @@ import { SpendingSummaryCards } from '@/components/logged-in/dashboard/spending-
 import { TopMerchants } from '@/components/logged-in/dashboard/top-merchants'
 import { TransactionsToReview } from '@/components/logged-in/dashboard/transactions-to-review'
 import { PageLayout } from '@/components/logged-in/page-layout'
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'Dashboard',
+}
 
 export default function DashboardPage() {
   return (
