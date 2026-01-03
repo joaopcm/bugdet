@@ -21,6 +21,7 @@ import { useUploads } from '@/hooks/use-uploads'
 import { trpc } from '@/lib/trpc/client'
 import { IconInfoCircle } from '@tabler/icons-react'
 import { useMemo, useState } from 'react'
+import { useHotkeys } from 'react-hotkeys-hook'
 import { toast } from 'sonner'
 import { FloatingActionBar } from '../bulk-actions/floating-action-bar'
 import { EmptyState } from '../empty-state'
@@ -45,8 +46,11 @@ export function UploadsTable() {
     isPartiallySelected,
     handleClick,
     toggleAll,
+    selectAll,
     clearSelection,
   } = useBulkSelection({ itemIds })
+
+  useHotkeys('mod+a', selectAll, { preventDefault: true })
 
   const { mutate: deleteMany, isPending: isDeleting } =
     trpc.uploads.deleteMany.useMutation({

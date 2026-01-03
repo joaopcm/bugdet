@@ -110,12 +110,18 @@ export function useBulkSelection({ itemIds }: UseBulkSelectionOptions) {
     lastSelectedIdRef.current = null
   }, [])
 
+  const selectAll = useCallback(() => {
+    setSelectedIds(new Set(itemIds))
+    lastSelectedIdRef.current = null
+  }, [itemIds])
+
   return {
     selectedIds,
     isAllSelected,
     isPartiallySelected,
     handleClick,
     toggleAll,
+    selectAll,
     clearSelection,
   }
 }

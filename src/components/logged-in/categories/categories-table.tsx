@@ -13,6 +13,7 @@ import { useBulkSelection } from '@/hooks/use-bulk-selection'
 import { useCategories } from '@/hooks/use-categories'
 import { trpc } from '@/lib/trpc/client'
 import { useMemo } from 'react'
+import { useHotkeys } from 'react-hotkeys-hook'
 import { toast } from 'sonner'
 import { FloatingActionBar } from '../bulk-actions/floating-action-bar'
 import { EmptyState } from '../empty-state'
@@ -35,8 +36,11 @@ export function CategoriesTable() {
     isPartiallySelected,
     handleClick,
     toggleAll,
+    selectAll,
     clearSelection,
   } = useBulkSelection({ itemIds })
+
+  useHotkeys('mod+a', selectAll, { preventDefault: true })
 
   const { mutate: deleteMany, isPending: isDeleting } =
     trpc.categories.deleteMany.useMutation({
