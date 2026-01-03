@@ -13,7 +13,7 @@ import {
 import { authClient } from '@/lib/auth/client'
 import { trpc } from '@/lib/trpc/client'
 import { uploadProfilePictureAction } from '@/server/actions/profile-picture'
-import { IconPhoto, IconUpload, IconX } from '@tabler/icons-react'
+import { IconPhoto, IconX } from '@tabler/icons-react'
 import { useCallback, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -154,8 +154,7 @@ export function ProfilePictureDialog({
         <DialogHeader>
           <DialogTitle>Change profile picture</DialogTitle>
           <DialogDescription>
-            Upload a new profile picture. Supported formats: JPEG, PNG, WebP,
-            GIF. Maximum size: 5MB.
+            Upload a new profile picture. The maximum file size is 5MB.
           </DialogDescription>
         </DialogHeader>
 
@@ -204,16 +203,6 @@ export function ProfilePictureDialog({
             onChange={handleInputChange}
             className="hidden"
           />
-
-          {!previewUrl && (
-            <Button
-              variant="outline"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <IconUpload className="mr-2 h-4 w-4" />
-              Choose image
-            </Button>
-          )}
         </div>
 
         <DialogFooter>
@@ -228,7 +217,7 @@ export function ProfilePictureDialog({
             onClick={handleUpload}
             disabled={!selectedFile || isUploading}
           >
-            {isUploading ? 'Uploading...' : 'Upload'}
+            Upload
           </Button>
         </DialogFooter>
       </DialogContent>

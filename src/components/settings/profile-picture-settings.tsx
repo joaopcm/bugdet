@@ -86,7 +86,7 @@ export function ProfilePictureSettings() {
                   onClick={handleRemove}
                   disabled={isRemoving}
                 >
-                  {isRemoving ? 'Removing...' : 'Remove'}
+                  Remove
                 </Button>
               )}
             </div>
