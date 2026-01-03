@@ -88,7 +88,7 @@ export function PasswordDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={isPending || !password.trim()}>
-              {isPending ? 'Submitting...' : 'Submit'}
+              Submit
             </Button>
           </DialogFooter>
         </form>

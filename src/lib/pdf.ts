@@ -1,5 +1,4 @@
-import { PDFDocument } from 'pdf-lib'
-import * as pdfjsLib from 'pdfjs-dist'
+import * as mupdf from 'mupdf'
 
 export class PdfPasswordRequiredError extends Error {
   constructor() {
@@ -28,34 +27,40 @@ export async function checkPdfPassword(
   password?: string,
 ): Promise<PdfCheckResult> {
   try {
-    const loadingTask = pdfjsLib.getDocument({
-      data: new Uint8Array(data),
-      password: password,
-    })
+    const doc = mupdf.Document.openDocument(
+      new Uint8Array(data),
+      'application/pdf',
+    )
 
-    const pdf = await loadingTask.promise
-    await pdf.destroy()
+    // Check if document needs a password
+    if (doc.needsPassword()) {
+      if (password) {
+        // Try to authenticate with the provided password
+        const authenticated = doc.authenticatePassword(password)
+        doc.destroy()
 
-    if (password) {
-      return { encrypted: true, needsPassword: false }
-    }
-
-    return { encrypted: false }
-  } catch (error: unknown) {
-    if (
-      error instanceof Error &&
-      error.name === 'PasswordException' &&
-      'code' in error
-    ) {
-      const code = (error as { code: number }).code
-      if (code === 1) {
-        // NEED_PASSWORD
-        return { encrypted: true, needsPassword: true }
-      }
-      if (code === 2) {
-        // INCORRECT_PASSWORD
+        if (authenticated) {
+          return { encrypted: true, needsPassword: false }
+        }
         throw new PdfIncorrectPasswordError()
       }
+
+      doc.destroy()
+      return { encrypted: true, needsPassword: true }
+    }
+
+    doc.destroy()
+    return { encrypted: false }
+  } catch (error) {
+    if (error instanceof PdfIncorrectPasswordError) {
+      throw error
+    }
+    // If mupdf throws during open, it might be password-protected
+    if (
+      error instanceof Error &&
+      error.message.toLowerCase().includes('password')
+    ) {
+      return { encrypted: true, needsPassword: true }
     }
     throw error
   }
@@ -63,51 +68,27 @@ export async function checkPdfPassword(
 
 /**
  * Decrypt a password-protected PDF and return an unencrypted buffer.
- * Uses pdfjs-dist to validate the password, then pdf-lib to create an unencrypted copy.
- *
- * Note: pdf-lib with ignoreEncryption loads the structure but not encrypted content.
- * For full decryption, a tool like qpdf would be needed.
  */
 export async function decryptPdf(
   data: ArrayBuffer,
   password: string,
 ): Promise<Uint8Array> {
-  // First validate the password with pdfjs-dist
-  const loadingTask = pdfjsLib.getDocument({
-    data: new Uint8Array(data),
-    password: password,
-  })
+  const doc = mupdf.Document.openDocument(
+    new Uint8Array(data),
+    'application/pdf',
+  ) as mupdf.PDFDocument
 
-  try {
-    const pdf = await loadingTask.promise
-    await pdf.destroy()
-  } catch (error: unknown) {
-    if (
-      error instanceof Error &&
-      error.name === 'PasswordException' &&
-      'code' in error
-    ) {
-      const code = (error as { code: number }).code
-      if (code === 2) {
-        throw new PdfIncorrectPasswordError()
-      }
-    }
-    throw error
-  }
-
-  // Load with pdf-lib ignoring encryption to get the structure
-  // This allows us to save an unencrypted copy
-  try {
-    const pdfDoc = await PDFDocument.load(data, {
-      ignoreEncryption: true,
-    })
-
-    const decryptedBytes = await pdfDoc.save()
-    return decryptedBytes
-  } catch (error: unknown) {
-    if (error instanceof Error && error.message.includes('password')) {
+  if (doc.needsPassword()) {
+    const authenticated = doc.authenticatePassword(password)
+    if (!authenticated) {
+      doc.destroy()
       throw new PdfIncorrectPasswordError()
     }
-    throw error
   }
+
+  // Save the document without encryption using saveToBuffer
+  const outputBuffer = doc.saveToBuffer('decrypt')
+  doc.destroy()
+
+  return outputBuffer.asUint8Array()
 }
