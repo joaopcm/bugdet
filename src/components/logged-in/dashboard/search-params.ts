@@ -1,8 +1,8 @@
 import { parseAsLocalDate } from '@/lib/utils'
-import { endOfYear, startOfYear, subDays } from 'date-fns'
+import { endOfYear, startOfYear, subDays, subMonths } from 'date-fns'
 import { parseAsStringLiteral, useQueryStates } from 'nuqs'
 
-export const DATE_PRESETS = ['7d', '30d', '90d', 'ytd', 'custom'] as const
+export const DATE_PRESETS = ['7d', '30d', '3m', '6m', 'ytd', 'custom'] as const
 export type DatePreset = (typeof DATE_PRESETS)[number]
 
 export function useDashboardFilters() {
@@ -27,8 +27,10 @@ export function getDateRangeFromPreset(
       return { from: subDays(now, 7), to: now }
     case '30d':
       return { from: subDays(now, 30), to: now }
-    case '90d':
-      return { from: subDays(now, 90), to: now }
+    case '3m':
+      return { from: subMonths(now, 3), to: now }
+    case '6m':
+      return { from: subMonths(now, 6), to: now }
     case 'ytd':
       return { from: startOfYear(now), to: endOfYear(now) }
     case 'custom':
@@ -45,8 +47,10 @@ export function getPresetLabel(preset: DatePreset): string {
       return 'Last 7 days'
     case '30d':
       return 'Last 30 days'
-    case '90d':
-      return 'Last 90 days'
+    case '3m':
+      return 'Last 3 months'
+    case '6m':
+      return 'Last 6 months'
     case 'ytd':
       return 'Year to date'
     case 'custom':
@@ -61,8 +65,9 @@ export function getGroupByFromPreset(
     case '7d':
     case '30d':
       return 'day'
-    case '90d':
+    case '3m':
       return 'week'
+    case '6m':
     case 'ytd':
     case 'custom':
       return 'month'
