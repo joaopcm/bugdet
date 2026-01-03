@@ -1,48 +1,48 @@
 {
-	"$schema": "https://biomejs.dev/schemas/1.8.1/schema.json",
-	"formatter": {
-		"indentStyle": "space"
-	},
-	"linter": {
-		"rules": {
-			"a11y": {
-				"noAriaUnsupportedElements": "warn",
-				"noBlankTarget": "off",
-				"useAltText": "warn",
-				"useAriaPropsForRole": "warn",
-				"useValidAriaProps": "warn",
-				"useValidAriaValues": "warn",
-				"useKeyWithClickEvents": "off",
-				"noSvgWithoutTitle": "off"
-			},
-			"correctness": {
-				"noChildrenProp": "error",
-				"useExhaustiveDependencies": "warn",
-				"useHookAtTopLevel": "error",
-				"useJsxKeyInIterable": "error",
-				"noUnusedImports": "warn"
-			},
-			"security": {
-				"noDangerouslySetInnerHtmlWithChildren": "error"
-			},
-			"suspicious": {
-				"noCommentText": "error",
-				"noDuplicateJsxProps": "error",
-				"noExplicitAny": "warn"
-			}
-		}
-	},
-	"javascript": {
-		"formatter": {
-			"jsxQuoteStyle": "double",
-			"quoteProperties": "asNeeded",
-			"trailingCommas": "all",
-			"semicolons": "asNeeded",
-			"arrowParentheses": "always",
-			"bracketSpacing": true,
-			"bracketSameLine": false,
-			"quoteStyle": "single",
-			"attributePosition": "auto"
-		}
-	}
+  "$schema": "https://biomejs.dev/schemas/1.8.1/schema.json",
+  "formatter": {
+    "indentStyle": "space"
+  },
+  "linter": {
+    "rules": {
+      "a11y": {
+        "noAriaUnsupportedElements": "warn",
+        "noBlankTarget": "off",
+        "useAltText": "warn",
+        "useAriaPropsForRole": "warn",
+        "useValidAriaProps": "warn",
+        "useValidAriaValues": "warn",
+        "useKeyWithClickEvents": "off",
+        "noSvgWithoutTitle": "off"
+      },
+      "correctness": {
+        "noChildrenProp": "error",
+        "useExhaustiveDependencies": "warn",
+        "useHookAtTopLevel": "error",
+        "useJsxKeyInIterable": "error",
+        "noUnusedImports": "warn"
+      },
+      "security": {
+        "noDangerouslySetInnerHtmlWithChildren": "error"
+      },
+      "suspicious": {
+        "noCommentText": "error",
+        "noDuplicateJsxProps": "error",
+        "noExplicitAny": "warn"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "jsxQuoteStyle": "double",
+      "quoteProperties": "asNeeded",
+      "trailingCommas": "all",
+      "semicolons": "asNeeded",
+      "arrowParentheses": "always",
+      "bracketSpacing": true,
+      "bracketSameLine": false,
+      "quoteStyle": "single",
+      "attributePosition": "auto"
+    }
+  }
 }
