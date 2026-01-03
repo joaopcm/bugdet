@@ -21,18 +21,10 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
-import { useCategories } from '@/hooks/use-categories'
 import {
   cn,
   formatCurrency,
@@ -47,6 +39,7 @@ import { useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { useHotkeys } from 'react-hotkeys-hook'
 import z from 'zod'
+import { CategorySelect } from './category-select'
 
 const transactionSchema = z.object({
   categoryId: z.string().uuid().nullable(),
@@ -73,10 +66,6 @@ export function TransactionForm({
   currencyCode = getCurrencyCode(),
   currencySymbol = getCurrencySymbol(),
 }: TransactionFormProps) {
-  const { data: categories } = useCategories({
-    ignoreFilters: true,
-    ignorePagination: true,
-  })
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const submitButtonRef = useRef<HTMLButtonElement>(null)
 
@@ -157,24 +146,10 @@ export function TransactionForm({
           name="categoryId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel htmlFor="categoryId">Category</FormLabel>
-              <Select
-                onValueChange={field.onChange}
-                defaultValue={field.value || undefined}
-              >
-                <FormControl>
-                  <SelectTrigger id="categoryId" className="w-full">
-                    <SelectValue placeholder="Select a category" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {categories?.data.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FormLabel>Category</FormLabel>
+              <FormControl>
+                <CategorySelect value={field.value} onChange={field.onChange} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
