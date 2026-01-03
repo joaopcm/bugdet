@@ -116,8 +116,7 @@ export function ProfilePictureDialog({
     setIsUploading(true)
 
     try {
-      // 1. Get signed upload URL
-      const { signedUrl, token, path } = await createUploadUrl({
+      const { token, path } = await createUploadUrl({
         fileType: selectedFile.type as
           | 'image/jpeg'
           | 'image/png'
@@ -126,13 +125,8 @@ export function ProfilePictureDialog({
         fileSize: selectedFile.size,
       })
 
-      // 2. Upload file to Supabase
       await uploadProfilePictureAction(path, token, selectedFile)
-
-      // 3. Update user profile with new image URL
       await updateProfilePicture({ filePath: path })
-
-      // 4. Refetch session to update UI
       await refetchSession()
 
       toast.success('Profile picture updated successfully')

@@ -45,15 +45,12 @@ export const usersRouter = router({
     .mutation(async ({ ctx, input }): Promise<ProfilePictureUploadUrl> => {
       const supabase = await createClient({ admin: true })
 
-      // Get current user to check for existing profile picture
       const [currentUser] = await db
         .select({ image: user.image })
         .from(user)
         .where(eq(user.id, ctx.user.id))
 
-      // Delete existing profile picture if it exists
       if (currentUser?.image) {
-        // Extract path from URL if it's a full URL
         const existingPath = currentUser.image.includes(PROFILE_PICTURES_BUCKET)
           ? currentUser.image.split(`${PROFILE_PICTURES_BUCKET}/`)[1]
           : null
@@ -65,7 +62,6 @@ export const usersRouter = router({
         }
       }
 
-      // Generate unique filename: {userId}/{uuid}.{ext}
       const extension = getExtensionFromMimeType(input.fileType)
       const uniqueFileName = `${ctx.user.id}/${randomUUID()}.${extension}`
 
