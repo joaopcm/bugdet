@@ -6,8 +6,9 @@ import {
 import { CANCELLABLE_STATUSES, DELETABLE_STATUSES } from '@/constants/uploads'
 import { db } from '@/db'
 import { transaction, upload } from '@/db/schema'
+import { encryptPassword } from '@/lib/crypto'
 import { createClient } from '@/lib/supabase/server'
-import { uploadBreakdownTask } from '@/trigger/ai/upload-breakdown'
+import { tasks } from '@trigger.dev/sdk/v3'
 import { TRPCError } from '@trpc/server'
 import { and, desc, eq, ilike, inArray } from 'drizzle-orm'
 import { z } from 'zod'
@@ -107,10 +108,11 @@ export const uploadsRouter = router({
           id: upload.id,
         })
 
-      await uploadBreakdownTask.batchTrigger(
-        newUploads.map((upload) => ({
+      await tasks.batchTrigger(
+        'upload-breakdown',
+        newUploads.map((u) => ({
           payload: {
-            uploadId: upload.id,
+            uploadId: u.id,
           },
         })),
       )
@@ -324,5 +326,52 @@ export const uploadsRouter = router({
       return {
         url: signedUrlData.signedUrl,
       }
+    }),
+  setPassword: protectedProcedure
+    .input(
+      z.object({
+        uploadId: z.string().uuid(),
+        password: z.string().min(1).max(1000),
+      }),
+    )
+    .mutation(async ({ input, ctx }) => {
+      const { uploadId, password } = input
+
+      const [existingUpload] = await ctx.db
+        .select({
+          id: upload.id,
+          status: upload.status,
+          deleted: upload.deleted,
+        })
+        .from(upload)
+        .where(and(eq(upload.id, uploadId), eq(upload.userId, ctx.user.id)))
+
+      if (!existingUpload || existingUpload.deleted) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Upload not found.',
+        })
+      }
+
+      if (existingUpload.status !== 'waiting_for_password') {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Upload is not waiting for a password.',
+        })
+      }
+
+      const encrypted = encryptPassword(password)
+
+      await ctx.db
+        .update(upload)
+        .set({
+          encryptedPassword: encrypted,
+          status: 'queued',
+        })
+        .where(eq(upload.id, uploadId))
+
+      await tasks.trigger('upload-breakdown', { uploadId })
+
+      return { success: true }
     }),
 })

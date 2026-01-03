@@ -5,6 +5,7 @@ import { z } from 'zod'
 export const env = createEnv({
   server: {
     BACKOFFICE_API_KEY: z.string(),
+    UPLOAD_PASSWORD_ENCRYPTION_KEY: z.string().min(64),
     BETTER_AUTH_SECRET: z.string(),
     BETTER_AUTH_URL: z.string().url(),
     DATABASE_URL: z.string().url(),
@@ -26,6 +27,7 @@ export const env = createEnv({
   },
   runtimeEnv: {
     BACKOFFICE_API_KEY: process.env.BACKOFFICE_API_KEY,
+    UPLOAD_PASSWORD_ENCRYPTION_KEY: process.env.UPLOAD_PASSWORD_ENCRYPTION_KEY,
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
     DATABASE_URL: process.env.DATABASE_URL,

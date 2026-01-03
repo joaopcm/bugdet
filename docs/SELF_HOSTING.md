@@ -233,6 +233,7 @@ Create your production `.env` file with all required variables:
 # Application
 NODE_ENV=production
 NEXT_PUBLIC_APP_URL=https://yourdomain.com
+UPLOAD_PASSWORD_ENCRYPTION_KEY=your-encryption-key-here
 
 # Database
 DATABASE_URL=postgresql://user:password@host:5432/bugdet
