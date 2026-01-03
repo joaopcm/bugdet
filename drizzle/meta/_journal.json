@@ -169,6 +169,13 @@
       "when": 1767391348739,
       "tag": "0023_wooden_alice",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1767484800000,
+      "tag": "0024_password_protected_pdfs",
+      "breakpoints": true
     }
   ]
 }

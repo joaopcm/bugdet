@@ -96,6 +96,7 @@ export const uploadStatusEnum = pgEnum('upload_status', [
   'completed',
   'failed',
   'cancelled',
+  'waiting_for_password',
 ])
 
 export type UploadMetadata = {
@@ -126,6 +127,7 @@ export const upload = pgTable(
     filePath: text('file_path').notNull(),
     fileSize: integer('file_size').notNull(),
     status: uploadStatusEnum('status').notNull().default('queued'),
+    encryptedPassword: text('encrypted_password'),
     failedReason: text('failed_reason'),
     metadata: jsonb('metadata').$type<UploadMetadata>(),
     deleted: boolean('deleted').notNull().default(false),

@@ -21,6 +21,7 @@ import { useState } from 'react'
 import { toast } from 'sonner'
 import { DoubleConfirmationAlertDialog } from '../double-confirmation-alert-dialog'
 import { FileName } from './file-name'
+import { PasswordDialog } from './password-dialog'
 import { StatusBadge } from './status-badge'
 
 interface UploadItemProps {
@@ -111,6 +112,14 @@ export function UploadItem({
         >
           Download
         </Button>
+
+        {upload.status === 'waiting_for_password' && (
+          <PasswordDialog uploadId={upload.id} fileName={upload.fileName}>
+            <Button variant="default" size="sm">
+              Enter password
+            </Button>
+          </PasswordDialog>
+        )}
 
         {CANCELLABLE_STATUSES.includes(upload.status) && (
           <DoubleConfirmationAlertDialog
