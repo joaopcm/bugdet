@@ -46,7 +46,7 @@ export function CategorySelect({
     trpc.categories.create.useMutation({
       onSuccess: (newCategory) => {
         refetchCategories()
-        toast.success(`Category "${newCategory.name}" created.`)
+        toast.success(`Category "${newCategory.name}" created`)
         onChange(newCategory.id)
         setSearch('')
         setOpen(false)
