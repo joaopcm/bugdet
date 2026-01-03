@@ -5,6 +5,7 @@ import { categorizationRulesRouter } from './routers/categorization-rules'
 import { dashboardRouter } from './routers/dashboard'
 import { transactionsRouter } from './routers/transactions'
 import { uploadsRouter } from './routers/uploads'
+import { usersRouter } from './routers/users'
 import { waitlistRouter } from './routers/waitlist'
 import { router } from './trpc'
 
@@ -19,6 +20,7 @@ export const appRouter = router({
   categorizationRules: categorizationRulesRouter,
   dashboard: dashboardRouter,
   waitlist: waitlistRouter,
+  users: usersRouter,
 })
 
 export type AppRouter = typeof appRouter

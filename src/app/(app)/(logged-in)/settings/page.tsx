@@ -1,4 +1,5 @@
 import { PageLayout } from '@/components/logged-in/page-layout'
+import { ProfilePictureSettings } from '@/components/settings/profile-picture-settings'
 import { TwoFactorSettings } from '@/components/settings/two-factor-settings'
 
 export default function SettingsPage() {
@@ -11,6 +12,7 @@ export default function SettingsPage() {
         </PageLayout.HeaderContent>
       </PageLayout.Header>
       <div className="flex flex-col gap-6">
+        <ProfilePictureSettings />
         <TwoFactorSettings />
       </div>
     </PageLayout.Root>
