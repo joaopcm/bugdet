@@ -146,10 +146,15 @@ export const categoriesRouter = router({
   create: protectedProcedure
     .input(z.object({ name: z.string().min(1).max(255) }))
     .mutation(async ({ ctx, input }) => {
-      await db.insert(category).values({
-        ...input,
-        userId: ctx.user.id,
-      })
+      const [newCategory] = await db
+        .insert(category)
+        .values({
+          ...input,
+          userId: ctx.user.id,
+        })
+        .returning({ id: category.id, name: category.name })
+
+      return newCategory
     }),
   update: protectedProcedure
     .input(
