@@ -1,4 +1,9 @@
 import { randomUUID } from 'node:crypto'
+import {
+  ALLOWED_PROFILE_PICTURE_TYPES,
+  MAX_PROFILE_PICTURE_SIZE,
+  PROFILE_PICTURES_BUCKET,
+} from '@/constants/profile-pictures'
 import { db } from '@/db'
 import { user } from '@/db/schema'
 import { createClient } from '@/lib/supabase/server'
@@ -6,15 +11,6 @@ import { TRPCError } from '@trpc/server'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { protectedProcedure, router } from '../trpc'
-
-const PROFILE_PICTURES_BUCKET = 'profile-pictures'
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
-const ALLOWED_FILE_TYPES = [
-  'image/jpeg',
-  'image/png',
-  'image/webp',
-  'image/gif',
-] as const
 
 function getExtensionFromMimeType(mimeType: string): string {
   const mimeToExt: Record<string, string> = {
@@ -36,10 +32,10 @@ export const usersRouter = router({
   createProfilePictureUploadUrl: protectedProcedure
     .input(
       z.object({
-        fileType: z.enum(ALLOWED_FILE_TYPES),
+        fileType: z.enum(ALLOWED_PROFILE_PICTURE_TYPES),
         fileSize: z
           .number()
-          .max(MAX_FILE_SIZE, 'File size must be less than 5MB'),
+          .max(MAX_PROFILE_PICTURE_SIZE, 'File size must be less than 5MB'),
       }),
     )
     .mutation(async ({ ctx, input }): Promise<ProfilePictureUploadUrl> => {
@@ -94,7 +90,6 @@ export const usersRouter = router({
     .mutation(async ({ ctx, input }) => {
       const supabase = await createClient({ admin: true })
 
-      // Get public URL for the uploaded file
       const { data: publicUrlData } = supabase.storage
         .from(PROFILE_PICTURES_BUCKET)
         .getPublicUrl(input.filePath)
@@ -106,7 +101,6 @@ export const usersRouter = router({
         })
       }
 
-      // Update user.image in database
       await db
         .update(user)
         .set({
@@ -123,7 +117,6 @@ export const usersRouter = router({
   removeProfilePicture: protectedProcedure.mutation(async ({ ctx }) => {
     const supabase = await createClient({ admin: true })
 
-    // Get current user image
     const [currentUser] = await db
       .select({ image: user.image })
       .from(user)
@@ -133,7 +126,6 @@ export const usersRouter = router({
       return { success: true }
     }
 
-    // Extract path from URL
     const existingPath = currentUser.image.includes(PROFILE_PICTURES_BUCKET)
       ? currentUser.image.split(`${PROFILE_PICTURES_BUCKET}/`)[1]
       : null
@@ -151,7 +143,6 @@ export const usersRouter = router({
       }
     }
 
-    // Clear user.image in database
     await db
       .update(user)
       .set({

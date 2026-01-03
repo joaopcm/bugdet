@@ -10,6 +10,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  ALLOWED_PROFILE_PICTURE_TYPES,
+  MAX_PROFILE_PICTURE_SIZE,
+} from '@/constants/profile-pictures'
 import { authClient } from '@/lib/auth/client'
 import { trpc } from '@/lib/trpc/client'
 import { uploadProfilePictureAction } from '@/server/actions/profile-picture'
@@ -21,9 +25,6 @@ interface ProfilePictureDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 
 export function ProfilePictureDialog({
   open,
@@ -56,11 +57,15 @@ export function ProfilePictureDialog({
   }
 
   const handleFileSelect = useCallback((file: File) => {
-    if (!ALLOWED_TYPES.includes(file.type)) {
+    if (
+      !ALLOWED_PROFILE_PICTURE_TYPES.includes(
+        file.type as (typeof ALLOWED_PROFILE_PICTURE_TYPES)[number],
+      )
+    ) {
       toast.error('Please upload a JPEG, PNG, WebP, or GIF image')
       return
     }
-    if (file.size > MAX_FILE_SIZE) {
+    if (file.size > MAX_PROFILE_PICTURE_SIZE) {
       toast.error('Image must be less than 5MB')
       return
     }

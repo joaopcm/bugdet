@@ -1,8 +1,7 @@
 'use server'
 
+import { PROFILE_PICTURES_BUCKET } from '@/constants/profile-pictures'
 import { createClient } from '@/lib/supabase/server'
-
-const PROFILE_PICTURES_BUCKET = 'profile-pictures'
 
 export async function uploadProfilePictureAction(
   fileName: string,
