@@ -60,19 +60,21 @@ export function BackupCodesDialog({
     }
 
     setIsLoading(true)
+    const toastId = toast.loading('Verifying password...')
 
     const { data, error } = await authClient.twoFactor.generateBackupCodes({
       password,
     })
 
     if (error) {
-      toast.error(error.message)
+      toast.error(error.message, { id: toastId })
       setIsLoading(false)
       return
     }
 
     if (data?.backupCodes) {
       setBackupCodes(data.backupCodes)
+      toast.success('Password verified', { id: toastId })
       setStep('codes')
     }
 
@@ -81,20 +83,23 @@ export function BackupCodesDialog({
 
   async function handleRegenerateCodes() {
     setIsLoading(true)
+    const toastId = toast.loading('Regenerating backup codes...')
 
     const { data, error } = await authClient.twoFactor.generateBackupCodes({
       password,
     })
 
     if (error) {
-      toast.error(error.message)
+      toast.error(error.message, { id: toastId })
       setIsLoading(false)
       return
     }
 
     if (data?.backupCodes) {
       setBackupCodes(data.backupCodes)
-      toast.success('Backup codes regenerated. Previous codes are now invalid.')
+      toast.success('Backup codes regenerated. Previous codes are now invalid.', {
+        id: toastId,
+      })
     }
 
     setIsLoading(false)
@@ -151,7 +156,7 @@ export function BackupCodesDialog({
                 onClick={handleGetBackupCodes}
                 disabled={isLoading || !password}
               >
-                {isLoading ? 'Verifying...' : 'View codes'}
+                View codes
               </Button>
             </DialogFooter>
           </>
@@ -202,7 +207,7 @@ export function BackupCodesDialog({
                 disabled={isLoading}
               >
                 <IconRefresh className="size-4" />
-                {isLoading ? 'Regenerating...' : 'Regenerate codes'}
+                Regenerate codes
               </Button>
             </div>
             <DialogFooter>
