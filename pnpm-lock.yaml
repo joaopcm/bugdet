@@ -192,10 +192,10 @@ importers:
         specifier: 2.5.0
         version: 2.5.0(next@15.3.8(@opentelemetry/api@1.9.0)(react-dom@19.0.0(react@19.0.0))(react@19.0.0))(react@19.0.0)
       pdf-lib:
-        specifier: ^1.17.1
+        specifier: 1.17.1
         version: 1.17.1
       pdfjs-dist:
-        specifier: ^5.4.530
+        specifier: 5.4.530
         version: 5.4.530
       pg:
         specifier: 8.14.1
