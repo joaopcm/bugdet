@@ -107,7 +107,7 @@ export function RuleItem({
         <Checkbox
           checked={isSelected}
           onClick={(e) => onSelect?.(rule.id, e)}
-          className="absolute -left-8 top-3 opacity-0 group-hover:opacity-100 data-[state=checked]:opacity-100"
+          className="absolute -left-8 top-3 hidden opacity-0 group-hover:opacity-100 data-[state=checked]:opacity-100 md:block"
           aria-label={`Select rule ${rule.name}`}
         />
         <button

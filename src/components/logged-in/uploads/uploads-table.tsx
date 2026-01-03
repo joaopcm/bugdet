@@ -17,6 +17,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useBulkSelection } from '@/hooks/use-bulk-selection'
+import { useIsMobile } from '@/hooks/use-is-mobile'
 import { useUploads } from '@/hooks/use-uploads'
 import { trpc } from '@/lib/trpc/client'
 import { IconInfoCircle } from '@tabler/icons-react'
@@ -31,6 +32,7 @@ import { UploadItem } from './upload-item'
 import { UploadsPagination } from './uploads-pagination'
 
 export function UploadsTable() {
+  const isMobile = useIsMobile()
   const { data: uploads, isLoading, refetch } = useUploads()
   const [deleteRelatedTransactions, setDeleteRelatedTransactions] =
     useState(false)
@@ -50,7 +52,7 @@ export function UploadsTable() {
     clearSelection,
   } = useBulkSelection({ itemIds })
 
-  useHotkeys('mod+a', selectAll, { preventDefault: true })
+  useHotkeys('mod+a', selectAll, { preventDefault: true, enabled: !isMobile })
 
   const { mutate: deleteMany, isPending: isDeleting } =
     trpc.uploads.deleteMany.useMutation({
@@ -77,7 +79,7 @@ export function UploadsTable() {
           checked={isAllSelected}
           indeterminate={isPartiallySelected}
           onCheckedChange={toggleAll}
-          className="absolute -left-8 top-2.5 opacity-0 hover:opacity-100 data-[state=checked]:opacity-100 data-[state=indeterminate]:opacity-100"
+          className="absolute -left-8 top-2.5 hidden opacity-0 hover:opacity-100 data-[state=checked]:opacity-100 data-[state=indeterminate]:opacity-100 md:block"
           aria-label="Select all uploads"
         />
         <Table containerClassName="overflow-visible">

@@ -11,6 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useBulkSelection } from '@/hooks/use-bulk-selection'
+import { useIsMobile } from '@/hooks/use-is-mobile'
 import { usePagination } from '@/hooks/use-pagination'
 import { trpc } from '@/lib/trpc/client'
 import {
@@ -39,6 +40,7 @@ import { RuleItem } from './rule-item'
 import { RulesPagination } from './rules-pagination'
 
 export function CategorizationRulesTable() {
+  const isMobile = useIsMobile()
   const { filters } = useCategorizationRulesFilters()
   const { pagination } = usePagination()
   const utils = trpc.useUtils()
@@ -70,7 +72,7 @@ export function CategorizationRulesTable() {
     clearSelection,
   } = useBulkSelection({ itemIds })
 
-  useHotkeys('mod+a', selectAll, { preventDefault: true })
+  useHotkeys('mod+a', selectAll, { preventDefault: true, enabled: !isMobile })
 
   const { mutate: deleteMany, isPending: isDeleting } =
     trpc.categorizationRules.deleteMany.useMutation({
@@ -152,7 +154,7 @@ export function CategorizationRulesTable() {
           checked={isAllSelected}
           indeterminate={isPartiallySelected}
           onCheckedChange={toggleAll}
-          className="absolute -left-8 top-2.5 opacity-0 hover:opacity-100 data-[state=checked]:opacity-100 data-[state=indeterminate]:opacity-100"
+          className="absolute -left-8 top-2.5 hidden opacity-0 hover:opacity-100 data-[state=checked]:opacity-100 data-[state=indeterminate]:opacity-100 md:block"
           aria-label="Select all rules"
         />
         <Table containerClassName="overflow-visible">
