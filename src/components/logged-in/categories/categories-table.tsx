@@ -11,6 +11,7 @@ import {
 import { TableHeader } from '@/components/ui/table'
 import { useBulkSelection } from '@/hooks/use-bulk-selection'
 import { useCategories } from '@/hooks/use-categories'
+import { useIsMobile } from '@/hooks/use-is-mobile'
 import { trpc } from '@/lib/trpc/client'
 import { useMemo } from 'react'
 import { useHotkeys } from 'react-hotkeys-hook'
@@ -23,6 +24,7 @@ import { CategoriesFilters } from './filters'
 import { LoadingState } from './loading-state'
 
 export function CategoriesTable() {
+  const isMobile = useIsMobile()
   const { data: categories, isLoading, refetch } = useCategories()
 
   const itemIds = useMemo(
@@ -40,7 +42,7 @@ export function CategoriesTable() {
     clearSelection,
   } = useBulkSelection({ itemIds })
 
-  useHotkeys('mod+a', selectAll, { preventDefault: true })
+  useHotkeys('mod+a', selectAll, { preventDefault: true, enabled: !isMobile })
 
   const { mutate: deleteMany, isPending: isDeleting } =
     trpc.categories.deleteMany.useMutation({
@@ -66,7 +68,7 @@ export function CategoriesTable() {
           checked={isAllSelected}
           indeterminate={isPartiallySelected}
           onCheckedChange={toggleAll}
-          className="absolute -left-8 top-2.5 opacity-0 hover:opacity-100 data-[state=checked]:opacity-100 data-[state=indeterminate]:opacity-100"
+          className="absolute -left-8 top-2.5 hidden opacity-0 hover:opacity-100 data-[state=checked]:opacity-100 data-[state=indeterminate]:opacity-100 md:block"
           aria-label="Select all categories"
         />
         <Table containerClassName="overflow-visible">

@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/table'
 import { TableHeader } from '@/components/ui/table'
 import { useBulkSelection } from '@/hooks/use-bulk-selection'
+import { useIsMobile } from '@/hooks/use-is-mobile'
 import { useTransactions } from '@/hooks/use-transactions'
 import { trpc } from '@/lib/trpc/client'
 import { useMemo } from 'react'
@@ -23,6 +24,7 @@ import { TransactionItem } from './transaction-item'
 import { TransactionsPagination } from './transactions-pagination'
 
 export const TransactionsTable = () => {
+  const isMobile = useIsMobile()
   const { data: transactions, isLoading, refetch } = useTransactions()
 
   const itemIds = useMemo(
@@ -40,7 +42,7 @@ export const TransactionsTable = () => {
     clearSelection,
   } = useBulkSelection({ itemIds })
 
-  useHotkeys('mod+a', selectAll, { preventDefault: true })
+  useHotkeys('mod+a', selectAll, { preventDefault: true, enabled: !isMobile })
 
   const { mutate: deleteMany, isPending: isDeleting } =
     trpc.transactions.deleteMany.useMutation({
@@ -66,7 +68,7 @@ export const TransactionsTable = () => {
           checked={isAllSelected}
           indeterminate={isPartiallySelected}
           onCheckedChange={toggleAll}
-          className="absolute -left-8 top-2.5 opacity-0 hover:opacity-100 data-[state=checked]:opacity-100 data-[state=indeterminate]:opacity-100"
+          className="absolute -left-8 top-2.5 hidden opacity-0 hover:opacity-100 data-[state=checked]:opacity-100 data-[state=indeterminate]:opacity-100 md:block"
           aria-label="Select all transactions"
         />
         <Table containerClassName="overflow-visible">

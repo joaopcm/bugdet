@@ -44,7 +44,7 @@ export function CategoryItem({
         <Checkbox
           checked={isSelected}
           onClick={(e) => onSelect?.(category.id, e)}
-          className="absolute -left-8 top-3 opacity-0 group-hover:opacity-100 data-[state=checked]:opacity-100"
+          className="absolute -left-8 top-3 hidden opacity-0 group-hover:opacity-100 data-[state=checked]:opacity-100 md:block"
           aria-label={`Select category ${category.name}`}
         />
         <InternalLink href={`/transactions?category=${category.id}`}>
