@@ -3,14 +3,11 @@
 import { Button } from '@/components/ui/button'
 import {
   Command,
-  CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
 } from '@/components/ui/command'
-import { Input } from '@/components/ui/input'
 import {
   Popover,
   PopoverContent,
@@ -38,8 +35,7 @@ export function CategorySelect({
   className,
 }: CategorySelectProps) {
   const [open, setOpen] = useState(false)
-  const [isCreating, setIsCreating] = useState(false)
-  const [newCategoryName, setNewCategoryName] = useState('')
+  const [search, setSearch] = useState('')
 
   const { data: categories, refetch: refetchCategories } = useCategories({
     ignoreFilters: true,
@@ -52,8 +48,7 @@ export function CategorySelect({
         refetchCategories()
         toast.success(`Category "${newCategory.name}" created.`)
         onChange(newCategory.id)
-        setNewCategoryName('')
-        setIsCreating(false)
+        setSearch('')
         setOpen(false)
       },
       onError: (error) => {
@@ -63,23 +58,20 @@ export function CategorySelect({
 
   const selectedCategory = categories?.data.find((cat) => cat.id === value)
 
-  function handleCreateCategory() {
-    if (!newCategoryName.trim()) {
-      return
-    }
-    createCategory({ name: newCategoryName.trim() })
-  }
+  const filteredCategories =
+    categories?.data.filter((cat) =>
+      cat.name.toLowerCase().includes(search.toLowerCase()),
+    ) ?? []
 
-  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      handleCreateCategory()
-    }
-    if (e.key === 'Escape') {
-      e.preventDefault()
-      setIsCreating(false)
-      setNewCategoryName('')
-    }
+  const exactMatch = categories?.data.some(
+    (cat) => cat.name.toLowerCase() === search.toLowerCase(),
+  )
+
+  const showCreateOption = search.trim() && !exactMatch
+
+  function handleCreateCategory() {
+    if (!search.trim()) return
+    createCategory({ name: search.trim() })
   }
 
   return (
@@ -95,17 +87,21 @@ export function CategorySelect({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-        <Command>
-          <CommandInput placeholder="Search categories..." />
+        <Command shouldFilter={false}>
+          <CommandInput
+            placeholder="Search or create category..."
+            value={search}
+            onValueChange={setSearch}
+          />
           <CommandList>
-            <CommandEmpty>No category found.</CommandEmpty>
             <CommandGroup>
-              {categories?.data.map((category) => (
+              {filteredCategories.map((category) => (
                 <CommandItem
                   key={category.id}
-                  value={category.name}
+                  value={category.id}
                   onSelect={() => {
                     onChange(category.id)
+                    setSearch('')
                     setOpen(false)
                   }}
                 >
@@ -118,39 +114,24 @@ export function CategorySelect({
                   {category.name}
                 </CommandItem>
               ))}
-            </CommandGroup>
-            <CommandSeparator />
-            <CommandGroup>
-              {isCreating ? (
-                <div className="flex items-center gap-2 p-2">
-                  <Input
-                    placeholder="Category name"
-                    value={newCategoryName}
-                    onChange={(e) => setNewCategoryName(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    autoFocus
-                    className="h-8"
-                  />
-                  <Button
-                    size="sm"
-                    onClick={handleCreateCategory}
-                    disabled={!newCategoryName.trim() || isCreatingCategory}
-                  >
-                    {isCreatingCategory ? (
-                      <IconLoader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      'Add'
-                    )}
-                  </Button>
-                </div>
-              ) : (
+              {showCreateOption && (
                 <CommandItem
-                  onSelect={() => setIsCreating(true)}
+                  onSelect={handleCreateCategory}
+                  disabled={isCreatingCategory}
                   className="cursor-pointer"
                 >
-                  <IconPlus className="mr-2 h-4 w-4" />
-                  Create new category
+                  {isCreatingCategory ? (
+                    <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <IconPlus className="mr-2 h-4 w-4" />
+                  )}
+                  Create "{search.trim()}"
                 </CommandItem>
+              )}
+              {filteredCategories.length === 0 && !showCreateOption && (
+                <div className="py-6 text-center text-sm text-muted-foreground">
+                  No category found.
+                </div>
               )}
             </CommandGroup>
           </CommandList>
