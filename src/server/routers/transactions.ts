@@ -106,7 +106,13 @@ export const transactionsRouter = router({
           createdAt: transaction.createdAt,
         })
         .from(transaction)
-        .leftJoin(category, eq(transaction.categoryId, category.id))
+        .leftJoin(
+          category,
+          and(
+            eq(transaction.categoryId, category.id),
+            eq(category.deleted, false),
+          ),
+        )
         .where(and(...whereClauses))
         .orderBy(desc(transaction.date), desc(transaction.id))
         .limit(input.pagination.limit + 1)
@@ -301,7 +307,13 @@ export const transactionsRouter = router({
         categoryName: category.name,
       })
       .from(transaction)
-      .leftJoin(category, eq(transaction.categoryId, category.id))
+      .leftJoin(
+        category,
+        and(
+          eq(transaction.categoryId, category.id),
+          eq(category.deleted, false),
+        ),
+      )
       .where(
         and(
           eq(transaction.userId, ctx.user.id),
@@ -350,7 +362,13 @@ export const transactionsRouter = router({
         currency: transaction.currency,
       })
       .from(transaction)
-      .leftJoin(category, eq(transaction.categoryId, category.id))
+      .leftJoin(
+        category,
+        and(
+          eq(transaction.categoryId, category.id),
+          eq(category.deleted, false),
+        ),
+      )
       .where(
         and(
           eq(transaction.userId, ctx.user.id),
