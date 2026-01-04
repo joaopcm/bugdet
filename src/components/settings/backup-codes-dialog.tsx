@@ -97,9 +97,12 @@ export function BackupCodesDialog({
 
     if (data?.backupCodes) {
       setBackupCodes(data.backupCodes)
-      toast.success('Backup codes regenerated. Previous codes are now invalid.', {
-        id: toastId,
-      })
+      toast.success(
+        'Backup codes regenerated. Previous codes are now invalid.',
+        {
+          id: toastId,
+        },
+      )
     }
 
     setIsLoading(false)
