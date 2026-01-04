@@ -46,18 +46,19 @@ export function DisableTwoFactorDialog({
     }
 
     setIsLoading(true)
+    const toastId = toast.loading('Disabling two-factor authentication...')
 
     const { error } = await authClient.twoFactor.disable({
       password,
     })
 
     if (error) {
-      toast.error(error.message)
+      toast.error(error.message, { id: toastId })
       setIsLoading(false)
       return
     }
 
-    toast.success('Two-factor authentication disabled')
+    toast.success('Two-factor authentication disabled', { id: toastId })
     handleOpenChange(false)
   }
 
@@ -93,7 +94,7 @@ export function DisableTwoFactorDialog({
             onClick={handleDisable}
             disabled={isLoading || !password}
           >
-            {isLoading ? 'Disabling...' : 'Disable 2FA'}
+            Disable 2FA
           </Button>
         </DialogFooter>
       </DialogContent>

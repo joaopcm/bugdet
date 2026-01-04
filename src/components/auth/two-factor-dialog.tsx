@@ -43,17 +43,19 @@ export function TwoFactorDialog({
     }
 
     setIsLoading(true)
+    const toastId = toast.loading('Verifying code...')
 
     const response = await authClient.twoFactor.verifyTotp({
       code,
     })
 
     if (response.error) {
-      toast.error(response.error.message)
+      toast.error(response.error.message, { id: toastId })
       setIsLoading(false)
       return
     }
 
+    toast.success('Verification successful', { id: toastId })
     onSuccess()
   }
 
@@ -64,17 +66,19 @@ export function TwoFactorDialog({
     }
 
     setIsLoading(true)
+    const toastId = toast.loading('Verifying backup code...')
 
     const { error } = await authClient.twoFactor.verifyBackupCode({
       code: backupCode.trim(),
     })
 
     if (error) {
-      toast.error(error.message)
+      toast.error(error.message, { id: toastId })
       setIsLoading(false)
       return
     }
 
+    toast.success('Verification successful', { id: toastId })
     onSuccess()
   }
 
@@ -124,7 +128,7 @@ export function TwoFactorDialog({
                 onClick={handleVerifyBackupCode}
                 disabled={isLoading || !backupCode.trim()}
               >
-                {isLoading ? 'Verifying...' : 'Verify'}
+                Verify
               </Button>
             </DialogFooter>
           </div>
@@ -161,7 +165,7 @@ export function TwoFactorDialog({
                 onClick={handleVerifyTotp}
                 disabled={isLoading || code.length !== 6}
               >
-                {isLoading ? 'Verifying...' : 'Verify'}
+                Verify
               </Button>
             </DialogFooter>
           </div>

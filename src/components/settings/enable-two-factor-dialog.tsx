@@ -67,13 +67,14 @@ export function EnableTwoFactorDialog({
     }
 
     setIsLoading(true)
+    const toastId = toast.loading('Verifying password...')
 
     const { data, error } = await authClient.twoFactor.enable({
       password,
     })
 
     if (error) {
-      toast.error(error.message)
+      toast.error(error.message, { id: toastId })
       setIsLoading(false)
       return
     }
@@ -88,6 +89,7 @@ export function EnableTwoFactorDialog({
       if (data.backupCodes) {
         setBackupCodes(data.backupCodes)
       }
+      toast.success('Password verified', { id: toastId })
       setStep('qrcode')
     }
 
@@ -101,18 +103,19 @@ export function EnableTwoFactorDialog({
     }
 
     setIsLoading(true)
+    const toastId = toast.loading('Verifying code...')
 
     const { error } = await authClient.twoFactor.verifyTotp({
       code: verifyCode,
     })
 
     if (error) {
-      toast.error(error.message)
+      toast.error(error.message, { id: toastId })
       setIsLoading(false)
       return
     }
 
-    toast.success('Two-factor authentication enabled')
+    toast.success('Two-factor authentication enabled', { id: toastId })
     setStep('backup-codes')
     setIsLoading(false)
   }
@@ -173,7 +176,7 @@ export function EnableTwoFactorDialog({
                 onClick={handleEnableTwoFactor}
                 disabled={isLoading || !password}
               >
-                {isLoading ? 'Verifying...' : 'Continue'}
+                Continue
               </Button>
             </DialogFooter>
           </>
@@ -246,7 +249,7 @@ export function EnableTwoFactorDialog({
                 onClick={handleVerifyCode}
                 disabled={isLoading || verifyCode.length !== 6}
               >
-                {isLoading ? 'Verifying...' : 'Verify'}
+                Verify
               </Button>
             </DialogFooter>
           </>
