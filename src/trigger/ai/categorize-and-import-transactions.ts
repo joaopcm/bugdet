@@ -8,19 +8,23 @@ import {
   user,
 } from '@/db/schema'
 import { env } from '@/env'
+import { categorizationSchema, ocrSchema } from '@/lib/ai/ocr/schemas'
 import { applyRules } from '@/lib/rules/apply-rules'
 import { sendUploadCompletedTask } from '@/trigger/emails/send-upload-completed'
 import { sendUploadFailedTask } from '@/trigger/emails/send-upload-failed'
-import { openai } from '@ai-sdk/openai'
+import { ocr } from '@ai-sdk-tools/ocr'
 import { AbortTaskRunError, logger, retry, task } from '@trigger.dev/sdk/v3'
-import { generateObject } from 'ai'
+import { Output, generateText } from 'ai'
 import { and, desc, eq, inArray, ne } from 'drizzle-orm'
-import { z } from 'zod'
+import type { DocumentType } from './extract-upload-metadata'
 import { getBankStatementPresignedUrlTask } from './get-bank-statement-presigned-url'
 
 export const categorizeAndImportTransactionsTask = task({
   id: 'categorize-and-import-transactions',
-  run: async (payload: { uploadId: string }, { ctx }) => {
+  run: async (
+    payload: { uploadId: string; documentType: DocumentType },
+    { ctx },
+  ) => {
     logger.info(
       `Categorizing and importing transactions for upload ${payload.uploadId}...`,
       { payload, ctx },
@@ -94,55 +98,32 @@ export const categorizeAndImportTransactionsTask = task({
         ),
       )
       .orderBy(desc(categorizationRule.priority), categorizationRule.createdAt)
-    logger.info(`Found ${rules.length} categorization rules for user ${userId}`)
+    logger.info(
+      `Found ${rules.length} categorization rules for user ${userId}`,
+      {
+        rules,
+      },
+    )
 
     logger.info('Extracting transactions from bank statement with AI...')
-    const schema = z.object({
-      transactions: z.array(
-        z.object({
-          date: z
-            .string()
-            .date()
-            .describe('The date of the transaction (e.g. "2025-01-01").'),
-          merchantName: z
-            .string()
-            .describe(
-              "The merchant's name written in the same way as on the document. Do not include any unrelated information like the date, installments, etc. Only include the merchant's name.",
-            ),
-          amount: z
-            .number()
-            .describe(
-              'The amount of the transaction in cents (e.g. "1000" for $10.00, "100" for $1.00, "10" for $0.10, etc.). Use positive numbers for when the transaction is a debit (e.g. a purchase, a withdrawal, etc.) and negative numbers for when the transaction is a credit (e.g. a refund, a deposit, etc.).',
-            ),
-          currency: z
-            .string()
-            .describe(
-              'The effective currency of the transaction. Use the ISO 4217 currency code (e.g. "USD", "BRL", "EUR", etc.).',
-            ),
-          category: z
-            .string()
-            .nullable()
-            .describe(
-              'The category of the transaction based on the merchant name and relevant information (e.g. "Food", "Transportation", "Entertainment", "Shopping", "Health", "Education", "Other"). Leave null if you cannot find a category.',
-            ),
-          confidence: z
-            .number()
-            .optional()
-            .describe(
-              'Your confidence level about the transaction being correctly extracted and categorized. Use an integer between 0 and 100. 100 is the highest confidence level.',
-            ),
-        }),
-      ),
+    const ocrResult = await ocr(presignedUrl.url, ocrSchema, {
+      timeout: 120_000, // 2 minutes in milliseconds
+      qualityThreshold: {
+        requireCurrency: true,
+        requireDate: true,
+        requireVendor: true,
+        requireTotal: false,
+      },
     })
+    logger.info('OCR result', { ocrResult })
 
-    const result = await generateObject({
-      model: openai('gpt-5-mini'),
-      mode: 'json',
-      schemaName: 'categorize-and-import-transactions',
-      schemaDescription:
-        'A JSON schema for a categorization of transactions based on the merchant name and relevant information.',
-      output: 'object',
-      schema,
+    const result = await generateText({
+      model: 'google/gemini-2.5-pro',
+      output: Output.object({
+        schema: categorizationSchema,
+        description:
+          'A JSON schema for a categorization of transactions based on the merchant name and relevant information.',
+      }),
       messages: [
         {
           role: 'system',
@@ -197,10 +178,10 @@ export const categorizeAndImportTransactionsTask = task({
         },
       ],
     })
-    logger.info('AI analysis complete', { transactions: result.object })
+    logger.info('AI analysis complete', { transactions: result.output })
 
     let totalRulesApplied = 0
-    const processedTransactions = result.object.transactions
+    const processedTransactions = result.output.transactions
       .map((tx) => {
         const ruleResult = applyRules(
           { merchantName: tx.merchantName, amount: tx.amount },
@@ -222,7 +203,7 @@ export const categorizeAndImportTransactionsTask = task({
       .filter((tx): tx is NonNullable<typeof tx> => tx !== null)
 
     logger.info(
-      `Processed ${processedTransactions.length} transactions after applying rules (${result.object.transactions.length - processedTransactions.length} skipped)`,
+      `Processed ${processedTransactions.length} transactions after applying rules (${result.output.transactions.length - processedTransactions.length} skipped)`,
     )
 
     let transactionCount = 0

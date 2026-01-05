@@ -111,9 +111,14 @@ export function useBulkSelection({ itemIds }: UseBulkSelectionOptions) {
   }, [])
 
   const selectAll = useCallback(() => {
+    if (isAllSelected) {
+      setSelectedIds(new Set())
+      return
+    }
+
     setSelectedIds(new Set(itemIds))
     lastSelectedIdRef.current = null
-  }, [itemIds])
+  }, [itemIds, isAllSelected])
 
   return {
     selectedIds,

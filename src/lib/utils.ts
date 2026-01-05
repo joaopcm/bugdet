@@ -1,4 +1,5 @@
 import { PLATFORM_MODIFIERS } from '@/constants/platforms'
+import type { DocumentType } from '@/trigger/ai/extract-upload-metadata'
 import { type ClassValue, clsx } from 'clsx'
 import { format } from 'date-fns'
 import { createParser } from 'nuqs/server'
@@ -136,4 +137,20 @@ export function getPlatformModifiers() {
   }
 
   return PLATFORM_MODIFIERS[platform]
+}
+
+export function normalizeTransaction(
+  amount: number,
+  documentType: DocumentType,
+): number {
+  // Credit card transactions are already normalized
+  if (documentType === 'Credit Card') {
+    return amount
+  }
+
+  /**
+   * Checking account statements use positive amounts for credits and negative
+   * amount for debits. This is the opposite of what we usually see in budgeting apps.
+   */
+  return -amount
 }

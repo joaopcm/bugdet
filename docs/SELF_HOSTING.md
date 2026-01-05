@@ -43,7 +43,6 @@ You'll need accounts with the following services:
 | [Upstash](https://upstash.com/) | Redis (rate limiting) | Yes |
 | [Resend](https://resend.com/) | Transactional emails | Yes (100/day) |
 | [OpenAI](https://platform.openai.com/) | AI categorization | Pay-as-you-go |
-| [Google AI](https://ai.google.dev/) | AI categorization | Free tier available |
 | [Trigger.dev](https://trigger.dev/) | Background jobs | Yes |
 
 ## External Services
@@ -79,12 +78,6 @@ You'll need accounts with the following services:
 1. Create an account at [OpenAI Platform](https://platform.openai.com/)
 2. Generate an API key:
    - `OPENAI_API_KEY`
-
-### Google AI Setup
-
-1. Go to [Google AI Studio](https://ai.google.dev/)
-2. Create an API key:
-   - `GOOGLE_GENERATIVE_AI_API_KEY`
 
 ### Trigger.dev Setup
 
@@ -244,7 +237,6 @@ BETTER_AUTH_URL=https://yourdomain.com
 
 # AI Services
 OPENAI_API_KEY=sk-...
-GOOGLE_GENERATIVE_AI_API_KEY=...
 
 # Supabase
 SUPABASE_URL=https://xxx.supabase.co

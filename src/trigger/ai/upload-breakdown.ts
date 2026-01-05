@@ -191,15 +191,18 @@ export const uploadBreakdownTask = task({
     logger.info(
       `Bank statement ${payload.uploadId} is valid. Extracting its metadata in background...`,
     )
-    await extractUploadMetadataTask.trigger({
-      uploadId: payload.uploadId,
-    })
+    const metadata = await extractUploadMetadataTask
+      .triggerAndWait({
+        uploadId: payload.uploadId,
+      })
+      .unwrap()
 
     logger.info(
       `Sending upload ${payload.uploadId} to the categorize and import transactions task...`,
     )
     await categorizeAndImportTransactionsTask.trigger({
       uploadId: payload.uploadId,
+      documentType: metadata.documentType,
     })
 
     return { success: true }

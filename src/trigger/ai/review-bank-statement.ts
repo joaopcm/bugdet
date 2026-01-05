@@ -1,8 +1,21 @@
-import { openai } from '@ai-sdk/openai'
 import { AbortTaskRunError, logger, retry, task } from '@trigger.dev/sdk/v3'
-import { generateObject } from 'ai'
+import { Output, generateText } from 'ai'
 import { z } from 'zod'
 import { getBankStatementPresignedUrlTask } from './get-bank-statement-presigned-url'
+
+const schema = z.object({
+  isValid: z
+    .boolean()
+    .describe(
+      'Whether the file matches the expected format of a bank statement.',
+    ),
+  reason: z
+    .string()
+    .describe(
+      'The reason for the validity of the file. This is only set if isValid is false. E.g. "The file is not a bank statement. It looks like a screenshot of a webpage."',
+    )
+    .optional(),
+})
 
 export const reviewBankStatementTask = task({
   id: 'review-bank-statement',
@@ -32,29 +45,12 @@ export const reviewBankStatementTask = task({
     })
     const fileBuffer = await response.arrayBuffer()
 
-    const schema = z.object({
-      isValid: z
-        .boolean()
-        .describe(
-          'Whether the file matches the expected format of a bank statement.',
-        ),
-      reason: z
-        .string()
-        .describe(
-          'The reason for the validity of the file. This is only set if isValid is false. E.g. "The file is not a bank statement. It looks like a screenshot of a webpage."',
-        )
-        .optional(),
-    })
-
     logger.info('Analyzing bank statement with AI...')
-    const result = await generateObject({
-      model: openai('gpt-5-mini'),
-      mode: 'json',
-      schemaName: 'review-bank-statement',
-      schemaDescription:
-        'A JSON schema to represent whether a submitted file looks like a bank statement.',
-      output: 'object',
-      schema,
+    const result = await generateText({
+      model: 'google/gemini-2.5-flash',
+      output: Output.object({
+        schema,
+      }),
       messages: [
         {
           role: 'system',
@@ -77,8 +73,8 @@ export const reviewBankStatementTask = task({
         },
       ],
     })
-    logger.info('AI analysis complete', result.object)
+    logger.info('AI analysis complete', result.output)
 
-    return result.object
+    return result.output
   },
 })

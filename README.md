@@ -7,7 +7,7 @@ Bugdet helps you understand your spending by importing bank statements and using
 ## Features
 
 - **Bank Statement Processing** - Upload PDF bank statements for automatic parsing
-- **AI-Powered Categorization** - Transactions are automatically categorized using OpenAI and Google AI
+- **AI-Powered Categorization** - Transactions are automatically categorized using OpenAI
 - **Custom Categories** - Create and manage your own spending categories
 - **Categorization Rules** - Define rules to automatically categorize recurring merchants
 - **Dashboard Analytics** - Visual insights into your spending patterns
@@ -22,7 +22,7 @@ Bugdet helps you understand your spending by importing bank statements and using
 - **Database**: [PostgreSQL 16](https://www.postgresql.org/) with [Drizzle ORM](https://orm.drizzle.team/)
 - **API**: [tRPC](https://trpc.io/) for end-to-end type-safe APIs
 - **Authentication**: [better-auth](https://www.better-auth.com/) with email/password + 2FA
-- **AI**: [Vercel AI SDK](https://sdk.vercel.ai/) with OpenAI and Google Generative AI
+- **AI**: [Vercel AI SDK](https://sdk.vercel.ai/) with [OpenAI](https://openai.com/)
 - **Background Jobs**: [Trigger.dev](https://trigger.dev/) for async processing
 - **Caching**: [Upstash Redis](https://upstash.com/) for rate limiting and caching
 - **File Storage**: [Supabase](https://supabase.com/) for bank statement uploads
@@ -114,7 +114,6 @@ Create a `.env` file based on `.env.example`. Here are the required variables:
 | `BETTER_AUTH_SECRET` | Secret key for authentication encryption |
 | `BETTER_AUTH_URL` | Base URL for auth endpoints (e.g., `http://localhost:3000`) |
 | `OPENAI_API_KEY` | OpenAI API key for AI categorization |
-| `GOOGLE_GENERATIVE_AI_API_KEY` | Google AI API key |
 | `RESEND_API_KEY` | Resend API key for emails |
 | `RESEND_WAITLIST_SEGMENT_ID` | Resend segment ID for waitlist |
 | `SUPABASE_URL` | Supabase project URL |
