@@ -186,3 +186,7 @@
     transform: rotate(0deg);
   }
 }
+
+[data-sonner-toast] [data-description] {
+  color: var(--muted-foreground) !important;
+}
