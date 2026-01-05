@@ -44,14 +44,16 @@ export function NavMain({ items }: NavMainProps) {
     trpc.uploads.createSignedUploadUrls.useMutation({
       onMutate: () => {
         setIsUploading(true)
-        toast.loading('Preparing bank statement upload...', {
+        toast.loading('Preparing bank statements upload...', {
           id: 'upload-bank-statement',
+          description: null,
         })
       },
       onError: (error) => {
         setIsUploading(false)
         toast.error(error.message, {
           id: 'upload-bank-statement',
+          description: null,
         })
       },
       onSuccess: async ({ uploadUrls }) => {
@@ -79,6 +81,7 @@ export function NavMain({ items }: NavMainProps) {
 
     toast.loading('Uploading bank statements...', {
       id: 'upload-bank-statement',
+      description: null,
     })
 
     const successfulUploads: {
@@ -109,11 +112,13 @@ export function NavMain({ items }: NavMainProps) {
     onMutate: () => {
       toast.loading('Processing bank statements...', {
         id: 'upload-bank-statement',
+        description: null,
       })
     },
     onError: (error) => {
       toast.error(error.message, {
         id: 'upload-bank-statement',
+        description: null,
       })
     },
     onSuccess: () => {
