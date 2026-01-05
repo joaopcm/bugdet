@@ -8,6 +8,7 @@ import {
   user,
 } from '@/db/schema'
 import { env } from '@/env'
+import { extractTextFromPdf } from '@/lib/pdf'
 import { applyRules } from '@/lib/rules/apply-rules'
 import { sendUploadCompletedTask } from '@/trigger/emails/send-upload-completed'
 import { sendUploadFailedTask } from '@/trigger/emails/send-upload-failed'
@@ -45,6 +46,10 @@ export const categorizeAndImportTransactionsTask = task({
       method: 'GET',
     })
     const fileBuffer = await response.arrayBuffer()
+
+    logger.info('Extracting text from PDF...')
+    const pdfText = await extractTextFromPdf(fileBuffer)
+    logger.info(`Extracted ${pdfText.length} characters from PDF`)
 
     logger.info(
       `Finding categories for the user that owns the upload ${payload.uploadId}...`,
@@ -147,53 +152,22 @@ export const categorizeAndImportTransactionsTask = task({
         {
           role: 'system',
           content:
-            "You are a bank statement expert. You are given a bank statement and you need to extract the transactions from it following a JSON schema. Avoid extracting duplicated transactions. In the merchant name, do not include any unrelated information like the date, installments, etc. Only include the merchant's name.",
+            "You are a bank statement expert. You are given the text content extracted from a bank statement and you need to extract the transactions from it following a JSON schema. Avoid extracting duplicated transactions. In the merchant name, do not include any unrelated information like the date, installments, etc. Only include the merchant's name.",
         },
         {
           role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: 'Hello! Before you start, I would like to give you some information about the categories I have already created so you can use them to categorize the transactions:',
-            },
-            {
-              type: 'text',
-              text: categories
-                .map((category) => `- ${category.name}`)
-                .join('\n'),
-            },
-            {
-              type: 'text',
-              text: "But don't worry to stick to them if you don't find a good match. Feel free to create new categories if you think they are missing.",
-            },
-            {
-              type: 'text',
-              text: `Also, remember to stick to the following categories whenever you find a merchant name that matches one of the following: ${merchantCategories
-                .map(
-                  (merchantCategory) =>
-                    `- Merchant name: ${merchantCategory.merchantName} → Category: ${merchantCategory.categoryName ?? 'N/A'}`,
-                )
-                .join('\n')}.`,
-            },
-            {
-              type: 'text',
-              text: 'Now, let me give you the bank statement:',
-            },
-          ],
-        },
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: 'Here is my bank statement:',
-            },
-            {
-              type: 'file',
-              data: fileBuffer,
-              mediaType: 'application/pdf',
-            },
-          ],
+          content: `Hello! Before you start, I would like to give you some information about the categories I have already created so you can use them to categorize the transactions:
+
+${categories.map((category) => `- ${category.name}`).join('\n')}
+
+But don't worry to stick to them if you don't find a good match. Feel free to create new categories if you think they are missing.
+
+Also, remember to stick to the following categories whenever you find a merchant name that matches one of the following:
+${merchantCategories.map((merchantCategory) => `- Merchant name: ${merchantCategory.merchantName} → Category: ${merchantCategory.categoryName ?? 'N/A'}`).join('\n')}
+
+Now, here is the text content extracted from the bank statement:
+
+${pdfText}`,
         },
       ],
     })
