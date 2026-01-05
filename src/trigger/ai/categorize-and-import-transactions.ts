@@ -64,7 +64,7 @@ export const categorizeAndImportTransactionsTask = task({
     const categories = await db
       .select({ id: category.id, name: category.name })
       .from(category)
-      .where(eq(category.userId, userId))
+      .where(and(eq(category.userId, userId), eq(category.deleted, false)))
     logger.info(
       `Found ${categories.length} categories for the user ${userId}:`,
       {
@@ -238,6 +238,7 @@ ${pdfText}`,
         .where(
           and(
             eq(category.userId, upToDateUpload.userId),
+            eq(category.deleted, false),
             inArray(category.name, uniqueCategories),
           ),
         )
