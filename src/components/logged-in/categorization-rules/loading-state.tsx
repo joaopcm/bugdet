@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 const RANDOM_NAME_SIZES = ['h-3.5 w-32', 'h-3.5 w-40', 'h-3.5 w-28']
 
 export function LoadingState() {
-  const { pagination } = usePagination()
+  const { pagination } = usePagination('categorization-rules')
 
   return (
     <>

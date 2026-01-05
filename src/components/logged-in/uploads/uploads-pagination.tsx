@@ -17,7 +17,7 @@ interface UploadsPaginationProps {
 }
 
 export function UploadsPagination({ hasMore }: UploadsPaginationProps) {
-  const { pagination, setPagination } = usePagination()
+  const { pagination, setPagination } = usePagination('uploads')
 
   const currentPage = pagination.page
   const hasNextPage = hasMore

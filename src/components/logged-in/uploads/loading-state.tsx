@@ -15,7 +15,7 @@ const RANDOM_FIRST_COLUMN_SIZES = [
 ]
 
 export function LoadingState() {
-  const { pagination } = usePagination()
+  const { pagination } = usePagination('uploads')
 
   return (
     <>

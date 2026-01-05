@@ -19,7 +19,7 @@ interface TransactionsPaginationProps {
 export function TransactionsPagination({
   hasMore,
 }: TransactionsPaginationProps) {
-  const { pagination, setPagination } = usePagination()
+  const { pagination, setPagination } = usePagination('transactions')
 
   const currentPage = pagination.page
   const hasNextPage = hasMore

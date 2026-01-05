@@ -27,7 +27,7 @@ export function CategoryFilter() {
     ignorePagination: true,
   })
   const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
-  const { setPagination } = usePagination()
+  const { setPagination } = usePagination('transactions')
   const [isOpen, setIsOpen] = useState(false)
 
   useHotkeys(CATEGORY_SHORTCUT, (e) => {

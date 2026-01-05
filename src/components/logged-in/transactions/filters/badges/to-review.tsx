@@ -18,7 +18,7 @@ const TO_REVIEW_SHORTCUT = '1'
 export function ToReview() {
   const { data: transactions, isLoading } = useCountToReview()
   const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
-  const { setPagination } = usePagination()
+  const { setPagination } = usePagination('transactions')
 
   useHotkeys(TO_REVIEW_SHORTCUT, () => handleClick())
 

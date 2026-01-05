@@ -18,7 +18,7 @@ const SEARCH_SHORTCUT = 'S'
 
 export function SearchFilter() {
   const { uploadsFilters, setUploadsFilters } = useUploadsFilters()
-  const { setPagination } = usePagination()
+  const { setPagination } = usePagination('uploads')
   const inputRef = useRef<HTMLInputElement>(null)
 
   const debouncedSetSearchParams = useDebounceCallback((value: string) => {

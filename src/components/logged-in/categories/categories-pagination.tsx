@@ -17,7 +17,7 @@ interface CategoriesPaginationProps {
 }
 
 export function CategoriesPagination({ hasMore }: CategoriesPaginationProps) {
-  const { pagination, setPagination } = usePagination()
+  const { pagination, setPagination } = usePagination('categories')
 
   const currentPage = pagination.page
   const hasNextPage = hasMore

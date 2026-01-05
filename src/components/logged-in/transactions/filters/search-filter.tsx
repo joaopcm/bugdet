@@ -18,7 +18,7 @@ const SEARCH_SHORTCUT = 'S'
 
 export function SearchFilter() {
   const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
-  const { setPagination } = usePagination()
+  const { setPagination } = usePagination('transactions')
   const inputRef = useRef<HTMLInputElement>(null)
 
   const debouncedSetSearchParams = useDebounceCallback((value: string) => {

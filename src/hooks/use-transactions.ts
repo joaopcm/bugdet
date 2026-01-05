@@ -10,7 +10,7 @@ import { usePagination } from './use-pagination'
 
 export function useTransactions() {
   const { transactionFilters } = useTransactionsFilters()
-  const { pagination } = usePagination()
+  const { pagination } = usePagination('transactions')
 
   const { refetch: refetchCountToReview } = useCountToReview()
   const { refetch: refetchMostFrequentMerchant } = useMostFrequentMerchant()

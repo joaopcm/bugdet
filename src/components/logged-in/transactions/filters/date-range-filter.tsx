@@ -25,7 +25,7 @@ const DATE_RANGE_SHORTCUT = 'D'
 
 export function DateRangeFilter() {
   const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
-  const { setPagination } = usePagination()
+  const { setPagination } = usePagination('transactions')
   const [isOpen, setIsOpen] = useState(false)
 
   const hasValues = !!transactionFilters.from && !!transactionFilters.to

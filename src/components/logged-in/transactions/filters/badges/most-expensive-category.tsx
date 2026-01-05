@@ -19,7 +19,7 @@ const MOST_EXPENSIVE_CATEGORY_SHORTCUT = '3'
 export function MostExpensiveCategory() {
   const { data: category, isLoading } = useMostExpensiveCategory()
   const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
-  const { setPagination } = usePagination()
+  const { setPagination } = usePagination('transactions')
 
   useHotkeys(MOST_EXPENSIVE_CATEGORY_SHORTCUT, () => handleClick())
 

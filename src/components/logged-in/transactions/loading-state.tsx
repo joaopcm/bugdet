@@ -10,7 +10,7 @@ const RANDOM_THIRD_COLUMN_SIZES = ['h-3.5 w-48', 'h-3.5 w-40', 'h-3.5 w-52']
 const RANDOM_FOURTH_COLUMN_SIZES = ['h-3.5 w-20', 'h-3.5 w-24', 'h-3.5 w-28']
 
 export function LoadingState() {
-  const { pagination } = usePagination()
+  const { pagination } = usePagination('transactions')
 
   return (
     <>
