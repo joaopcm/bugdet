@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 const RANDOM_FIRST_COLUMN_SIZES = ['h-3.5 w-48', 'h-3.5 w-40', 'h-3.5 w-52']
 
 export function LoadingState() {
-  const { pagination } = usePagination()
+  const { pagination } = usePagination('categories')
 
   return (
     <>

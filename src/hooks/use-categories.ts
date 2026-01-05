@@ -10,7 +10,7 @@ export function useCategories(
   } = {},
 ) {
   const { categoryFilters } = useCategoriesFilters()
-  const { pagination } = usePagination()
+  const { pagination } = usePagination('categories')
 
   return trpc.categories.list.useQuery({
     filters: {

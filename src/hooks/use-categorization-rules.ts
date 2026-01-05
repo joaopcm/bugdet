@@ -10,7 +10,7 @@ export function useCategorizationRules(
   } = {},
 ) {
   const { filters } = useCategorizationRulesFilters()
-  const { pagination } = usePagination()
+  const { pagination } = usePagination('categorization-rules')
 
   return trpc.categorizationRules.list.useQuery({
     filters: {

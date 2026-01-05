@@ -4,7 +4,7 @@ import { usePagination } from './use-pagination'
 
 export function useUploads() {
   const { uploadsFilters } = useUploadsFilters()
-  const { pagination } = usePagination()
+  const { pagination } = usePagination('uploads')
 
   return trpc.uploads.list.useQuery({
     filters: {

@@ -42,7 +42,7 @@ import { RulesPagination } from './rules-pagination'
 export function CategorizationRulesTable() {
   const isMobile = useIsMobile()
   const { filters } = useCategorizationRulesFilters()
-  const { pagination } = usePagination()
+  const { pagination } = usePagination('categorization-rules')
   const utils = trpc.useUtils()
 
   const queryKey = {

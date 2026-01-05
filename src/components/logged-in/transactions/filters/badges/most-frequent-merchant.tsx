@@ -18,7 +18,7 @@ const MOST_FREQUENT_MERCHANT_SHORTCUT = '5'
 export function MostFrequentMerchant() {
   const { data: merchant, isLoading } = useMostFrequentMerchant()
   const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
-  const { setPagination } = usePagination()
+  const { setPagination } = usePagination('transactions')
 
   useHotkeys(MOST_FREQUENT_MERCHANT_SHORTCUT, () => handleClick())
 

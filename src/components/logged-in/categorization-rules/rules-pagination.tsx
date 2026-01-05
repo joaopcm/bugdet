@@ -17,7 +17,7 @@ interface RulesPaginationProps {
 }
 
 export function RulesPagination({ hasMore }: RulesPaginationProps) {
-  const { pagination, setPagination } = usePagination()
+  const { pagination, setPagination } = usePagination('categorization-rules')
 
   const currentPage = pagination.page
   const hasNextPage = hasMore

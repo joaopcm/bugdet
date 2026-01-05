@@ -18,7 +18,7 @@ const SEARCH_SHORTCUT = 'S'
 
 export function SearchFilter() {
   const { filters, setFilters } = useCategorizationRulesFilters()
-  const { setPagination } = usePagination()
+  const { setPagination } = usePagination('categorization-rules')
   const inputRef = useRef<HTMLInputElement>(null)
 
   const debouncedSetSearchParams = useDebounceCallback((value: string) => {

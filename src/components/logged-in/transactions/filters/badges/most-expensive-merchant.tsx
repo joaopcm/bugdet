@@ -19,7 +19,7 @@ const MOST_EXPENSIVE_MERCHANT_SHORTCUT = '2'
 export function MostExpensiveMerchant() {
   const { data: merchant, isLoading } = useMostExpensiveMerchant()
   const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
-  const { setPagination } = usePagination()
+  const { setPagination } = usePagination('transactions')
 
   useHotkeys(MOST_EXPENSIVE_MERCHANT_SHORTCUT, () => handleClick())
 

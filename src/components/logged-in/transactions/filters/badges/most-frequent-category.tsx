@@ -18,7 +18,7 @@ const MOST_FREQUENT_CATEGORY_SHORTCUT = '4'
 export function MostFrequentCategory() {
   const { data: category, isLoading } = useMostFrequentCategory()
   const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
-  const { setPagination } = usePagination()
+  const { setPagination } = usePagination('transactions')
 
   useHotkeys(MOST_FREQUENT_CATEGORY_SHORTCUT, () => handleClick())
 
