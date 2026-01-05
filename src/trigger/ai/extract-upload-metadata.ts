@@ -1,5 +1,6 @@
 import { db } from '@/db'
 import { upload } from '@/db/schema'
+import { extractTextFromPdf } from '@/lib/pdf'
 import { openai } from '@ai-sdk/openai'
 import { AbortTaskRunError, logger, retry, task } from '@trigger.dev/sdk/v3'
 import { generateObject } from 'ai'
@@ -34,6 +35,10 @@ export const extractUploadMetadataTask = task({
       method: 'GET',
     })
     const fileBuffer = await response.arrayBuffer()
+
+    logger.info('Extracting text from PDF...')
+    const pdfText = await extractTextFromPdf(fileBuffer)
+    logger.info(`Extracted ${pdfText.length} characters from PDF`)
 
     const schema = z
       .object({
@@ -103,21 +108,11 @@ export const extractUploadMetadataTask = task({
         {
           role: 'system',
           content:
-            'You are a bank statement expert. You are given a file and you need to find relevant financial information about it. The file is a bank statement.',
+            'You are a bank statement expert. You are given the text content extracted from a bank statement and you need to find relevant financial information about it.',
         },
         {
           role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: 'Here is the file:',
-            },
-            {
-              type: 'file',
-              data: fileBuffer,
-              mediaType: 'application/pdf',
-            },
-          ],
+          content: `Here is the text content extracted from the bank statement:\n\n${pdfText}`,
         },
       ],
     })

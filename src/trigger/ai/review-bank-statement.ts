@@ -1,3 +1,4 @@
+import { extractTextFromPdf } from '@/lib/pdf'
 import { openai } from '@ai-sdk/openai'
 import { AbortTaskRunError, logger, retry, task } from '@trigger.dev/sdk/v3'
 import { generateObject } from 'ai'
@@ -32,6 +33,10 @@ export const reviewBankStatementTask = task({
     })
     const fileBuffer = await response.arrayBuffer()
 
+    logger.info('Extracting text from PDF...')
+    const pdfText = await extractTextFromPdf(fileBuffer)
+    logger.info(`Extracted ${pdfText.length} characters from PDF`)
+
     const schema = z.object({
       isValid: z
         .boolean()
@@ -59,21 +64,11 @@ export const reviewBankStatementTask = task({
         {
           role: 'system',
           content:
-            'You are a bank statement expert. You are given a file and you need to determine if it looks like a bank statement. If it is not a valid bank statement, you need to provide a reason why it is not a valid bank statement.',
+            'You are a bank statement expert. You are given the text content extracted from a document and you need to determine if it looks like a bank statement. If it is not a valid bank statement, you need to provide a reason why it is not a valid bank statement.',
         },
         {
           role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: 'Is this file a bank statement?',
-            },
-            {
-              type: 'file',
-              data: fileBuffer,
-              mediaType: 'application/pdf',
-            },
-          ],
+          content: `Is this a bank statement? Here is the text content extracted from the document:\n\n${pdfText}`,
         },
       ],
     })

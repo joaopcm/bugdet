@@ -67,6 +67,46 @@ export async function checkPdfPassword(
 }
 
 /**
+ * Extract text content from all pages of a PDF.
+ */
+export async function extractTextFromPdf(
+  data: ArrayBuffer,
+  password?: string,
+): Promise<string> {
+  const doc = mupdf.Document.openDocument(
+    new Uint8Array(data),
+    'application/pdf',
+  )
+
+  if (doc.needsPassword()) {
+    if (!password) {
+      doc.destroy()
+      throw new PdfPasswordRequiredError()
+    }
+    const authenticated = doc.authenticatePassword(password)
+    if (!authenticated) {
+      doc.destroy()
+      throw new PdfIncorrectPasswordError()
+    }
+  }
+
+  const pageCount = doc.countPages()
+  const textParts: string[] = []
+
+  for (let i = 0; i < pageCount; i++) {
+    const page = doc.loadPage(i)
+    const structuredText = page.toStructuredText()
+    const pageText = structuredText.asText()
+    if (pageText.trim()) {
+      textParts.push(pageText)
+    }
+  }
+
+  doc.destroy()
+  return textParts.join('\n\n')
+}
+
+/**
  * Decrypt a password-protected PDF and return an unencrypted buffer.
  */
 export async function decryptPdf(
