@@ -16,6 +16,14 @@ import { useCategorizationRulesFilters } from './search-params'
 
 const SEARCH_SHORTCUT = 'S'
 
+/**
+ * Renders a search input used to filter categorization rules by name.
+ *
+ * The input updates the active filters' `query` and resets pagination to page 1 after a 500ms debounce.
+ * Pressing the configured shortcut focuses the input. A tooltip shows the shortcut hint.
+ *
+ * @returns The JSX element for the search filter control.
+ */
 export function SearchFilter() {
   const { filters, setFilters } = useCategorizationRulesFilters()
   const { setPagination } = usePagination('categorization-rules')

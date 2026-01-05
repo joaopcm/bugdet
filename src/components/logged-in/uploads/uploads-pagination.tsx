@@ -16,6 +16,12 @@ interface UploadsPaginationProps {
   hasMore: boolean
 }
 
+/**
+ * Render pagination controls for the uploads list, including page-size selection and page navigation.
+ *
+ * @param hasMore - `true` if there are more pages after the current page
+ * @returns The pagination UI for uploads: page-size selector, previous/next buttons, page links, and ellipses to indicate additional pages
+ */
 export function UploadsPagination({ hasMore }: UploadsPaginationProps) {
   const { pagination, setPagination } = usePagination('uploads')
 

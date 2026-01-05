@@ -15,6 +15,16 @@ import { useTransactionsFilters } from '../search-params'
 
 const MOST_FREQUENT_CATEGORY_SHORTCUT = '4'
 
+/**
+ * Renders a badge for the most frequent transaction category and enables filtering transactions by that category.
+ *
+ * When loading, renders a skeleton. If no category is found, renders a disabled/secondary badge with explanatory tooltip.
+ * Clicking the badge (or pressing the configured hotkey) sets pagination to page 1 and toggles the category filter:
+ * if the current filter already matches the most frequent category it clears the category to `"all"`;
+ * otherwise it applies the category and resets other filters (`ids`, `from`, `to`, `query`).
+ *
+ * @returns The component's rendered React element.
+ */
 export function MostFrequentCategory() {
   const { data: category, isLoading } = useMostFrequentCategory()
   const { transactionFilters, setTransactionFilters } = useTransactionsFilters()

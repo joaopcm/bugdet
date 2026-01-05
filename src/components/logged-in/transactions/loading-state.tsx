@@ -9,6 +9,13 @@ const RANDOM_SECOND_COLUMN_SIZES = ['h-6 w-20', 'h-6 w-24', 'h-6 w-16']
 const RANDOM_THIRD_COLUMN_SIZES = ['h-3.5 w-48', 'h-3.5 w-40', 'h-3.5 w-52']
 const RANDOM_FOURTH_COLUMN_SIZES = ['h-3.5 w-20', 'h-3.5 w-24', 'h-3.5 w-28']
 
+/**
+ * Renders skeleton table rows for the transactions list according to current pagination.
+ *
+ * Each row contains placeholder cells sized to approximate the real table columns; the number of rows matches `pagination.limit`.
+ *
+ * @returns A JSX fragment containing the skeleton table rows.
+ */
 export function LoadingState() {
   const { pagination } = usePagination('transactions')
 

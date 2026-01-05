@@ -7,6 +7,11 @@ import { cn } from '@/lib/utils'
 
 const RANDOM_FIRST_COLUMN_SIZES = ['h-3.5 w-48', 'h-3.5 w-40', 'h-3.5 w-52']
 
+/**
+ * Renders a skeleton loading state for the categories table based on the current pagination limit.
+ *
+ * @returns A fragment containing `pagination.limit` table rows populated with skeleton placeholders.
+ */
 export function LoadingState() {
   const { pagination } = usePagination('categories')
 

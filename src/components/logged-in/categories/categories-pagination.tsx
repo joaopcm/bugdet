@@ -16,6 +16,15 @@ interface CategoriesPaginationProps {
   hasMore: boolean
 }
 
+/**
+ * Render pagination controls and a page-size selector for the categories list.
+ *
+ * Changing the page size resets the current page to 1. Navigation buttons and page links
+ * update the categories pagination state when clicked.
+ *
+ * @param hasMore - Whether there are pages after the current page
+ * @returns A JSX element containing a page-size selector and pagination controls (previous, next, current page, adjacent page links, and ellipses)
+ */
 export function CategoriesPagination({ hasMore }: CategoriesPaginationProps) {
   const { pagination, setPagination } = usePagination('categories')
 

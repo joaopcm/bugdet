@@ -15,6 +15,13 @@ import { useTransactionsFilters } from '../search-params'
 
 const TO_REVIEW_SHORTCUT = '1'
 
+/**
+ * Displays a "To review" badge with a count and tooltip, and provides click and keyboard interactions to toggle the to-review transaction filter.
+ *
+ * When transaction data is loading a skeleton is rendered. If there are no transactions to review a non-interactive secondary badge with explanatory tooltip is shown. When transactions exist a badge shows the count and a tooltip; clicking the badge (or pressing the configured shortcut) toggles selecting all to-review transactions or clearing the selection and resets pagination and other filters.
+ *
+ * @returns The React element that renders the badge, tooltip, and associated interactions for filtering transactions that require review.
+ */
 export function ToReview() {
   const { data: transactions, isLoading } = useCountToReview()
   const { transactionFilters, setTransactionFilters } = useTransactionsFilters()

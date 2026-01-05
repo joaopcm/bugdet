@@ -39,6 +39,13 @@ import { LoadingState } from './loading-state'
 import { RuleItem } from './rule-item'
 import { RulesPagination } from './rules-pagination'
 
+/**
+ * Render a table of categorization rules with filtering, selection, drag-and-drop reordering, and bulk actions.
+ *
+ * The component fetches and paginates rules, allows single and bulk selection (including Cmd/Ctrl+A), supports keyboard and pointer drag-and-drop reordering, and exposes a floating action bar for bulk deletion. Successful or failed reorder and delete operations are surfaced via toast notifications and the rules list cache is refreshed accordingly.
+ *
+ * @returns A React element containing the rules table, filters, pagination controls, and floating action bar.
+ */
 export function CategorizationRulesTable() {
   const isMobile = useIsMobile()
   const { filters } = useCategorizationRulesFilters()

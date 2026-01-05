@@ -16,6 +16,14 @@ import { useTransactionsFilters } from '../search-params'
 
 const MOST_EXPENSIVE_CATEGORY_SHORTCUT = '3'
 
+/**
+ * Renders a badge that filters transactions by the most expensive category in the last 45 days.
+ *
+ * When activated (by clicking the badge or pressing the "3" hotkey) the component resets transactions pagination to page 1 and updates transaction filters:
+ * it toggles the category filter between the fetched most-expensive category and "all".
+ *
+ * @returns The rendered React element for the most-expensive-category filter badge (including tooltip and keyboard hint).
+ */
 export function MostExpensiveCategory() {
   const { data: category, isLoading } = useMostExpensiveCategory()
   const { transactionFilters, setTransactionFilters } = useTransactionsFilters()

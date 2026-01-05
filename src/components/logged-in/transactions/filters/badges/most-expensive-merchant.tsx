@@ -16,6 +16,15 @@ import { useTransactionsFilters } from '../search-params'
 
 const MOST_EXPENSIVE_MERCHANT_SHORTCUT = '2'
 
+/**
+ * Renders a badge that filters transactions by the most expensive merchant in the last 45 days.
+ *
+ * While loading, shows a skeleton. If no merchant is found, shows a non-interactive badge with an explanatory tooltip.
+ * Clicking the badge sets transactions pagination to page 1 and toggles the transaction query to the merchant's name,
+ * resetting other filters when activating the filter.
+ *
+ * @returns The React element for the MostExpensiveMerchant badge and its tooltip.
+ */
 export function MostExpensiveMerchant() {
   const { data: merchant, isLoading } = useMostExpensiveMerchant()
   const { transactionFilters, setTransactionFilters } = useTransactionsFilters()

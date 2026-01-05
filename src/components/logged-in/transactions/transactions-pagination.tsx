@@ -16,6 +16,16 @@ interface TransactionsPaginationProps {
   hasMore: boolean
 }
 
+/**
+ * Render pagination controls for the transactions list.
+ *
+ * Renders page-size selector and navigational controls (previous/next, adjacent page links,
+ * optional first-page link with ellipsis, and optional next-page ellipsis). Changing the page
+ * size resets the current page to 1; navigation controls update the current page.
+ *
+ * @param hasMore - Whether there are additional pages after the current page
+ * @returns The transactions pagination UI
+ */
 export function TransactionsPagination({
   hasMore,
 }: TransactionsPaginationProps) {

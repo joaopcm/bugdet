@@ -16,6 +16,13 @@ import { useUploadsFilters } from './search-params'
 
 const SEARCH_SHORTCUT = 'S'
 
+/**
+ * Render a search input that updates uploads filters and resets uploads pagination when changed, with a keyboard shortcut to focus the input.
+ *
+ * Debounces changes by 500ms before calling `setUploadsFilters({ query })` and `setPagination({ page: 1 })`. Pressing the configured `SEARCH_SHORTCUT` focuses the input.
+ *
+ * @returns The React element for the search filter UI.
+ */
 export function SearchFilter() {
   const { uploadsFilters, setUploadsFilters } = useUploadsFilters()
   const { setPagination } = usePagination('uploads')

@@ -15,6 +15,13 @@ import { useTransactionsFilters } from '../search-params'
 
 const MOST_FREQUENT_MERCHANT_SHORTCUT = '5'
 
+/**
+ * Render a badge that toggles filtering transactions by the most frequent merchant observed in the last 45 days.
+ *
+ * Shows a loading skeleton while the merchant is being fetched; if no merchant is found it displays a secondary badge with an explanatory tooltip. When a merchant is available the badge indicates selection state, and clicking it (or pressing the '5' shortcut) applies or clears a filter by the merchant's name and resets pagination to page 1.
+ *
+ * @returns A JSX element containing the tooltip-wrapped badge (or skeleton) that toggles the most-frequent-merchant filter.
+ */
 export function MostFrequentMerchant() {
   const { data: merchant, isLoading } = useMostFrequentMerchant()
   const { transactionFilters, setTransactionFilters } = useTransactionsFilters()

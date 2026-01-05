@@ -16,6 +16,13 @@ import { useCategoriesFilters } from './search-params'
 
 const SEARCH_SHORTCUT = 'S'
 
+/**
+ * Renders a searchable category filter input with a tooltip and keyboard shortcut.
+ *
+ * The input updates category filters with a 500ms debounce and resets category pagination to page 1 when the query changes. Pressing the "S" key focuses the input. The UI includes a left-aligned search icon and a tooltip that shows the shortcut.
+ *
+ * @returns The search filter component as JSX to be rendered in the UI.
+ */
 export function SearchFilter() {
   const { categoryFilters, setCategoryFilters } = useCategoriesFilters()
   const { setPagination } = usePagination('categories')

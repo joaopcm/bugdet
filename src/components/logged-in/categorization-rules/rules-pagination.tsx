@@ -16,6 +16,14 @@ interface RulesPaginationProps {
   hasMore: boolean
 }
 
+/**
+ * Render pagination controls for the categorization rules list.
+ *
+ * Renders a page-size selector, previous/next buttons, numeric page links, and ellipses where appropriate.
+ *
+ * @param hasMore - Whether additional pages exist after the current page
+ * @returns The JSX element containing the pagination UI
+ */
 export function RulesPagination({ hasMore }: RulesPaginationProps) {
   const { pagination, setPagination } = usePagination('categorization-rules')
 

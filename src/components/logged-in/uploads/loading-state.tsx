@@ -14,6 +14,11 @@ const RANDOM_FIRST_COLUMN_SIZES = [
   'h-3.5 w-[71px]',
 ]
 
+/**
+ * Render a table-shaped skeleton loading state for the uploads list using the current pagination limit.
+ *
+ * @returns A fragment containing `pagination.limit` table rows, each filled with skeleton placeholders matching the table's column layout.
+ */
 export function LoadingState() {
   const { pagination } = usePagination('uploads')
 

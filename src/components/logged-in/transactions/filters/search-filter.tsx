@@ -16,6 +16,13 @@ import { useTransactionsFilters } from './search-params'
 
 const SEARCH_SHORTCUT = 'S'
 
+/**
+ * A search input UI for filtering transactions by merchant name.
+ *
+ * Renders an input with a tooltip and search icon; updates transaction filters' `query` (debounced) and resets pagination to page 1 when the input changes, and registers the `S` hotkey to focus the input.
+ *
+ * @returns The search filter React element for filtering transactions by merchant name.
+ */
 export function SearchFilter() {
   const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
   const { setPagination } = usePagination('transactions')

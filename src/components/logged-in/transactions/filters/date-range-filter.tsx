@@ -23,6 +23,13 @@ import { useTransactionsFilters } from './search-params'
 
 const DATE_RANGE_SHORTCUT = 'D'
 
+/**
+ * Render a date range picker button that opens a popover calendar and synchronizes the selected range with transaction filters.
+ *
+ * The component shows the current range or a placeholder, provides a clear control when a range is set, supports the `D` keyboard shortcut to toggle the picker, and resets pagination to page 1 when the range is changed or cleared.
+ *
+ * @returns A JSX element that renders a button-triggered popover containing a range Calendar; selecting or clearing dates updates transaction filters and resets pagination.
+ */
 export function DateRangeFilter() {
   const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
   const { setPagination } = usePagination('transactions')

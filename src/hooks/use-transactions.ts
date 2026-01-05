@@ -8,6 +8,12 @@ import { useMostFrequentCategory } from './use-most-frequent-category'
 import { useMostFrequentMerchant } from './use-most-frequent-merchant'
 import { usePagination } from './use-pagination'
 
+/**
+ * Provides transactions query state and a composite refetch that refreshes transactions and related summary queries.
+ *
+ * @returns An object containing the query context properties from the transactions list query and a `refetch` function.
+ * The `refetch` function refreshes the transactions list and the associated summary queries: count to review, most frequent merchant, most frequent category, most expensive merchant, and most expensive category.
+ */
 export function useTransactions() {
   const { transactionFilters } = useTransactionsFilters()
   const { pagination } = usePagination('transactions')

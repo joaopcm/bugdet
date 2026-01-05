@@ -21,6 +21,13 @@ import { useTransactionsFilters } from './search-params'
 
 const CATEGORY_SHORTCUT = 'C'
 
+/**
+ * Renders a category selection control with a tooltip and a keyboard shortcut to open the dropdown.
+ *
+ * Selecting a category updates the transaction filters and resets pagination to page 1. The dropdown includes an "All categories" option and one entry per available category.
+ *
+ * @returns The Select UI for choosing a transaction category.
+ */
 export function CategoryFilter() {
   const { data: categories } = useCategories({
     ignoreFilters: true,
