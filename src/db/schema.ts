@@ -253,7 +253,7 @@ export const merchantCategory = pgTable(
 
 export type RuleCondition = {
   field: 'merchant_name' | 'amount'
-  operator: 'contains' | 'gt' | 'lt' | 'gte' | 'lte' | 'eq'
+  operator: 'contains' | 'neq' | 'gt' | 'lt' | 'gte' | 'lte' | 'eq'
   value: string | number
 }
 

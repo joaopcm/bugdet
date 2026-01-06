@@ -25,6 +25,9 @@ function matchesCondition(
     if (condition.operator === 'eq') {
       return txName === ruleValue
     }
+    if (condition.operator === 'neq') {
+      return txName !== ruleValue
+    }
     return txName.includes(ruleValue)
   }
 
@@ -41,6 +44,8 @@ function matchesCondition(
         return tx.amount <= value
       case 'eq':
         return tx.amount === value
+      case 'neq':
+        return tx.amount !== value
       default:
         return false
     }
