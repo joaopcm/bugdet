@@ -12,11 +12,15 @@ const DEFAULT_PRESET: DatePreset = '30d'
 function getStoredPreset(): DatePreset {
   if (typeof window === 'undefined') return DEFAULT_PRESET
 
-  const stored = localStorage.getItem(STORAGE_KEY)
-  if (!stored) return DEFAULT_PRESET
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (!stored) return DEFAULT_PRESET
 
-  if (DATE_PRESETS.includes(stored as DatePreset)) {
-    return stored as DatePreset
+    if (DATE_PRESETS.includes(stored as DatePreset)) {
+      return stored as DatePreset
+    }
+  } catch {
+    // localStorage unavailable or blocked, fall through to default
   }
 
   return DEFAULT_PRESET
@@ -24,7 +28,11 @@ function getStoredPreset(): DatePreset {
 
 function setStoredPreset(preset: DatePreset): void {
   if (typeof window === 'undefined') return
-  localStorage.setItem(STORAGE_KEY, preset)
+  try {
+    localStorage.setItem(STORAGE_KEY, preset)
+  } catch {
+    // localStorage unavailable or blocked, silently fail
+  }
 }
 
 export function useDashboardFilters() {
