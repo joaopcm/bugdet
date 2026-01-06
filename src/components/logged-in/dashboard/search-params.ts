@@ -1,5 +1,5 @@
 import { parseAsLocalDate } from '@/lib/utils'
-import { endOfYear, startOfYear, subDays, subMonths } from 'date-fns'
+import { startOfYear, subDays, subMonths } from 'date-fns'
 import { parseAsStringLiteral, useQueryStates } from 'nuqs'
 import { useCallback, useEffect, useRef } from 'react'
 
@@ -80,7 +80,7 @@ export function getDateRangeFromPreset(
     case '6m':
       return { from: subMonths(now, 6), to: now }
     case 'ytd':
-      return { from: startOfYear(now), to: endOfYear(now) }
+      return { from: startOfYear(now), to: now }
     case 'custom':
       return {
         from: customFrom ?? subDays(now, 30),
