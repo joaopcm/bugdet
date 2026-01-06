@@ -1,16 +1,72 @@
 import { parseAsLocalDate } from '@/lib/utils'
-import { endOfYear, startOfYear, subDays, subMonths } from 'date-fns'
+import { startOfYear, subDays, subMonths } from 'date-fns'
 import { parseAsStringLiteral, useQueryStates } from 'nuqs'
+import { useCallback, useEffect, useRef } from 'react'
 
 export const DATE_PRESETS = ['7d', '30d', '3m', '6m', 'ytd', 'custom'] as const
 export type DatePreset = (typeof DATE_PRESETS)[number]
 
+const STORAGE_KEY = 'dashboard-date-preset'
+const DEFAULT_PRESET: DatePreset = '30d'
+
+function getStoredPreset(): DatePreset {
+  if (typeof window === 'undefined') return DEFAULT_PRESET
+
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (!stored) return DEFAULT_PRESET
+
+    if (DATE_PRESETS.includes(stored as DatePreset)) {
+      return stored as DatePreset
+    }
+  } catch {
+    // localStorage unavailable or blocked, fall through to default
+  }
+
+  return DEFAULT_PRESET
+}
+
+function setStoredPreset(preset: DatePreset): void {
+  if (typeof window === 'undefined') return
+  try {
+    localStorage.setItem(STORAGE_KEY, preset)
+  } catch {
+    // localStorage unavailable or blocked, silently fail
+  }
+}
+
 export function useDashboardFilters() {
-  const [filters, setFilters] = useQueryStates({
-    preset: parseAsStringLiteral(DATE_PRESETS).withDefault('30d'),
+  const initialPreset = getStoredPreset()
+  const storedPresetRef = useRef<DatePreset>(initialPreset)
+
+  const [filters, setQueryFilters] = useQueryStates({
+    preset: parseAsStringLiteral(DATE_PRESETS).withDefault(initialPreset),
     from: parseAsLocalDate,
     to: parseAsLocalDate,
   })
+
+  // Sync external URL changes (browser navigation) to localStorage
+  useEffect(() => {
+    if (filters.preset !== storedPresetRef.current) {
+      setStoredPreset(filters.preset)
+      storedPresetRef.current = filters.preset
+    }
+  }, [filters.preset])
+
+  const setFilters = useCallback(
+    (updates: {
+      preset?: DatePreset
+      from?: Date | null
+      to?: Date | null
+    }) => {
+      if (updates.preset !== undefined) {
+        setStoredPreset(updates.preset)
+        storedPresetRef.current = updates.preset
+      }
+      return setQueryFilters(updates)
+    },
+    [setQueryFilters],
+  )
 
   return { filters, setFilters }
 }
@@ -32,7 +88,7 @@ export function getDateRangeFromPreset(
     case '6m':
       return { from: subMonths(now, 6), to: now }
     case 'ytd':
-      return { from: startOfYear(now), to: endOfYear(now) }
+      return { from: startOfYear(now), to: now }
     case 'custom':
       return {
         from: customFrom ?? subDays(now, 30),
