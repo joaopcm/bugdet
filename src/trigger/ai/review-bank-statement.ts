@@ -1,9 +1,39 @@
-import { extractTextFromPdf } from '@/lib/pdf'
-import { openai } from '@ai-sdk/openai'
+import { type PdfPageImage, convertPdfToImages } from '@/lib/pdf'
 import { AbortTaskRunError, logger, retry, task } from '@trigger.dev/sdk/v3'
 import { generateObject } from 'ai'
 import { z } from 'zod'
 import { getBankStatementPresignedUrlTask } from './get-bank-statement-presigned-url'
+
+const schema = z.object({
+  isValid: z
+    .boolean()
+    .describe(
+      'Whether the document is a valid bank statement or credit card statement.',
+    ),
+  reason: z
+    .string()
+    .optional()
+    .describe(
+      'Required if isValid is false. Explain why this is not a bank statement (e.g., "This appears to be a screenshot of a website", "This is a receipt, not a bank statement", "The document is illegible or corrupted").',
+    ),
+  documentLanguage: z
+    .string()
+    .optional()
+    .describe(
+      'The primary language of the document (e.g., "English", "Portuguese", "Spanish").',
+    ),
+})
+
+function buildImageContent(images: PdfPageImage[]) {
+  // Use first 5 pages for validation (usually enough to determine if it's a bank statement)
+  const pagesToCheck = images.slice(0, 5)
+
+  return pagesToCheck.map((img) => ({
+    type: 'image' as const,
+    image: Buffer.from(img.base64, 'base64'),
+    mimeType: img.mimeType,
+  }))
+}
 
 export const reviewBankStatementTask = task({
   id: 'review-bank-statement',
@@ -33,42 +63,58 @@ export const reviewBankStatementTask = task({
     })
     const fileBuffer = await response.arrayBuffer()
 
-    logger.info('Extracting text from PDF...')
-    const pdfText = await extractTextFromPdf(fileBuffer)
-    logger.info(`Extracted ${pdfText.length} characters from PDF`)
+    logger.info('Converting PDF to images...')
+    const images = await convertPdfToImages(fileBuffer)
+    logger.info(`Converted ${images.length} pages to images`)
 
-    const schema = z.object({
-      isValid: z
-        .boolean()
-        .describe(
-          'Whether the file matches the expected format of a bank statement.',
-        ),
-      reason: z
-        .string()
-        .describe(
-          'The reason for the validity of the file. This is only set if isValid is false. E.g. "The file is not a bank statement. It looks like a screenshot of a webpage."',
-        )
-        .optional(),
-    })
+    if (images.length === 0) {
+      return {
+        isValid: false,
+        reason:
+          'The PDF file could not be processed. It may be corrupted or empty.',
+      }
+    }
 
-    logger.info('Analyzing bank statement with AI...')
+    logger.info('Analyzing bank statement with Gemini Vision...')
     const result = await generateObject({
-      model: openai('gpt-5-mini'),
+      model: 'google/gemini-2.5-flash',
       mode: 'json',
       schemaName: 'review-bank-statement',
       schemaDescription:
-        'A JSON schema to represent whether a submitted file looks like a bank statement.',
-      output: 'object',
+        'Validation result for whether a document is a legitimate bank statement.',
       schema,
       messages: [
         {
           role: 'system',
-          content:
-            'You are a bank statement expert. You are given the text content extracted from a document and you need to determine if it looks like a bank statement. If it is not a valid bank statement, you need to provide a reason why it is not a valid bank statement.',
+          content: `You are a bank statement validation expert. Analyze the provided document images and determine if this is a legitimate bank statement or credit card statement.
+
+A VALID bank statement typically has:
+- Bank name/logo clearly visible
+- Account holder information
+- Statement period dates
+- Transaction list with dates, descriptions, and amounts
+- Opening and/or closing balance
+- Official formatting and letterhead
+
+REJECT documents that are:
+- Screenshots of websites or apps
+- Receipts or invoices
+- Spreadsheets or manually created documents
+- Illegible, blurry, or corrupted images
+- Partial statements missing key information
+- Any document that is NOT an official bank/credit card statement
+
+You will be provided with up to 5 pages of the document.`,
         },
         {
           role: 'user',
-          content: `Is this a bank statement? Here is the text content extracted from the document:\n\n${pdfText}`,
+          content: [
+            {
+              type: 'text',
+              text: 'Please analyze these document pages and determine if this is a valid bank statement.',
+            },
+            ...buildImageContent(images),
+          ],
         },
       ],
     })

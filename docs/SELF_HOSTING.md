@@ -42,9 +42,8 @@ You'll need accounts with the following services:
 | [Supabase](https://supabase.com/) | File storage | Yes |
 | [Upstash](https://upstash.com/) | Redis (rate limiting) | Yes |
 | [Resend](https://resend.com/) | Transactional emails | Yes (100/day) |
-| [OpenAI](https://platform.openai.com/) | AI categorization | Pay-as-you-go |
-| [Google AI](https://ai.google.dev/) | AI categorization | Free tier available |
 | [Trigger.dev](https://trigger.dev/) | Background jobs | Yes |
+| [Vercel AI Gateway](https://vercel.com/docs/ai-gateway) | AI model access | Pay-as-you-go |
 
 ## External Services
 
@@ -74,17 +73,12 @@ You'll need accounts with the following services:
 4. Create a segment for the waitlist (optional):
    - `RESEND_WAITLIST_SEGMENT_ID`
 
-### OpenAI Setup
+### Vercel AI Gateway Setup
 
-1. Create an account at [OpenAI Platform](https://platform.openai.com/)
-2. Generate an API key:
-   - `OPENAI_API_KEY`
-
-### Google AI Setup
-
-1. Go to [Google AI Studio](https://ai.google.dev/)
-2. Create an API key:
-   - `GOOGLE_GENERATIVE_AI_API_KEY`
+1. Go to your [Vercel Dashboard](https://vercel.com/dashboard)
+2. Navigate: Dashboard → AI Gateway → API Keys → Create key
+3. Create an API key:
+   - `AI_GATEWAY_API_KEY`
 
 ### Trigger.dev Setup
 
@@ -242,9 +236,8 @@ DATABASE_URL=postgresql://user:password@host:5432/bugdet
 BETTER_AUTH_SECRET=generate-a-secure-random-string
 BETTER_AUTH_URL=https://yourdomain.com
 
-# AI Services
-OPENAI_API_KEY=sk-...
-GOOGLE_GENERATIVE_AI_API_KEY=...
+# AI Gateway
+AI_GATEWAY_API_KEY=...
 
 # Supabase
 SUPABASE_URL=https://xxx.supabase.co

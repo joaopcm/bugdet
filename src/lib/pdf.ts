@@ -1,5 +1,15 @@
 import * as mupdf from 'mupdf'
 
+const MAX_PAGES = 50
+const DPI = 150
+const SCALE_FACTOR = DPI / 72 // mupdf default is 72 DPI
+
+export type PdfPageImage = {
+  page: number
+  base64: string
+  mimeType: 'image/png'
+}
+
 export class PdfPasswordRequiredError extends Error {
   constructor() {
     super('PDF is password protected')
@@ -67,46 +77,6 @@ export async function checkPdfPassword(
 }
 
 /**
- * Extract text content from all pages of a PDF.
- */
-export async function extractTextFromPdf(
-  data: ArrayBuffer,
-  password?: string,
-): Promise<string> {
-  const doc = mupdf.Document.openDocument(
-    new Uint8Array(data),
-    'application/pdf',
-  )
-
-  if (doc.needsPassword()) {
-    if (!password) {
-      doc.destroy()
-      throw new PdfPasswordRequiredError()
-    }
-    const authenticated = doc.authenticatePassword(password)
-    if (!authenticated) {
-      doc.destroy()
-      throw new PdfIncorrectPasswordError()
-    }
-  }
-
-  const pageCount = doc.countPages()
-  const textParts: string[] = []
-
-  for (let i = 0; i < pageCount; i++) {
-    const page = doc.loadPage(i)
-    const structuredText = page.toStructuredText()
-    const pageText = structuredText.asText()
-    if (pageText.trim()) {
-      textParts.push(pageText)
-    }
-  }
-
-  doc.destroy()
-  return textParts.join('\n\n')
-}
-
-/**
  * Decrypt a password-protected PDF and return an unencrypted buffer.
  */
 export async function decryptPdf(
@@ -131,4 +101,66 @@ export async function decryptPdf(
   doc.destroy()
 
   return outputBuffer.asUint8Array()
+}
+
+/**
+ * Convert PDF pages to PNG images for vision-based LLM processing.
+ * Returns base64-encoded PNG images for each page (up to MAX_PAGES).
+ */
+export async function convertPdfToImages(
+  data: ArrayBuffer,
+  password?: string,
+): Promise<PdfPageImage[]> {
+  const doc = mupdf.Document.openDocument(
+    new Uint8Array(data),
+    'application/pdf',
+  )
+
+  if (doc.needsPassword()) {
+    if (!password) {
+      doc.destroy()
+      throw new PdfPasswordRequiredError()
+    }
+    const authenticated = doc.authenticatePassword(password)
+    if (!authenticated) {
+      doc.destroy()
+      throw new PdfIncorrectPasswordError()
+    }
+  }
+
+  const pageCount = Math.min(doc.countPages(), MAX_PAGES)
+  const images: PdfPageImage[] = []
+
+  for (let i = 0; i < pageCount; i++) {
+    let page: mupdf.Page | undefined
+    let pixmap: mupdf.Pixmap | undefined
+
+    try {
+      page = doc.loadPage(i)
+      pixmap = page.toPixmap(
+        mupdf.Matrix.scale(SCALE_FACTOR, SCALE_FACTOR),
+        mupdf.ColorSpace.DeviceRGB,
+        false, // no alpha/transparency
+        true, // include annotations
+      )
+
+      const pngBuffer = pixmap.asPNG()
+      const base64 = Buffer.from(pngBuffer).toString('base64')
+
+      images.push({
+        page: i + 1,
+        base64,
+        mimeType: 'image/png',
+      })
+    } catch {
+      // Log warning but continue with other pages
+      console.warn(`Failed to render page ${i + 1}, skipping`)
+    } finally {
+      pixmap?.destroy()
+      page?.destroy()
+    }
+  }
+
+  doc.destroy()
+  return images
 }
