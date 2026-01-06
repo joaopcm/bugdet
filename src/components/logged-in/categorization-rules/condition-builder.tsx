@@ -30,6 +30,7 @@ const AMOUNT_OPERATORS = [
   { value: 'gte', label: '>=' },
   { value: 'lte', label: '<=' },
   { value: 'eq', label: '=' },
+  { value: 'neq', label: '!=' },
 ] as const
 
 type ArrayFieldError = Merge<
