@@ -360,10 +360,15 @@ export const categorizeAndImportTransactionsTask = task({
           )
           return null
         }
+        // If a rule set the category, confidence is 100%
+        const finalConfidence = ruleResult.overrides.categoryId
+          ? 100
+          : Math.min(100, Math.max(0, normalizedConfidence))
+
         return {
           ...tx,
           amount: ruleResult.overrides.amount ?? normalizedAmount,
-          confidence: Math.min(100, Math.max(0, normalizedConfidence)),
+          confidence: finalConfidence,
           ruleCategoryId: ruleResult.overrides.categoryId,
         }
       })
