@@ -76,7 +76,7 @@ You'll need accounts with the following services:
 ### Vercel AI Gateway Setup
 
 1. Go to your [Vercel Dashboard](https://vercel.com/dashboard)
-2. Navigate to your project's AI Gateway settings
+2. Navigate: Dashboard → AI Gateway → API Keys → Create key
 3. Create an API key:
    - `AI_GATEWAY_API_KEY`
 

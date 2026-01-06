@@ -132,9 +132,12 @@ export async function convertPdfToImages(
   const images: PdfPageImage[] = []
 
   for (let i = 0; i < pageCount; i++) {
+    let page: mupdf.Page | undefined
+    let pixmap: mupdf.Pixmap | undefined
+
     try {
-      const page = doc.loadPage(i)
-      const pixmap = page.toPixmap(
+      page = doc.loadPage(i)
+      pixmap = page.toPixmap(
         mupdf.Matrix.scale(SCALE_FACTOR, SCALE_FACTOR),
         mupdf.ColorSpace.DeviceRGB,
         false, // no alpha/transparency
@@ -152,6 +155,9 @@ export async function convertPdfToImages(
     } catch {
       // Log warning but continue with other pages
       console.warn(`Failed to render page ${i + 1}, skipping`)
+    } finally {
+      pixmap?.destroy()
+      page?.destroy()
     }
   }
 

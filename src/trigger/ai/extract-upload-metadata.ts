@@ -111,8 +111,9 @@ export const extractUploadMetadataTask = task({
     logger.info(`Converted ${images.length} pages to images`)
 
     if (images.length === 0) {
-      logger.warn('No images extracted from PDF, skipping metadata extraction')
-      return { success: false }
+      throw new AbortTaskRunError(
+        `No images extracted from PDF for upload ${payload.uploadId}`,
+      )
     }
 
     logger.info('Extracting metadata with Gemini Vision...')
