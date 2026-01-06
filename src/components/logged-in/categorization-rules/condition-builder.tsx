@@ -21,6 +21,7 @@ const FIELD_OPTIONS = [
 const MERCHANT_OPERATORS = [
   { value: 'contains', label: 'contains' },
   { value: 'eq', label: 'equals' },
+  { value: 'neq', label: 'not equals' },
 ] as const
 
 const AMOUNT_OPERATORS = [

@@ -25,6 +25,9 @@ function matchesCondition(
     if (condition.operator === 'eq') {
       return txName === ruleValue
     }
+    if (condition.operator === 'neq') {
+      return txName !== ruleValue
+    }
     return txName.includes(ruleValue)
   }
 

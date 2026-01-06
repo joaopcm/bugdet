@@ -11,7 +11,7 @@ import { protectedProcedure, router } from '../trpc'
 
 const ruleConditionSchema = z.object({
   field: z.enum(['merchant_name', 'amount']),
-  operator: z.enum(['contains', 'gt', 'lt', 'gte', 'lte', 'eq']),
+  operator: z.enum(['contains', 'neq', 'gt', 'lt', 'gte', 'lte', 'eq']),
   value: z.union([z.string(), z.number()]),
 })
 
