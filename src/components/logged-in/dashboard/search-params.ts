@@ -1,16 +1,62 @@
 import { parseAsLocalDate } from '@/lib/utils'
 import { endOfYear, startOfYear, subDays, subMonths } from 'date-fns'
 import { parseAsStringLiteral, useQueryStates } from 'nuqs'
+import { useCallback, useEffect, useMemo } from 'react'
 
 export const DATE_PRESETS = ['7d', '30d', '3m', '6m', 'ytd', 'custom'] as const
 export type DatePreset = (typeof DATE_PRESETS)[number]
 
+const STORAGE_KEY = 'dashboard-date-preset'
+const DEFAULT_PRESET: DatePreset = '30d'
+
+function getStoredPreset(): DatePreset {
+  if (typeof window === 'undefined') return DEFAULT_PRESET
+
+  const stored = localStorage.getItem(STORAGE_KEY)
+  if (!stored) return DEFAULT_PRESET
+
+  if (DATE_PRESETS.includes(stored as DatePreset)) {
+    return stored as DatePreset
+  }
+
+  return DEFAULT_PRESET
+}
+
+function setStoredPreset(preset: DatePreset): void {
+  if (typeof window === 'undefined') return
+  localStorage.setItem(STORAGE_KEY, preset)
+}
+
 export function useDashboardFilters() {
-  const [filters, setFilters] = useQueryStates({
-    preset: parseAsStringLiteral(DATE_PRESETS).withDefault('30d'),
+  const storedPreset = useMemo(() => getStoredPreset(), [])
+
+  const [filters, setQueryFilters] = useQueryStates({
+    preset: parseAsStringLiteral(DATE_PRESETS).withDefault(storedPreset),
     from: parseAsLocalDate,
     to: parseAsLocalDate,
   })
+
+  // Sync preset changes to localStorage
+  useEffect(() => {
+    if (filters.preset !== storedPreset) {
+      setStoredPreset(filters.preset)
+    }
+  }, [filters.preset, storedPreset])
+
+  const setFilters = useCallback(
+    (updates: {
+      preset?: DatePreset
+      from?: Date | null
+      to?: Date | null
+    }) => {
+      // If preset is being updated, also persist to localStorage
+      if (updates.preset !== undefined) {
+        setStoredPreset(updates.preset)
+      }
+      return setQueryFilters(updates)
+    },
+    [setQueryFilters],
+  )
 
   return { filters, setFilters }
 }
