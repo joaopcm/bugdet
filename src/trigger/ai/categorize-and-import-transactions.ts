@@ -8,16 +8,214 @@ import {
   user,
 } from '@/db/schema'
 import { env } from '@/env'
-import { extractTextFromPdf } from '@/lib/pdf'
+import { type PdfPageImage, convertPdfToImages } from '@/lib/pdf'
 import { applyRules } from '@/lib/rules/apply-rules'
 import { sendUploadCompletedTask } from '@/trigger/emails/send-upload-completed'
 import { sendUploadFailedTask } from '@/trigger/emails/send-upload-failed'
-import { openai } from '@ai-sdk/openai'
 import { AbortTaskRunError, logger, retry, task } from '@trigger.dev/sdk/v3'
 import { generateObject } from 'ai'
 import { and, desc, eq, inArray, ne } from 'drizzle-orm'
 import { z } from 'zod'
 import { getBankStatementPresignedUrlTask } from './get-bank-statement-presigned-url'
+
+const transactionSchema = z.object({
+  transactions: z.array(
+    z.object({
+      date: z
+        .string()
+        .describe(
+          'Transaction date in ISO format YYYY-MM-DD (e.g., "2025-01-15"). Parse dates carefully from the statement.',
+        ),
+      merchantName: z
+        .string()
+        .describe(
+          'Merchant name EXACTLY as shown on statement. Keep prefixes like "Ifd*", "Pag*", "MP*". Only remove: installment suffixes (1/3, PARC 01/12) and payment method indicators at the end. Example: "Ifd*Japakitos 2/3" → "Ifd*Japakitos".',
+        ),
+      description: z
+        .string()
+        .optional()
+        .describe(
+          'Additional transaction details if present (e.g., "Online purchase", "ATM withdrawal", installment info "2/6").',
+        ),
+      amount: z
+        .number()
+        .describe(
+          'Amount in CENTS as integer. POSITIVE for money OUT (purchases, payments, withdrawals, fees). NEGATIVE for money IN (deposits, refunds, cashback, interest received). Example: $10.50 expense = 1050, $25.00 refund = -2500.',
+        ),
+      currency: z
+        .string()
+        .describe(
+          'ISO 4217 currency code (e.g., "USD", "BRL", "EUR"). Use the statement\'s primary currency.',
+        ),
+      category: z
+        .string()
+        .nullable()
+        .describe(
+          'Suggested category from provided list, or a new descriptive category. Use null if uncertain.',
+        ),
+      confidence: z
+        .number()
+        .describe(
+          'Confidence score 0-100. BE CONSERVATIVE. 90-100: ONLY for exact merchant match in learned mappings. 70-89: Clear text, category is obvious (e.g., "Netflix" → Entertainment). 50-69: Category is a guess based on merchant name. Below 50: Uncertain category or unclear text.',
+        ),
+    }),
+  ),
+  statementCurrency: z
+    .string()
+    .describe('Primary currency of the statement (ISO 4217 code).'),
+  openingBalance: z
+    .number()
+    .optional()
+    .describe('Opening/previous balance in cents if clearly visible.'),
+  closingBalance: z
+    .number()
+    .optional()
+    .describe('Closing/ending balance in cents if clearly visible.'),
+})
+
+function buildImageContent(images: PdfPageImage[]) {
+  return images.map((img) => ({
+    type: 'image' as const,
+    image: Buffer.from(img.base64, 'base64'),
+    mimeType: img.mimeType,
+  }))
+}
+
+function buildSystemPrompt() {
+  return `You are an expert financial document analyst specializing in extracting transactions from bank statements and credit card statements.
+
+## YOUR TASK
+Analyze the provided bank statement images and extract ALL transactions into a structured format.
+
+## CRITICAL RULES
+
+### Transaction Identification
+- Extract EVERY transaction row from the transaction table/list
+- Look for transactions across ALL pages - they may span multiple pages
+- Transactions typically have: date, description/merchant, and amount columns
+- Watch for page headers that repeat - don't extract them as transactions
+
+### Date Parsing
+- Convert all dates to ISO format: YYYY-MM-DD
+- Handle various formats: "Jan 15", "15/01/2025", "01-15-25", etc.
+- Use the statement period to infer the year if not explicitly shown
+
+### Merchant Name (KEEP AS-IS)
+Keep the merchant name EXACTLY as shown on the statement. Preserve all prefixes and identifiers.
+
+KEEP prefixes like:
+- "Ifd*", "Pag*", "MP*", "PAG*", "SQ*", etc.
+
+Some transactions may have prefixes and we want to keep them as they are.
+
+ONLY REMOVE:
+- Installment suffixes at the end (1/3, 2/6, PARC 01/12)
+- Payment method indicators at the very end
+
+Examples:
+- "Ifd*Japakitos 2/3" → "Ifd*Japakitos"
+- "PAG*JoePizza" → "PAG*JoePizza"
+- "MP*Uber PARC 01/06" → "MP*Uber"
+- "NETFLIX.COM" → "NETFLIX.COM"
+
+### Amount Sign Convention (IMPORTANT!)
+- POSITIVE amounts = Money leaving the account (expenses, purchases, payments, fees, withdrawals)
+- NEGATIVE amounts = Money entering the account (deposits, refunds, credits, interest, cashback)
+- Convert to cents: $10.50 = 1050, R$ 25,00 = 2500
+
+### Deduplication
+- Same date + same merchant + same amount = likely duplicate, extract only once
+- Watch for "pending" and "posted" versions of the same transaction
+
+### Confidence Scoring (BE CONSERVATIVE!)
+The confidence score should reflect how certain you are about the CATEGORY assignment, not just the extraction.
+
+- 90-100: ONLY if merchant EXACTLY matches one from the "LEARNED MERCHANT MAPPINGS" list
+- 70-89: Category is very obvious from merchant name (e.g., "NETFLIX" → Entertainment, "UBER" → Transportation)
+- 50-69: Category is a reasonable guess but not certain
+- 30-49: Category is uncertain, merchant name is ambiguous
+- Below 30: No idea what category this should be
+
+Most transactions should be in the 50-70 range unless there's an exact match in the learned mappings.`
+}
+
+function buildUserPrompt(
+  categories: { name: string }[],
+  merchantMappings: { merchantName: string; categoryName: string | null }[],
+) {
+  const categoryList =
+    categories.length > 0
+      ? categories.map((c) => `- ${c.name}`).join('\n')
+      : '(No categories defined yet)'
+
+  const merchantList =
+    merchantMappings.length > 0
+      ? merchantMappings
+          .slice(0, 100) // Limit to avoid token overflow
+          .map(
+            (m) =>
+              `- "${m.merchantName}" → ${m.categoryName ?? 'Uncategorized'}`,
+          )
+          .join('\n')
+      : '(No merchant mappings yet)'
+
+  return `## AVAILABLE CATEGORIES
+Use these existing categories when appropriate:
+${categoryList}
+
+You may suggest new categories if none fit well.
+
+## LEARNED MERCHANT MAPPINGS
+When you see these merchants, use the mapped category:
+${merchantList}
+
+## INSTRUCTIONS
+1. Examine ALL pages of the bank statement
+2. Extract EVERY transaction from the transaction table(s)
+3. Keep merchant names as shown (preserve prefixes like "Ifd*", "Pag*")
+4. Apply correct sign convention (positive = expense, negative = income)
+5. Use categories from the list above when they match
+6. Provide confidence scores based on extraction certainty
+
+## EXAMPLE OUTPUT FORMAT
+\`\`\`json
+{
+  "transactions": [
+    {
+      "date": "2025-01-15",
+      "merchantName": "Ifd*Japakitos",
+      "description": "2/3",
+      "amount": 2500,
+      "currency": "BRL",
+      "category": "Food & Dining",
+      "confidence": 65
+    },
+    {
+      "date": "2025-01-14",
+      "merchantName": "NETFLIX.COM",
+      "amount": 3990,
+      "currency": "BRL",
+      "category": "Entertainment",
+      "confidence": 85
+    },
+    {
+      "date": "2025-01-10",
+      "merchantName": "TED RECEBIDO",
+      "description": "Salary deposit",
+      "amount": -500000,
+      "currency": "BRL",
+      "category": "Income",
+      "confidence": 70
+    }
+  ],
+  "statementCurrency": "BRL",
+  "openingBalance": 150000,
+  "closingBalance": 125000
+}
+\`\`\`
+
+Now analyze the statement images and extract all transactions.`
+}
 
 export const categorizeAndImportTransactionsTask = task({
   id: 'categorize-and-import-transactions',
@@ -47,9 +245,13 @@ export const categorizeAndImportTransactionsTask = task({
     })
     const fileBuffer = await response.arrayBuffer()
 
-    logger.info('Extracting text from PDF...')
-    const pdfText = await extractTextFromPdf(fileBuffer)
-    logger.info(`Extracted ${pdfText.length} characters from PDF`)
+    logger.info('Converting PDF to images...')
+    const images = await convertPdfToImages(fileBuffer)
+    logger.info(`Converted ${images.length} pages to images`)
+
+    if (images.length === 0) {
+      throw new AbortTaskRunError('No pages could be extracted from the PDF')
+    }
 
     logger.info(
       `Finding categories for the user that owns the upload ${payload.uploadId}...`,
@@ -99,85 +301,56 @@ export const categorizeAndImportTransactionsTask = task({
         ),
       )
       .orderBy(desc(categorizationRule.priority), categorizationRule.createdAt)
-    logger.info(`Found ${rules.length} categorization rules for user ${userId}`)
+    logger.info(
+      `Found ${rules.length} categorization rules for user ${userId}`,
+      {
+        rules,
+      },
+    )
 
-    logger.info('Extracting transactions from bank statement with AI...')
-    const schema = z.object({
-      transactions: z.array(
-        z.object({
-          date: z
-            .string()
-            .date()
-            .describe('The date of the transaction (e.g. "2025-01-01").'),
-          merchantName: z
-            .string()
-            .describe(
-              "The merchant's name written in the same way as on the document. Do not include any unrelated information like the date, installments, etc. Only include the merchant's name.",
-            ),
-          amount: z
-            .number()
-            .describe(
-              'The amount of the transaction in cents (e.g. "1000" for $10.00, "100" for $1.00, "10" for $0.10, etc.). Use positive numbers for when the transaction is a debit (e.g. a purchase, a withdrawal, etc.) and negative numbers for when the transaction is a credit (e.g. a refund, a deposit, etc.).',
-            ),
-          currency: z
-            .string()
-            .describe(
-              'The effective currency of the transaction. Use the ISO 4217 currency code (e.g. "USD", "BRL", "EUR", etc.).',
-            ),
-          category: z
-            .string()
-            .nullable()
-            .describe(
-              'The category of the transaction based on the merchant name and relevant information (e.g. "Food", "Transportation", "Entertainment", "Shopping", "Health", "Education", "Other"). Leave null if you cannot find a category.',
-            ),
-          confidence: z
-            .number()
-            .optional()
-            .describe(
-              'Your confidence level about the transaction being correctly extracted and categorized. Use an integer between 0 and 100. 100 is the highest confidence level.',
-            ),
-        }),
-      ),
-    })
-
+    logger.info('Extracting transactions with GPT-5 Vision...')
     const result = await generateObject({
-      model: openai('gpt-5-mini'),
+      model: 'openai/gpt-5-mini',
       mode: 'json',
       schemaName: 'categorize-and-import-transactions',
       schemaDescription:
-        'A JSON schema for a categorization of transactions based on the merchant name and relevant information.',
-      output: 'object',
-      schema,
+        'Transactions extracted from a bank statement with categorization.',
+      schema: transactionSchema,
       messages: [
         {
           role: 'system',
-          content:
-            "You are a bank statement expert. You are given the text content extracted from a bank statement and you need to extract the transactions from it following a JSON schema. Avoid extracting duplicated transactions. In the merchant name, do not include any unrelated information like the date, installments, etc. Only include the merchant's name.",
+          content: buildSystemPrompt(),
         },
         {
           role: 'user',
-          content: `Hello! Before you start, I would like to give you some information about the categories I have already created so you can use them to categorize the transactions:
-
-${categories.map((category) => `- ${category.name}`).join('\n')}
-
-But don't worry to stick to them if you don't find a good match. Feel free to create new categories if you think they are missing.
-
-Also, remember to stick to the following categories whenever you find a merchant name that matches one of the following:
-${merchantCategories.map((merchantCategory) => `- Merchant name: ${merchantCategory.merchantName} → Category: ${merchantCategory.categoryName ?? 'N/A'}`).join('\n')}
-
-Now, here is the text content extracted from the bank statement:
-
-${pdfText}`,
+          content: [
+            {
+              type: 'text',
+              text: buildUserPrompt(categories, merchantCategories),
+            },
+            ...buildImageContent(images),
+          ],
         },
       ],
     })
-    logger.info('AI analysis complete', { transactions: result.object })
+    logger.info('AI analysis complete', {
+      transactionCount: result.object.transactions.length,
+      statementCurrency: result.object.statementCurrency,
+      openingBalance: result.object.openingBalance,
+      closingBalance: result.object.closingBalance,
+    })
 
     let totalRulesApplied = 0
     const processedTransactions = result.object.transactions
       .map((tx) => {
+        // Normalize confidence: if model returned 0-1, convert to 0-100
+        const normalizedConfidence =
+          tx.confidence <= 1 ? Math.round(tx.confidence * 100) : tx.confidence
+        // Ensure amount is an integer (cents)
+        const normalizedAmount = Math.round(tx.amount)
+
         const ruleResult = applyRules(
-          { merchantName: tx.merchantName, amount: tx.amount },
+          { merchantName: tx.merchantName, amount: normalizedAmount },
           rules,
         )
         totalRulesApplied += ruleResult.rulesApplied
@@ -189,7 +362,8 @@ ${pdfText}`,
         }
         return {
           ...tx,
-          amount: ruleResult.overrides.amount ?? tx.amount,
+          amount: ruleResult.overrides.amount ?? normalizedAmount,
+          confidence: Math.min(100, Math.max(0, normalizedConfidence)),
           ruleCategoryId: ruleResult.overrides.categoryId,
         }
       })
