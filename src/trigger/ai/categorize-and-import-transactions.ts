@@ -343,14 +343,8 @@ export const categorizeAndImportTransactionsTask = task({
     let totalRulesApplied = 0
     const processedTransactions = result.object.transactions
       .map((tx) => {
-        // Normalize confidence: if model returned 0-1, convert to 0-100
-        const normalizedConfidence =
-          tx.confidence <= 1 ? Math.round(tx.confidence * 100) : tx.confidence
-        // Ensure amount is an integer (cents)
-        const normalizedAmount = Math.round(tx.amount)
-
         const ruleResult = applyRules(
-          { merchantName: tx.merchantName, amount: normalizedAmount },
+          { merchantName: tx.merchantName, amount: tx.amount },
           rules,
         )
         totalRulesApplied += ruleResult.rulesApplied
@@ -363,11 +357,11 @@ export const categorizeAndImportTransactionsTask = task({
         // If a rule set the category, confidence is 100%
         const finalConfidence = ruleResult.overrides.categoryId
           ? 100
-          : Math.min(100, Math.max(0, normalizedConfidence))
+          : Math.min(100, Math.max(0, tx.confidence))
 
         return {
           ...tx,
-          amount: ruleResult.overrides.amount ?? normalizedAmount,
+          amount: ruleResult.overrides.amount ?? tx.amount,
           confidence: finalConfidence,
           ruleCategoryId: ruleResult.overrides.categoryId,
         }
