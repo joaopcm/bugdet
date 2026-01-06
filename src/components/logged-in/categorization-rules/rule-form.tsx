@@ -38,7 +38,7 @@ const ruleSchema = z.object({
       z
         .object({
           field: z.enum(['merchant_name', 'amount']),
-          operator: z.enum(['contains', 'gt', 'lt', 'gte', 'lte', 'eq']),
+          operator: z.enum(['contains', 'gt', 'lt', 'gte', 'lte', 'eq', 'neq']),
           value: z.union([z.string(), z.number()]),
         })
         .refine(

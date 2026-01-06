@@ -44,6 +44,8 @@ function matchesCondition(
         return tx.amount <= value
       case 'eq':
         return tx.amount === value
+      case 'neq':
+        return tx.amount !== value
       default:
         return false
     }
