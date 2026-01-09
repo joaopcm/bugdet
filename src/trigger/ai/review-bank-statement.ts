@@ -4,6 +4,15 @@ import { generateObject } from 'ai'
 import { z } from 'zod'
 import { getBankStatementPresignedUrlTask } from './get-bank-statement-presigned-url'
 
+const documentTypeEnum = z.enum([
+  'checking_statement',
+  'savings_statement',
+  'credit_card_statement',
+  'unknown',
+])
+
+export type DocumentType = z.infer<typeof documentTypeEnum>
+
 const schema = z.object({
   isValid: z
     .boolean()
@@ -16,6 +25,9 @@ const schema = z.object({
     .describe(
       'Required if isValid is false. Explain why this is not a bank statement (e.g., "This appears to be a screenshot of a website", "This is a receipt, not a bank statement", "The document is illegible or corrupted").',
     ),
+  documentType: documentTypeEnum.describe(
+    'The type of financial document. Use "checking_statement" for checking/current account statements, "savings_statement" for savings account statements, "credit_card_statement" for credit card statements, or "unknown" if unclear.',
+  ),
   documentLanguage: z
     .string()
     .optional()
@@ -72,6 +84,7 @@ export const reviewBankStatementTask = task({
         isValid: false,
         reason:
           'The PDF file could not be processed. It may be corrupted or empty.',
+        documentType: 'unknown' as const,
       }
     }
 
@@ -103,6 +116,12 @@ REJECT documents that are:
 - Illegible, blurry, or corrupted images
 - Partial statements missing key information
 - Any document that is NOT an official bank/credit card statement
+
+DOCUMENT TYPE IDENTIFICATION:
+- "checking_statement": A checking/current account bank statement showing deposits, withdrawals, and daily transactions
+- "savings_statement": A savings account statement showing deposits, interest, and withdrawals
+- "credit_card_statement": A credit card bill showing purchases, payments, and credit limit information
+- "unknown": If you cannot determine the document type with confidence
 
 You will be provided with up to 5 pages of the document.`,
         },
