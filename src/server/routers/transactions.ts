@@ -5,7 +5,12 @@ import {
 import { SUGGESTED_TRANSACTION_FILTERS_DAYS } from '@/constants/suggested-transaction-filters'
 import { CONFIDENCE_THRESHOLD } from '@/constants/transactions'
 import { db } from '@/db'
-import { category, merchantCategory, transaction } from '@/db/schema'
+import {
+  categorizationRule,
+  category,
+  merchantCategory,
+  transaction,
+} from '@/db/schema'
 import { TRPCError } from '@trpc/server'
 import { format, subDays } from 'date-fns'
 import {
@@ -194,6 +199,7 @@ export const transactionsRouter = router({
         merchantName: z.string().min(1).max(255),
         amount: z.number().max(Number.MAX_SAFE_INTEGER / 100),
         updateCategoryForSimilarTransactions: z.boolean().optional(),
+        createCategorizationRule: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -252,13 +258,32 @@ export const transactionsRouter = router({
                   eq(merchantCategory.userId, ctx.user.id),
                 ),
               )
-            return
+          } else {
+            await tx.insert(merchantCategory).values({
+              merchantName: input.merchantName,
+              userId: ctx.user.id,
+              categoryId: input.categoryId,
+            })
           }
+        }
 
-          await tx.insert(merchantCategory).values({
-            merchantName: input.merchantName,
+        if (input.createCategorizationRule && input.categoryId) {
+          await tx.insert(categorizationRule).values({
             userId: ctx.user.id,
-            categoryId: input.categoryId,
+            name: `Auto: ${input.merchantName}`,
+            conditions: [
+              {
+                field: 'merchant_name',
+                operator: 'contains',
+                value: input.merchantName,
+              },
+            ],
+            actions: [
+              {
+                type: 'set_category',
+                value: input.categoryId,
+              },
+            ],
           })
         }
       })

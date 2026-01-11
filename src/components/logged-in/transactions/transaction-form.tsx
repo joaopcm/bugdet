@@ -47,6 +47,7 @@ const transactionSchema = z.object({
   merchantName: z.string().min(1).max(255),
   amount: z.string().min(3),
   updateCategoryForSimilarTransactions: z.boolean().optional(),
+  createCategorizationRule: z.boolean().optional(),
 })
 
 export type TransactionFormValues = z.infer<typeof transactionSchema>
@@ -96,6 +97,7 @@ export function TransactionForm({
   })
 
   const hasChangedCategory = form.formState.dirtyFields.categoryId
+  const selectedCategoryId = form.watch('categoryId')
 
   return (
     <Form {...form}>
@@ -188,6 +190,42 @@ export function TransactionForm({
             </FormItem>
           )}
         />
+
+        {selectedCategoryId && (
+          <FormField
+            control={form.control}
+            name="createCategorizationRule"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center gap-2">
+                <FormControl>
+                  <Checkbox
+                    id="createCategorizationRule"
+                    checked={field.value ?? false}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <FormLabel
+                  htmlFor="createCategorizationRule"
+                  className="flex items-center gap-1"
+                >
+                  Create categorization rule
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <IconInfoCircle className="text-muted-foreground h-4 w-4" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-[240px]">
+                        Creates a new categorization rule that automatically
+                        assigns this category to future transactions matching
+                        this merchant name.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </FormLabel>
+              </FormItem>
+            )}
+          />
+        )}
 
         <FormField
           control={form.control}
