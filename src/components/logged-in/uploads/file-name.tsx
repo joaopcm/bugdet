@@ -4,18 +4,27 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import type { UploadMetadata } from '@/db/schema'
+import Link from 'next/link'
 
 interface FileNameProps {
+  uploadId: string
   fileName: string
   metadata: UploadMetadata | null
 }
 
-export function FileName({ fileName, metadata }: FileNameProps) {
+export function FileName({ uploadId, fileName, metadata }: FileNameProps) {
+  const transactionsUrl = `/transactions?uploadId=${uploadId}`
+
   if (metadata) {
     return (
       <Tooltip>
-        <TooltipTrigger className="underline decoration-dashed underline-offset-2">
-          {fileName}
+        <TooltipTrigger asChild>
+          <Link
+            href={transactionsUrl}
+            className="underline decoration-dashed underline-offset-2 hover:text-primary transition-colors"
+          >
+            {fileName}
+          </Link>
         </TooltipTrigger>
         <TooltipContent side="right">
           <ul className="grid gap-3 text-xs">
@@ -59,7 +68,14 @@ export function FileName({ fileName, metadata }: FileNameProps) {
     )
   }
 
-  return <>{fileName}</>
+  return (
+    <Link
+      href={transactionsUrl}
+      className="underline decoration-dashed underline-offset-2 hover:text-primary transition-colors"
+    >
+      {fileName}
+    </Link>
+  )
 }
 
 interface MetadataFieldProps {

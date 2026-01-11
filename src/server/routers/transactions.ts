@@ -49,6 +49,7 @@ export const transactionsRouter = router({
         filters: z.object({
           ids: z.array(z.string().uuid()).nullable(),
           categoryId: z.string().uuid().nullable(),
+          uploadId: z.string().uuid().nullable(),
           from: z.string().date().nullable(),
           to: z.string().date().nullable(),
           query: z.string().min(1).max(255).nullable(),
@@ -75,6 +76,10 @@ export const transactionsRouter = router({
 
       if (input.filters.categoryId) {
         whereClauses.push(eq(transaction.categoryId, input.filters.categoryId))
+      }
+
+      if (input.filters.uploadId) {
+        whereClauses.push(eq(transaction.uploadId, input.filters.uploadId))
       }
 
       if (input.filters.from && input.filters.to) {

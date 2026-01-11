@@ -98,7 +98,11 @@ export function UploadItem({
           className="absolute -left-8 top-3 hidden opacity-0 group-hover:opacity-100 data-[state=checked]:opacity-100 md:block"
           aria-label={`Select upload ${upload.fileName}`}
         />
-        <FileName fileName={upload.fileName} metadata={upload.metadata} />
+        <FileName
+          uploadId={upload.id}
+          fileName={upload.fileName}
+          metadata={upload.metadata}
+        />
       </TableCell>
       <TableCell>{formatBytes(upload.fileSize)}</TableCell>
       <TableCell>

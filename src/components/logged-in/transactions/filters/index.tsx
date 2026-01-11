@@ -6,6 +6,7 @@ import { ToReview } from './badges/to-review'
 import { CategoryFilter } from './category-filter'
 import { DateRangeFilter } from './date-range-filter'
 import { SearchFilter } from './search-filter'
+import { UploadFilter } from './upload-filter'
 
 export function TransactionsFilters() {
   return (
@@ -14,6 +15,7 @@ export function TransactionsFilters() {
         <SearchFilter />
         <DateRangeFilter />
         <CategoryFilter />
+        <UploadFilter />
       </div>
       <div className="flex items-center gap-2 flex-wrap">
         <ToReview />

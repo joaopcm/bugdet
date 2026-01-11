@@ -25,6 +25,10 @@ export function useTransactions() {
           transactionFilters.category === 'all'
             ? null
             : transactionFilters.category,
+        uploadId:
+          transactionFilters.uploadId === 'all'
+            ? null
+            : transactionFilters.uploadId,
         from: transactionFilters.from
           ? format(transactionFilters.from, 'yyyy-MM-dd')
           : null,
