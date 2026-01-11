@@ -28,14 +28,19 @@ interface NavMainProps {
     url: string
     icon?: Icon
   }[]
+  fileInputRef?: React.RefObject<HTMLInputElement | null>
 }
 
-export function NavMain({ items }: NavMainProps) {
+export function NavMain({
+  items,
+  fileInputRef: externalFileInputRef,
+}: NavMainProps) {
   const [files, setFiles] = useState<File[] | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const internalFileInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = externalFileInputRef ?? internalFileInputRef
   const { refetch: refetchUploads } = useUploads()
 
   useHotkeys(IMPORT_BANK_STATEMENT_SHORTCUT, () => handleImportClick())

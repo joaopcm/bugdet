@@ -2,6 +2,7 @@
 
 import { NavMain } from '@/components/logged-in/nav-main'
 import { NavUser } from '@/components/logged-in/nav-user'
+import { UploadReminderAlert } from '@/components/logged-in/upload-reminder-alert'
 import {
   Sidebar,
   SidebarContent,
@@ -21,6 +22,7 @@ import {
 import type { User } from 'better-auth'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useCallback, useRef } from 'react'
 import type * as React from 'react'
 
 const routes = [
@@ -56,6 +58,12 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 }
 
 export function AppSidebar({ user, ...props }: AppSidebarProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleUploadClick = useCallback(() => {
+    fileInputRef.current?.click()
+  }, [])
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -80,9 +88,10 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={routes} />
+        <NavMain items={routes} fileInputRef={fileInputRef} />
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="gap-2">
+        <UploadReminderAlert onUploadClick={handleUploadClick} />
         <NavUser user={user} />
       </SidebarFooter>
     </Sidebar>
