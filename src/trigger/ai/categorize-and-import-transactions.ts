@@ -16,6 +16,7 @@ import { generateObject } from 'ai'
 import { and, desc, eq, inArray, ne } from 'drizzle-orm'
 import { z } from 'zod'
 import type { ExtractedTransaction } from './extract-transactions'
+import { secondPassCategorizationTask } from './second-pass-categorization'
 
 const categorizationSchema = z.object({
   categorizedTransactions: z.array(
@@ -420,6 +421,16 @@ export const categorizeAndImportTransactionsTask = task({
           uploadsLink: `${env.NEXT_PUBLIC_APP_URL}/uploads`,
         })
       }
+
+      // Trigger second-pass categorization for low-confidence transactions
+      // This runs in the background using a smarter model (Sonnet 4.5)
+      logger.info(
+        `Triggering second-pass categorization for upload ${payload.uploadId}...`,
+      )
+      await secondPassCategorizationTask.trigger({
+        uploadId: payload.uploadId,
+        userId: uploadUserId,
+      })
     }
 
     return {
