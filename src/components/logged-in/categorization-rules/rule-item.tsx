@@ -92,12 +92,17 @@ export function RuleItem({
 
   const { mutate: deleteRule, isPending: isDeleting } =
     trpc.categorizationRules.delete.useMutation({
+      onMutate: () => {
+        toast.loading('Deleting rule...', { id: `delete-rule-${rule.id}` })
+      },
       onSuccess: () => {
         refetchRules()
-        toast.success(`Deleted rule "${rule.name}".`)
+        toast.success(`Deleted rule "${rule.name}".`, {
+          id: `delete-rule-${rule.id}`,
+        })
       },
       onError: (error) => {
-        toast.error(error.message)
+        toast.error(error.message, { id: `delete-rule-${rule.id}` })
       },
     })
 

@@ -20,6 +20,7 @@ import { useBulkSelection } from '@/hooks/use-bulk-selection'
 import { useIsMobile } from '@/hooks/use-is-mobile'
 import { useUploads } from '@/hooks/use-uploads'
 import { trpc } from '@/lib/trpc/client'
+import { pluralize } from '@/lib/utils'
 import { IconInfoCircle } from '@tabler/icons-react'
 import { useMemo, useState } from 'react'
 import { useHotkeys } from 'react-hotkeys-hook'
@@ -56,14 +57,20 @@ export function UploadsTable() {
 
   const { mutate: deleteMany, isPending: isDeleting } =
     trpc.uploads.deleteMany.useMutation({
+      onMutate: () => {
+        toast.loading('Deleting uploads...', { id: 'delete-uploads' })
+      },
       onSuccess: (result) => {
-        toast.success(`Deleted ${result.deletedCount} upload(s)`)
+        toast.success(
+          `Deleted ${result.deletedCount} ${pluralize(result.deletedCount, 'upload')}`,
+          { id: 'delete-uploads' },
+        )
         clearSelection()
         setDeleteRelatedTransactions(false)
         refetch()
       },
       onError: (error) => {
-        toast.error(error.message)
+        toast.error(error.message, { id: 'delete-uploads' })
       },
     })
 

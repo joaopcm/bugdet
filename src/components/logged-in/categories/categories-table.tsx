@@ -13,6 +13,7 @@ import { useBulkSelection } from '@/hooks/use-bulk-selection'
 import { useCategories } from '@/hooks/use-categories'
 import { useIsMobile } from '@/hooks/use-is-mobile'
 import { trpc } from '@/lib/trpc/client'
+import { pluralize } from '@/lib/utils'
 import { useMemo } from 'react'
 import { useHotkeys } from 'react-hotkeys-hook'
 import { toast } from 'sonner'
@@ -46,13 +47,19 @@ export function CategoriesTable() {
 
   const { mutate: deleteMany, isPending: isDeleting } =
     trpc.categories.deleteMany.useMutation({
+      onMutate: () => {
+        toast.loading('Deleting categories...', { id: 'delete-categories' })
+      },
       onSuccess: () => {
-        toast.success(`Deleted ${selectedIds.size} category(s)`)
+        toast.success(
+          `Deleted ${selectedIds.size} ${pluralize(selectedIds.size, 'category', 'categories')}`,
+          { id: 'delete-categories' },
+        )
         clearSelection()
         refetch()
       },
       onError: (error) => {
-        toast.error(error.message)
+        toast.error(error.message, { id: 'delete-categories' })
       },
     })
 

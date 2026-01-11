@@ -29,12 +29,19 @@ export function CategoryItem({
 
   const { mutate: deleteCategory, isPending: isDeleting } =
     trpc.categories.delete.useMutation({
+      onMutate: () => {
+        toast.loading('Deleting category...', {
+          id: `delete-category-${category.id}`,
+        })
+      },
       onSuccess: () => {
         refetchCategories()
-        toast.success(`You have deleted the category "${category.name}".`)
+        toast.success(`You have deleted the category "${category.name}".`, {
+          id: `delete-category-${category.id}`,
+        })
       },
       onError: (error) => {
-        toast.error(error.message)
+        toast.error(error.message, { id: `delete-category-${category.id}` })
       },
     })
 
