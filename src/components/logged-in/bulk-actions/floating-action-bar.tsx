@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Kbd, SHORTCUTS_VALUES } from '@/components/ui/kbd'
-import { cn } from '@/lib/utils'
+import { cn, pluralize } from '@/lib/utils'
 import { IconBackspace } from '@tabler/icons-react'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -81,7 +81,7 @@ export function FloatingActionBar({
   if (!isVisible) return null
 
   const displayCount = selectedCount > 0 ? selectedCount : 0
-  const pluralEntity = displayCount === 1 ? 'item' : 'items'
+  const itemLabel = pluralize(displayCount, 'item')
 
   const content = (
     <>
@@ -106,7 +106,7 @@ export function FloatingActionBar({
         <div className="flex items-center justify-between gap-4 rounded-lg border bg-card px-4 py-3 shadow-lg">
           <div className="flex items-center gap-4">
             <span className="text-sm font-medium">
-              {displayCount} {pluralEntity} selected
+              {displayCount} {itemLabel} selected
             </span>
 
             {children}
@@ -124,11 +124,11 @@ export function FloatingActionBar({
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>
-                  Delete {displayCount} {pluralEntity}?
+                  Delete {displayCount} {itemLabel}?
                 </AlertDialogTitle>
                 <AlertDialogDescription>
                   This action cannot be undone. Are you sure you want to delete{' '}
-                  {displayCount === 1 ? 'this' : 'these'} {pluralEntity}?
+                  {displayCount === 1 ? 'this' : 'these'} {itemLabel}?
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
