@@ -1,5 +1,6 @@
 import { db } from '@/db'
 import { upload } from '@/db/schema'
+import { decryptPassword } from '@/lib/crypto'
 import { convertPdfToImages } from '@/lib/pdf'
 import { createLambdaClient } from '@/lib/supabase/server'
 import { AbortTaskRunError, logger, retry, task } from '@trigger.dev/sdk/v3'
@@ -18,6 +19,7 @@ export const convertPdfToImagesTask = task({
       .select({
         id: upload.id,
         filePath: upload.filePath,
+        encryptedPassword: upload.encryptedPassword,
       })
       .from(upload)
       .where(eq(upload.id, payload.uploadId))
@@ -48,8 +50,12 @@ export const convertPdfToImagesTask = task({
     })
     const fileBuffer = await response.arrayBuffer()
 
+    const password = existingUpload.encryptedPassword
+      ? decryptPassword(existingUpload.encryptedPassword)
+      : undefined
+
     logger.info('Converting PDF to images...')
-    const images = await convertPdfToImages(fileBuffer)
+    const images = await convertPdfToImages(fileBuffer, password)
     logger.info(`Converted ${images.length} pages to images`)
 
     if (images.length === 0) {
@@ -86,6 +92,11 @@ export const convertPdfToImagesTask = task({
 
     logger.info(`Successfully uploaded ${uploadResults.length} images`)
 
+    await db
+      .update(upload)
+      .set({ pageCount: images.length })
+      .where(eq(upload.id, payload.uploadId))
+
     logger.info(`Deleting original PDF for upload ${payload.uploadId}...`)
     const { error: deleteError } = await supabase.storage
       .from('bank-statements')
@@ -94,11 +105,6 @@ export const convertPdfToImagesTask = task({
     if (deleteError) {
       logger.warn(`Failed to delete original PDF: ${deleteError.message}`)
     }
-
-    await db
-      .update(upload)
-      .set({ pageCount: images.length })
-      .where(eq(upload.id, payload.uploadId))
 
     logger.info(
       `PDF conversion complete for upload ${payload.uploadId}: ${images.length} pages`,

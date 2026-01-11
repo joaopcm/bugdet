@@ -9,11 +9,13 @@ export type PageImage = {
   mimeType: 'image/png'
 }
 
+type PageUrl = { page: number; url: string }
+
 export async function getPageImageUrls(
   uploadId: string,
   pageRange: { start: number; end: number } | 'all',
   pageCount: number,
-): Promise<string[]> {
+): Promise<PageUrl[]> {
   const supabase = createLambdaClient()
 
   const pagesToFetch =
@@ -24,17 +26,17 @@ export async function getPageImageUrls(
           (_, i) => pageRange.start + i,
         )
 
-  const urls = await Promise.all(
+  const results = await Promise.all(
     pagesToFetch.map(async (page) => {
       const path = `${uploadId}/page-${page}.png`
       const { data } = await supabase.storage
         .from('bank-statements')
         .createSignedUrl(path, 60 * 15)
-      return data?.signedUrl
+      return data?.signedUrl ? { page, url: data.signedUrl } : undefined
     }),
   )
 
-  return urls.filter((url): url is string => url !== undefined)
+  return results.filter((r): r is PageUrl => r !== undefined)
 }
 
 export async function fetchPageImages(
@@ -42,16 +44,12 @@ export async function fetchPageImages(
   pageRange: { start: number; end: number } | 'all',
   pageCount: number,
 ): Promise<PageImage[]> {
-  const urls = await getPageImageUrls(uploadId, pageRange, pageCount)
+  const pageUrls = await getPageImageUrls(uploadId, pageRange, pageCount)
 
   const images = await Promise.all(
-    urls.map(async (url, index) => {
+    pageUrls.map(async ({ page, url }) => {
       const response = await retry.fetch(url)
       const buffer = await response.arrayBuffer()
-      const page =
-        pageRange === 'all'
-          ? index + 1
-          : (pageRange as { start: number }).start + index
 
       return {
         page,
@@ -119,5 +117,12 @@ export async function getUploadImages(
   logger.info('Images not found, falling back to PDF conversion...')
   const images = await fetchImagesFromPdf(uploadId)
   logger.info(`Converted ${images.length} pages to images`)
-  return images
+
+  if (pageRange === 'all') {
+    return images
+  }
+
+  return images.filter(
+    (img) => img.page >= pageRange.start && img.page <= pageRange.end,
+  )
 }
