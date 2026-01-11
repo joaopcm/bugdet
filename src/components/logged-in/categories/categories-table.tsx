@@ -46,13 +46,18 @@ export function CategoriesTable() {
 
   const { mutate: deleteMany, isPending: isDeleting } =
     trpc.categories.deleteMany.useMutation({
+      onMutate: () => {
+        toast.loading('Deleting categories...', { id: 'delete-categories' })
+      },
       onSuccess: () => {
-        toast.success(`Deleted ${selectedIds.size} category(s)`)
+        toast.success(`Deleted ${selectedIds.size} category(s)`, {
+          id: 'delete-categories',
+        })
         clearSelection()
         refetch()
       },
       onError: (error) => {
-        toast.error(error.message)
+        toast.error(error.message, { id: 'delete-categories' })
       },
     })
 

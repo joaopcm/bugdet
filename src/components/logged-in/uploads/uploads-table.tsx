@@ -56,14 +56,19 @@ export function UploadsTable() {
 
   const { mutate: deleteMany, isPending: isDeleting } =
     trpc.uploads.deleteMany.useMutation({
+      onMutate: () => {
+        toast.loading('Deleting uploads...', { id: 'delete-uploads' })
+      },
       onSuccess: (result) => {
-        toast.success(`Deleted ${result.deletedCount} upload(s)`)
+        toast.success(`Deleted ${result.deletedCount} upload(s)`, {
+          id: 'delete-uploads',
+        })
         clearSelection()
         setDeleteRelatedTransactions(false)
         refetch()
       },
       onError: (error) => {
-        toast.error(error.message)
+        toast.error(error.message, { id: 'delete-uploads' })
       },
     })
 

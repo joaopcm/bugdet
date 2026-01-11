@@ -63,12 +63,17 @@ export function UploadItem({
 
   const { mutate: deleteUpload, isPending: isDeleting } =
     trpc.uploads.delete.useMutation({
+      onMutate: () => {
+        toast.loading('Deleting upload...', { id: `delete-upload-${upload.id}` })
+      },
       onSuccess: () => {
         refetchUploads()
-        toast.success(`You have deleted the file "${upload.fileName}".`)
+        toast.success(`You have deleted the file "${upload.fileName}".`, {
+          id: `delete-upload-${upload.id}`,
+        })
       },
       onError: (error) => {
-        toast.error(error.message)
+        toast.error(error.message, { id: `delete-upload-${upload.id}` })
       },
     })
 

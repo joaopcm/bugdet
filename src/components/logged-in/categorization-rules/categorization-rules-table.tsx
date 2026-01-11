@@ -76,13 +76,18 @@ export function CategorizationRulesTable() {
 
   const { mutate: deleteMany, isPending: isDeleting } =
     trpc.categorizationRules.deleteMany.useMutation({
+      onMutate: () => {
+        toast.loading('Deleting rules...', { id: 'delete-rules' })
+      },
       onSuccess: () => {
-        toast.success(`Deleted ${selectedIds.size} rule(s)`)
+        toast.success(`Deleted ${selectedIds.size} rule(s)`, {
+          id: 'delete-rules',
+        })
         clearSelection()
         utils.categorizationRules.list.invalidate()
       },
       onError: (error) => {
-        toast.error(error.message)
+        toast.error(error.message, { id: 'delete-rules' })
       },
     })
 

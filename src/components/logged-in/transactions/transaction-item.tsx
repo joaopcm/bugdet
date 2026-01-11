@@ -44,14 +44,22 @@ export function TransactionItem({
 
   const { mutate: deleteTransaction, isPending: isDeleting } =
     trpc.transactions.delete.useMutation({
+      onMutate: () => {
+        toast.loading('Deleting transaction...', {
+          id: `delete-transaction-${transaction.id}`,
+        })
+      },
       onSuccess: () => {
         refetchTransactions()
         toast.success(
           `You have deleted the transaction "${formatCurrency(transaction.amount, transaction.currency)} - ${transaction.merchantName}".`,
+          { id: `delete-transaction-${transaction.id}` },
         )
       },
       onError: (error) => {
-        toast.error(error.message)
+        toast.error(error.message, {
+          id: `delete-transaction-${transaction.id}`,
+        })
       },
     })
 

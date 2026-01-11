@@ -46,13 +46,18 @@ export const TransactionsTable = () => {
 
   const { mutate: deleteMany, isPending: isDeleting } =
     trpc.transactions.deleteMany.useMutation({
+      onMutate: () => {
+        toast.loading('Deleting transactions...', { id: 'delete-transactions' })
+      },
       onSuccess: () => {
-        toast.success(`Deleted ${selectedIds.size} transaction(s)`)
+        toast.success(`Deleted ${selectedIds.size} transaction(s)`, {
+          id: 'delete-transactions',
+        })
         clearSelection()
         refetch()
       },
       onError: (error) => {
-        toast.error(error.message)
+        toast.error(error.message, { id: 'delete-transactions' })
       },
     })
 
