@@ -14,6 +14,7 @@ import { useBulkSelection } from '@/hooks/use-bulk-selection'
 import { useIsMobile } from '@/hooks/use-is-mobile'
 import { usePagination } from '@/hooks/use-pagination'
 import { trpc } from '@/lib/trpc/client'
+import { pluralize } from '@/lib/utils'
 import {
   DndContext,
   type DragEndEvent,
@@ -80,9 +81,10 @@ export function CategorizationRulesTable() {
         toast.loading('Deleting rules...', { id: 'delete-rules' })
       },
       onSuccess: () => {
-        toast.success(`Deleted ${selectedIds.size} rule(s)`, {
-          id: 'delete-rules',
-        })
+        toast.success(
+          `Deleted ${selectedIds.size} ${pluralize(selectedIds.size, 'rule')}`,
+          { id: 'delete-rules' },
+        )
         clearSelection()
         utils.categorizationRules.list.invalidate()
       },

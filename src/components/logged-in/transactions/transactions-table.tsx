@@ -13,6 +13,7 @@ import { useBulkSelection } from '@/hooks/use-bulk-selection'
 import { useIsMobile } from '@/hooks/use-is-mobile'
 import { useTransactions } from '@/hooks/use-transactions'
 import { trpc } from '@/lib/trpc/client'
+import { pluralize } from '@/lib/utils'
 import { useMemo } from 'react'
 import { useHotkeys } from 'react-hotkeys-hook'
 import { toast } from 'sonner'
@@ -50,9 +51,10 @@ export const TransactionsTable = () => {
         toast.loading('Deleting transactions...', { id: 'delete-transactions' })
       },
       onSuccess: () => {
-        toast.success(`Deleted ${selectedIds.size} transaction(s)`, {
-          id: 'delete-transactions',
-        })
+        toast.success(
+          `Deleted ${selectedIds.size} ${pluralize(selectedIds.size, 'transaction')}`,
+          { id: 'delete-transactions' },
+        )
         clearSelection()
         refetch()
       },

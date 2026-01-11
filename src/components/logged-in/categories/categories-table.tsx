@@ -13,6 +13,7 @@ import { useBulkSelection } from '@/hooks/use-bulk-selection'
 import { useCategories } from '@/hooks/use-categories'
 import { useIsMobile } from '@/hooks/use-is-mobile'
 import { trpc } from '@/lib/trpc/client'
+import { pluralize } from '@/lib/utils'
 import { useMemo } from 'react'
 import { useHotkeys } from 'react-hotkeys-hook'
 import { toast } from 'sonner'
@@ -50,9 +51,10 @@ export function CategoriesTable() {
         toast.loading('Deleting categories...', { id: 'delete-categories' })
       },
       onSuccess: () => {
-        toast.success(`Deleted ${selectedIds.size} category(s)`, {
-          id: 'delete-categories',
-        })
+        toast.success(
+          `Deleted ${selectedIds.size} ${pluralize(selectedIds.size, 'category', 'categories')}`,
+          { id: 'delete-categories' },
+        )
         clearSelection()
         refetch()
       },
