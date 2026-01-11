@@ -14,6 +14,7 @@ import { sendWrongPasswordTask } from '@/trigger/emails/send-wrong-password'
 import { logger, retry, task } from '@trigger.dev/sdk/v3'
 import { and, eq, ne } from 'drizzle-orm'
 import { categorizeAndImportTransactionsTask } from './categorize-and-import-transactions'
+import { extractTransactionsTask } from './extract-transactions'
 import { extractUploadMetadataTask } from './extract-upload-metadata'
 import { reviewBankStatementTask } from './review-bank-statement'
 
@@ -38,13 +39,6 @@ export const uploadBreakdownTask = task({
       return { success: false, reason: 'Upload not found' }
     }
 
-    await db
-      .update(upload)
-      .set({
-        status: 'processing',
-      })
-      .where(eq(upload.id, payload.uploadId))
-
     const [uploadUser] = await db
       .select({ email: user.email })
       .from(user)
@@ -54,6 +48,13 @@ export const uploadBreakdownTask = task({
       logger.error(`User ${existingUpload.userId} not found`)
       return { success: false, reason: 'User not found' }
     }
+
+    await db
+      .update(upload)
+      .set({
+        status: 'processing',
+      })
+      .where(eq(upload.id, payload.uploadId))
 
     const supabase = createLambdaClient()
     const { data: signedUrlData, error: signedUrlError } =
@@ -196,10 +197,25 @@ export const uploadBreakdownTask = task({
     })
 
     logger.info(
-      `Sending upload ${payload.uploadId} to the categorize and import transactions task...`,
+      `Extracting transactions from upload ${payload.uploadId} (document type: ${review.documentType})...`,
+    )
+    const extractionResult = await extractTransactionsTask
+      .triggerAndWait({
+        uploadId: payload.uploadId,
+        documentType: review.documentType,
+      })
+      .unwrap()
+
+    logger.info(
+      `Extracted ${extractionResult.transactions.length} transactions. Sending to categorize and import task...`,
     )
     await categorizeAndImportTransactionsTask.trigger({
       uploadId: payload.uploadId,
+      userId: extractionResult.userId,
+      transactions: extractionResult.transactions,
+      statementCurrency: extractionResult.statementCurrency,
+      openingBalance: extractionResult.openingBalance,
+      closingBalance: extractionResult.closingBalance,
     })
 
     return { success: true }

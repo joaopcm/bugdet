@@ -8,45 +8,21 @@ import {
   user,
 } from '@/db/schema'
 import { env } from '@/env'
-import { type PdfPageImage, convertPdfToImages } from '@/lib/pdf'
 import { applyRules } from '@/lib/rules/apply-rules'
 import { sendUploadCompletedTask } from '@/trigger/emails/send-upload-completed'
 import { sendUploadFailedTask } from '@/trigger/emails/send-upload-failed'
-import { AbortTaskRunError, logger, retry, task } from '@trigger.dev/sdk/v3'
+import { logger, task } from '@trigger.dev/sdk/v3'
 import { generateObject } from 'ai'
 import { and, desc, eq, inArray, ne } from 'drizzle-orm'
 import { z } from 'zod'
-import { getBankStatementPresignedUrlTask } from './get-bank-statement-presigned-url'
+import type { ExtractedTransaction } from './extract-transactions'
 
-const transactionSchema = z.object({
-  transactions: z.array(
+const categorizationSchema = z.object({
+  categorizedTransactions: z.array(
     z.object({
-      date: z
-        .string()
-        .describe(
-          'Transaction date in ISO format YYYY-MM-DD (e.g., "2025-01-15"). Parse dates carefully from the statement.',
-        ),
-      merchantName: z
-        .string()
-        .describe(
-          'Merchant name EXACTLY as shown on statement. Keep prefixes like "Ifd*", "Pag*", "MP*". Only remove: installment suffixes (1/3, PARC 01/12) and payment method indicators at the end. Example: "Ifd*Japakitos 2/3" → "Ifd*Japakitos".',
-        ),
-      description: z
-        .string()
-        .optional()
-        .describe(
-          'Additional transaction details if present (e.g., "Online purchase", "ATM withdrawal", installment info "2/6").',
-        ),
-      amount: z
+      index: z
         .number()
-        .describe(
-          'Amount in CENTS as integer. POSITIVE for money OUT (purchases, payments, withdrawals, fees). NEGATIVE for money IN (deposits, refunds, cashback, interest received). Example: $10.50 expense = 1050, $25.00 refund = -2500.',
-        ),
-      currency: z
-        .string()
-        .describe(
-          'ISO 4217 currency code (e.g., "USD", "BRL", "EUR"). Use the statement\'s primary currency.',
-        ),
+        .describe('The index of the transaction in the input array (0-based).'),
       category: z
         .string()
         .nullable()
@@ -56,79 +32,27 @@ const transactionSchema = z.object({
       confidence: z
         .number()
         .describe(
-          'Confidence score 0-100. BE CONSERVATIVE. 90-100: ONLY for exact merchant match in learned mappings. 70-89: Clear text, category is obvious (e.g., "Netflix" → Entertainment). 50-69: Category is a guess based on merchant name. Below 50: Uncertain category or unclear text.',
+          'Confidence score 0-100. BE CONSERVATIVE. 90-100: ONLY for exact merchant match in learned mappings. 70-89: Clear category is obvious (e.g., "Netflix" → Entertainment). 50-69: Category is a guess based on merchant name. Below 50: Uncertain category.',
         ),
     }),
   ),
-  statementCurrency: z
-    .string()
-    .describe('Primary currency of the statement (ISO 4217 code).'),
-  openingBalance: z
-    .number()
-    .optional()
-    .describe('Opening/previous balance in cents if clearly visible.'),
-  closingBalance: z
-    .number()
-    .optional()
-    .describe('Closing/ending balance in cents if clearly visible.'),
 })
 
-function buildImageContent(images: PdfPageImage[]) {
-  return images.map((img) => ({
-    type: 'image' as const,
-    image: Buffer.from(img.base64, 'base64'),
-    mimeType: img.mimeType,
-  }))
-}
-
 function buildSystemPrompt() {
-  return `You are an expert financial document analyst specializing in extracting transactions from bank statements and credit card statements.
+  return `You are an expert financial analyst specializing in categorizing transactions from bank statements.
 
 ## YOUR TASK
-Analyze the provided bank statement images and extract ALL transactions into a structured format.
+Analyze the provided transactions and assign appropriate categories to each one.
 
 ## CRITICAL RULES
 
-### Transaction Identification
-- Extract EVERY transaction row from the transaction table/list
-- Look for transactions across ALL pages - they may span multiple pages
-- Transactions typically have: date, description/merchant, and amount columns
-- Watch for page headers that repeat - don't extract them as transactions
-
-### Date Parsing
-- Convert all dates to ISO format: YYYY-MM-DD
-- Handle various formats: "Jan 15", "15/01/2025", "01-15-25", etc.
-- Use the statement period to infer the year if not explicitly shown
-
-### Merchant Name (KEEP AS-IS)
-Keep the merchant name EXACTLY as shown on the statement. Preserve all prefixes and identifiers.
-
-KEEP prefixes like:
-- "Ifd*", "Pag*", "MP*", "PAG*", "SQ*", etc.
-
-Some transactions may have prefixes and we want to keep them as they are.
-
-ONLY REMOVE:
-- Installment suffixes at the end (1/3, 2/6, PARC 01/12)
-- Payment method indicators at the very end
-
-Examples:
-- "Ifd*Japakitos 2/3" → "Ifd*Japakitos"
-- "PAG*JoePizza" → "PAG*JoePizza"
-- "MP*Uber PARC 01/06" → "MP*Uber"
-- "NETFLIX.COM" → "NETFLIX.COM"
-
-### Amount Sign Convention (IMPORTANT!)
-- POSITIVE amounts = Money leaving the account (expenses, purchases, payments, fees, withdrawals)
-- NEGATIVE amounts = Money entering the account (deposits, refunds, credits, interest, cashback)
-- Convert to cents: $10.50 = 1050, R$ 25,00 = 2500
-
-### Deduplication
-- Same date + same merchant + same amount = likely duplicate, extract only once
-- Watch for "pending" and "posted" versions of the same transaction
+### Category Assignment
+- Use existing categories from the provided list when they fit
+- You may suggest new categories if none of the existing ones fit well
+- Use null for the category if you are truly uncertain
 
 ### Confidence Scoring (BE CONSERVATIVE!)
-The confidence score should reflect how certain you are about the CATEGORY assignment, not just the extraction.
+The confidence score should reflect how certain you are about the CATEGORY assignment.
 
 - 90-100: ONLY if merchant EXACTLY matches one from the "LEARNED MERCHANT MAPPINGS" list
 - 70-89: Category is very obvious from merchant name (e.g., "NETFLIX" → Entertainment, "UBER" → Transportation)
@@ -136,10 +60,14 @@ The confidence score should reflect how certain you are about the CATEGORY assig
 - 30-49: Category is uncertain, merchant name is ambiguous
 - Below 30: No idea what category this should be
 
-Most transactions should be in the 50-70 range unless there's an exact match in the learned mappings.`
+### Important Guidelines
+- Consider the merchant name, description, and amount when categorizing
+- Negative amounts (income) often have different categories than expenses
+- Be consistent with categorization across similar merchants`
 }
 
 function buildUserPrompt(
+  transactions: ExtractedTransaction[],
   categories: { name: string }[],
   merchantMappings: { merchantName: string; categoryName: string | null }[],
 ) {
@@ -159,6 +87,13 @@ function buildUserPrompt(
           .join('\n')
       : '(No merchant mappings yet)'
 
+  const transactionsList = transactions
+    .map(
+      (tx, i) =>
+        `${i}. ${tx.date} | ${tx.merchantName}${tx.description ? ` (${tx.description})` : ''} | ${tx.amount > 0 ? 'Expense' : 'Income'}: ${Math.abs(tx.amount)} cents (${tx.currency})`,
+    )
+    .join('\n')
+
   return `## AVAILABLE CATEGORIES
 Use these existing categories when appropriate:
 ${categoryList}
@@ -169,109 +104,83 @@ You may suggest new categories if none fit well.
 When you see these merchants, use the mapped category:
 ${merchantList}
 
+## TRANSACTIONS TO CATEGORIZE
+${transactionsList}
+
 ## INSTRUCTIONS
-1. Examine ALL pages of the bank statement
-2. Extract EVERY transaction from the transaction table(s)
-3. Keep merchant names as shown (preserve prefixes like "Ifd*", "Pag*")
-4. Apply correct sign convention (positive = expense, negative = income)
-5. Use categories from the list above when they match
-6. Provide confidence scores based on extraction certainty
+For each transaction, provide:
+1. The index (0-based)
+2. The suggested category (from the list above or a new one)
+3. Your confidence score (0-100)
 
-## EXAMPLE OUTPUT FORMAT
-\`\`\`json
-{
-  "transactions": [
-    {
-      "date": "2025-01-15",
-      "merchantName": "Ifd*Japakitos",
-      "description": "2/3",
-      "amount": 2500,
-      "currency": "BRL",
-      "category": "Food & Dining",
-      "confidence": 65
-    },
-    {
-      "date": "2025-01-14",
-      "merchantName": "NETFLIX.COM",
-      "amount": 3990,
-      "currency": "BRL",
-      "category": "Entertainment",
-      "confidence": 85
-    },
-    {
-      "date": "2025-01-10",
-      "merchantName": "TED RECEBIDO",
-      "description": "Salary deposit",
-      "amount": -500000,
-      "currency": "BRL",
-      "category": "Income",
-      "confidence": 70
-    }
-  ],
-  "statementCurrency": "BRL",
-  "openingBalance": 150000,
-  "closingBalance": 125000
+Return categorizations for ALL transactions.`
 }
-\`\`\`
 
-Now analyze the statement images and extract all transactions.`
+export interface CategorizeAndImportPayload {
+  uploadId: string
+  userId: string
+  transactions: ExtractedTransaction[]
+  statementCurrency: string
+  openingBalance?: number
+  closingBalance?: number
 }
 
 export const categorizeAndImportTransactionsTask = task({
   id: 'categorize-and-import-transactions',
-  run: async (payload: { uploadId: string }, { ctx }) => {
+  run: async (payload: CategorizeAndImportPayload, { ctx }) => {
     logger.info(
-      `Categorizing and importing transactions for upload ${payload.uploadId}...`,
-      { payload, ctx },
+      `Categorizing and importing ${payload.transactions.length} transactions for upload ${payload.uploadId}...`,
+      {
+        payload: {
+          ...payload,
+          transactions: `[${payload.transactions.length} items]`,
+        },
+        ctx,
+      },
     )
 
-    const presignedUrl = await getBankStatementPresignedUrlTask
-      .triggerAndWait({
-        uploadId: payload.uploadId,
-      })
-      .unwrap()
+    if (payload.transactions.length === 0) {
+      logger.warn('No transactions to import')
 
-    if (!presignedUrl.url) {
-      throw new AbortTaskRunError(
-        `Failed to get presigned URL for upload ${payload.uploadId}`,
-      )
+      await db
+        .update(upload)
+        .set({ status: 'completed' })
+        .where(eq(upload.id, payload.uploadId))
+
+      const [uploadData] = await db
+        .select({ fileName: upload.fileName, userId: upload.userId })
+        .from(upload)
+        .where(eq(upload.id, payload.uploadId))
+
+      if (uploadData) {
+        const [uploadUser] = await db
+          .select({ email: user.email })
+          .from(user)
+          .where(eq(user.id, uploadData.userId))
+
+        if (uploadUser) {
+          await sendUploadCompletedTask.trigger({
+            to: uploadUser.email,
+            fileName: uploadData.fileName,
+            transactionCount: 0,
+            categoriesCreated: 0,
+            rulesApplied: 0,
+            uploadsLink: `${env.NEXT_PUBLIC_APP_URL}/uploads`,
+          })
+        }
+      }
+
+      return { success: true }
     }
-
-    logger.info(
-      `Downloading bank statement for upload ${payload.uploadId} via presigned URL...`,
-    )
-    const response = await retry.fetch(presignedUrl.url, {
-      method: 'GET',
-    })
-    const fileBuffer = await response.arrayBuffer()
-
-    logger.info('Converting PDF to images...')
-    const images = await convertPdfToImages(fileBuffer)
-    logger.info(`Converted ${images.length} pages to images`)
-
-    if (images.length === 0) {
-      throw new AbortTaskRunError('No pages could be extracted from the PDF')
-    }
-
-    logger.info(
-      `Finding categories for the user that owns the upload ${payload.uploadId}...`,
-    )
-
-    const [{ userId }] = await db
-      .select({ userId: upload.userId })
-      .from(upload)
-      .where(eq(upload.id, payload.uploadId))
-    logger.info(`The user that owns the upload is ${userId}`)
 
     const categories = await db
       .select({ id: category.id, name: category.name })
       .from(category)
-      .where(and(eq(category.userId, userId), eq(category.deleted, false)))
+      .where(
+        and(eq(category.userId, payload.userId), eq(category.deleted, false)),
+      )
     logger.info(
-      `Found ${categories.length} categories for the user ${userId}:`,
-      {
-        categories,
-      },
+      `Found ${categories.length} categories for user ${payload.userId}`,
     )
 
     const merchantCategories = await db
@@ -281,41 +190,30 @@ export const categorizeAndImportTransactionsTask = task({
       })
       .from(merchantCategory)
       .leftJoin(category, eq(merchantCategory.categoryId, category.id))
-      .where(eq(merchantCategory.userId, userId))
+      .where(eq(merchantCategory.userId, payload.userId))
       .orderBy(desc(merchantCategory.updatedAt))
-    logger.info(
-      `Found ${merchantCategories.length} merchant categories for the user ${userId}:`,
-      {
-        merchantCategories,
-      },
-    )
+    logger.info(`Found ${merchantCategories.length} merchant categories`)
 
     const rules = await db
       .select()
       .from(categorizationRule)
       .where(
         and(
-          eq(categorizationRule.userId, userId),
+          eq(categorizationRule.userId, payload.userId),
           eq(categorizationRule.deleted, false),
           eq(categorizationRule.enabled, true),
         ),
       )
       .orderBy(desc(categorizationRule.priority), categorizationRule.createdAt)
-    logger.info(
-      `Found ${rules.length} categorization rules for user ${userId}`,
-      {
-        rules,
-      },
-    )
+    logger.info(`Found ${rules.length} categorization rules`)
 
-    logger.info('Extracting transactions with GPT-5 Vision...')
-    const result = await generateObject({
-      model: 'openai/gpt-5-mini',
+    logger.info('Categorizing transactions with AI...')
+    const categorizationResult = await generateObject({
+      model: 'anthropic/claude-haiku-4.5',
       mode: 'json',
-      schemaName: 'categorize-and-import-transactions',
-      schemaDescription:
-        'Transactions extracted from a bank statement with categorization.',
-      schema: transactionSchema,
+      schemaName: 'categorize-transactions',
+      schemaDescription: 'Category assignments for extracted transactions.',
+      schema: categorizationSchema,
       messages: [
         {
           role: 'system',
@@ -323,25 +221,37 @@ export const categorizeAndImportTransactionsTask = task({
         },
         {
           role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: buildUserPrompt(categories, merchantCategories),
-            },
-            ...buildImageContent(images),
-          ],
+          content: buildUserPrompt(
+            payload.transactions,
+            categories,
+            merchantCategories,
+          ),
         },
       ],
     })
-    logger.info('AI analysis complete', {
-      transactionCount: result.object.transactions.length,
-      statementCurrency: result.object.statementCurrency,
-      openingBalance: result.object.openingBalance,
-      closingBalance: result.object.closingBalance,
+    logger.info('Categorization complete', {
+      categorizedCount:
+        categorizationResult.object.categorizedTransactions.length,
+    })
+
+    const categorizationMap = new Map(
+      categorizationResult.object.categorizedTransactions.map((c) => [
+        c.index,
+        { category: c.category, confidence: c.confidence },
+      ]),
+    )
+
+    const transactionsWithCategories = payload.transactions.map((tx, index) => {
+      const categorization = categorizationMap.get(index)
+      return {
+        ...tx,
+        category: categorization?.category ?? null,
+        confidence: categorization?.confidence ?? 50,
+      }
     })
 
     let totalRulesApplied = 0
-    const processedTransactions = result.object.transactions
+    const processedTransactions = transactionsWithCategories
       .map((tx) => {
         const ruleResult = applyRules(
           { merchantName: tx.merchantName, amount: tx.amount },
@@ -369,7 +279,7 @@ export const categorizeAndImportTransactionsTask = task({
       .filter((tx): tx is NonNullable<typeof tx> => tx !== null)
 
     logger.info(
-      `Processed ${processedTransactions.length} transactions after applying rules (${result.object.transactions.length - processedTransactions.length} skipped)`,
+      `Processed ${processedTransactions.length} transactions after applying rules (${transactionsWithCategories.length - processedTransactions.length} skipped)`,
     )
 
     let transactionCount = 0
@@ -401,9 +311,7 @@ export const categorizeAndImportTransactionsTask = task({
             .filter((category): category is string => category !== null),
         ),
       ]
-      logger.info('Unique categories used:', {
-        uniqueCategories,
-      })
+      logger.info('Unique categories used:', { uniqueCategories })
 
       const existingCategories = await tx
         .select({ id: category.id, name: category.name })
@@ -504,7 +412,10 @@ export const categorizeAndImportTransactionsTask = task({
   },
   catchError: async ({ ctx, error, payload }) => {
     logger.error(`Run ${ctx.run.id} failed`, {
-      payload,
+      payload: {
+        ...payload,
+        transactions: `[${payload.transactions?.length ?? 0} items]`,
+      },
       error,
     })
 

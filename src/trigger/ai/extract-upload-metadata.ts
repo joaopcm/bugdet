@@ -116,9 +116,9 @@ export const extractUploadMetadataTask = task({
       )
     }
 
-    logger.info('Extracting metadata with Gemini Vision...')
+    logger.info('Extracting metadata with AI...')
     const result = await generateObject({
-      model: 'google/gemini-2.5-flash',
+      model: 'anthropic/claude-haiku-4.5',
       mode: 'json',
       schemaName: 'extract-upload-metadata',
       schemaDescription:
