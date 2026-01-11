@@ -130,6 +130,7 @@ export const upload = pgTable(
     encryptedPassword: text('encrypted_password'),
     failedReason: text('failed_reason'),
     metadata: jsonb('metadata').$type<UploadMetadata>(),
+    pageCount: integer('page_count'),
     deleted: boolean('deleted').notNull().default(false),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at')
