@@ -201,6 +201,9 @@ Now analyze the statement images and extract all transactions with perfect accur
 
 export const extractTransactionsTask = task({
   id: 'extract-transactions',
+  retry: {
+    randomize: false,
+  },
   run: async (
     payload: { uploadId: string; documentType: DocumentType },
     { ctx },
@@ -241,10 +244,18 @@ export const extractTransactionsTask = task({
       throw new AbortTaskRunError('No pages could be extracted from the PDF')
     }
 
-    const [{ userId }] = await db
+    const [uploadRecord] = await db
       .select({ userId: upload.userId })
       .from(upload)
       .where(eq(upload.id, payload.uploadId))
+
+    if (!uploadRecord) {
+      throw new AbortTaskRunError(
+        `Upload ${payload.uploadId} not found in database`,
+      )
+    }
+
+    const { userId } = uploadRecord
     logger.info(`The user that owns the upload is ${userId}`)
 
     logger.info('Extracting transactions with GPT-5 Vision...')
