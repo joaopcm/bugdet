@@ -60,8 +60,6 @@ The confidence score should reflect how certain you are about the CATEGORY assig
 - 30-49: Category is uncertain, merchant name is ambiguous
 - Below 30: No idea what category this should be
 
-Most transactions should be in the 50-70 range unless there's an exact match in the learned mappings.
-
 ### Important Guidelines
 - Consider the merchant name, description, and amount when categorizing
 - Negative amounts (income) often have different categories than expenses
@@ -209,9 +207,9 @@ export const categorizeAndImportTransactionsTask = task({
       .orderBy(desc(categorizationRule.priority), categorizationRule.createdAt)
     logger.info(`Found ${rules.length} categorization rules`)
 
-    logger.info('Categorizing transactions with GPT-5...')
+    logger.info('Categorizing transactions with AI...')
     const categorizationResult = await generateObject({
-      model: 'openai/gpt-5-mini',
+      model: 'anthropic/claude-haiku-4.5',
       mode: 'json',
       schemaName: 'categorize-transactions',
       schemaDescription: 'Category assignments for extracted transactions.',
@@ -236,7 +234,6 @@ export const categorizeAndImportTransactionsTask = task({
         categorizationResult.object.categorizedTransactions.length,
     })
 
-    // Create a map of index to categorization
     const categorizationMap = new Map(
       categorizationResult.object.categorizedTransactions.map((c) => [
         c.index,
@@ -244,7 +241,6 @@ export const categorizeAndImportTransactionsTask = task({
       ]),
     )
 
-    // Merge extracted transactions with categorizations
     const transactionsWithCategories = payload.transactions.map((tx, index) => {
       const categorization = categorizationMap.get(index)
       return {

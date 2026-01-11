@@ -258,9 +258,9 @@ export const extractTransactionsTask = task({
     const { userId } = uploadRecord
     logger.info(`The user that owns the upload is ${userId}`)
 
-    logger.info('Extracting transactions with GPT-5 Vision...')
+    logger.info('Extracting transactions with AI...')
     const result = await generateObject({
-      model: 'openai/gpt-5-mini',
+      model: 'anthropic/claude-sonnet-4.5',
       mode: 'json',
       schemaName: 'extract-transactions',
       schemaDescription:

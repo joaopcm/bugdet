@@ -88,9 +88,9 @@ export const reviewBankStatementTask = task({
       }
     }
 
-    logger.info('Analyzing bank statement with Gemini Vision...')
+    logger.info('Analyzing bank statement with AI...')
     const result = await generateObject({
-      model: 'google/gemini-2.5-flash',
+      model: 'anthropic/claude-haiku-4.5',
       mode: 'json',
       schemaName: 'review-bank-statement',
       schemaDescription:

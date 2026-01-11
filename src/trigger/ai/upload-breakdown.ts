@@ -39,13 +39,6 @@ export const uploadBreakdownTask = task({
       return { success: false, reason: 'Upload not found' }
     }
 
-    await db
-      .update(upload)
-      .set({
-        status: 'processing',
-      })
-      .where(eq(upload.id, payload.uploadId))
-
     const [uploadUser] = await db
       .select({ email: user.email })
       .from(user)
@@ -55,6 +48,13 @@ export const uploadBreakdownTask = task({
       logger.error(`User ${existingUpload.userId} not found`)
       return { success: false, reason: 'User not found' }
     }
+
+    await db
+      .update(upload)
+      .set({
+        status: 'processing',
+      })
+      .where(eq(upload.id, payload.uploadId))
 
     const supabase = createLambdaClient()
     const { data: signedUrlData, error: signedUrlError } =
