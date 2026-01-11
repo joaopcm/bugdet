@@ -1,11 +1,11 @@
 import { db } from '@/db'
 import { upload } from '@/db/schema'
-import { type PdfPageImage, convertPdfToImages } from '@/lib/pdf'
-import { AbortTaskRunError, logger, retry, task } from '@trigger.dev/sdk/v3'
+import type { PdfPageImage } from '@/lib/pdf'
+import { type PageImage, getUploadImages } from '@/lib/uploads/get-page-images'
+import { AbortTaskRunError, logger, task } from '@trigger.dev/sdk/v3'
 import { generateObject } from 'ai'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { getBankStatementPresignedUrlTask } from './get-bank-statement-presigned-url'
 
 const schema = z
   .object({
@@ -67,8 +67,7 @@ const schema = z
   })
   .describe('Metadata extracted from a bank statement for indexing and search.')
 
-function buildImageContent(images: PdfPageImage[]) {
-  // Use first 2 pages for metadata (header info is usually on page 1)
+function buildImageContent(images: (PdfPageImage | PageImage)[]) {
   const pagesToCheck = images.slice(0, 2)
 
   return pagesToCheck.map((img) => ({
@@ -83,32 +82,14 @@ export const extractUploadMetadataTask = task({
   retry: {
     randomize: false,
   },
-  run: async (payload: { uploadId: string }) => {
+  run: async (payload: { uploadId: string; pageCount?: number }) => {
     logger.info(`Extracting metadata from upload ${payload.uploadId}...`)
 
-    const presignedUrl = await getBankStatementPresignedUrlTask
-      .triggerAndWait({
-        uploadId: payload.uploadId,
-      })
-      .unwrap()
-
-    if (!presignedUrl.url) {
-      throw new AbortTaskRunError(
-        `Failed to get presigned URL for upload ${payload.uploadId}`,
-      )
-    }
-
-    logger.info(
-      `Downloading bank statement for upload ${payload.uploadId} via presigned URL...`,
+    const images = await getUploadImages(
+      payload.uploadId,
+      { start: 1, end: 2 },
+      payload.pageCount,
     )
-    const response = await retry.fetch(presignedUrl.url, {
-      method: 'GET',
-    })
-    const fileBuffer = await response.arrayBuffer()
-
-    logger.info('Converting PDF to images...')
-    const images = await convertPdfToImages(fileBuffer)
-    logger.info(`Converted ${images.length} pages to images`)
 
     if (images.length === 0) {
       throw new AbortTaskRunError(

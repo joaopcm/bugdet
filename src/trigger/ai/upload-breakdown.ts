@@ -14,6 +14,7 @@ import { sendWrongPasswordTask } from '@/trigger/emails/send-wrong-password'
 import { logger, retry, task } from '@trigger.dev/sdk/v3'
 import { and, eq, ne } from 'drizzle-orm'
 import { categorizeAndImportTransactionsTask } from './categorize-and-import-transactions'
+import { convertPdfToImagesTask } from './convert-pdf-to-images'
 import { extractTransactionsTask } from './extract-transactions'
 import { extractUploadMetadataTask } from './extract-upload-metadata'
 import { reviewBankStatementTask } from './review-bank-statement'
@@ -160,9 +161,21 @@ export const uploadBreakdownTask = task({
       throw error
     }
 
+    logger.info(`Converting PDF to images for upload ${payload.uploadId}...`)
+    const conversionResult = await convertPdfToImagesTask
+      .triggerAndWait({
+        uploadId: payload.uploadId,
+      })
+      .unwrap()
+
+    logger.info(
+      `PDF converted to ${conversionResult.pageCount} images for upload ${payload.uploadId}`,
+    )
+
     const review = await reviewBankStatementTask
       .triggerAndWait({
         uploadId: payload.uploadId,
+        pageCount: conversionResult.pageCount,
       })
       .unwrap()
 
@@ -194,6 +207,7 @@ export const uploadBreakdownTask = task({
     )
     await extractUploadMetadataTask.trigger({
       uploadId: payload.uploadId,
+      pageCount: conversionResult.pageCount,
     })
 
     logger.info(
@@ -202,6 +216,7 @@ export const uploadBreakdownTask = task({
     const extractionResult = await extractTransactionsTask
       .triggerAndWait({
         uploadId: payload.uploadId,
+        pageCount: conversionResult.pageCount,
         documentType: review.documentType,
       })
       .unwrap()

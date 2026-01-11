@@ -21,6 +21,7 @@ async function getExistingUpload(id: string, userId: string) {
       deleted: upload.deleted,
       status: upload.status,
       filePath: upload.filePath,
+      pageCount: upload.pageCount,
     })
     .from(upload)
     .where(and(eq(upload.id, id), eq(upload.userId, userId)))
@@ -33,6 +34,17 @@ async function getExistingUpload(id: string, userId: string) {
   }
 
   return existingUpload
+}
+
+function getPageImagePaths(
+  uploadId: string,
+  pageCount: number | null,
+): string[] {
+  if (!pageCount || pageCount === 0) return []
+  return Array.from(
+    { length: pageCount },
+    (_, i) => `${uploadId}/page-${i + 1}.png`,
+  )
 }
 
 export type SignedUploadUrl = {
@@ -207,9 +219,13 @@ export const uploadsRouter = router({
 
       const supabase = await createClient({ admin: true })
 
+      const pageImagePaths = getPageImagePaths(
+        existingUpload.id,
+        existingUpload.pageCount,
+      )
       const { error: deleteFileError } = await supabase.storage
         .from('bank-statements')
-        .remove([existingUpload.filePath])
+        .remove([existingUpload.filePath, ...pageImagePaths])
 
       if (deleteFileError) {
         throw new TRPCError({
@@ -250,11 +266,11 @@ export const uploadsRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      // Fetch uploads that are deletable and belong to user
       const uploadsToDelete = await ctx.db
         .select({
           id: upload.id,
           filePath: upload.filePath,
+          pageCount: upload.pageCount,
         })
         .from(upload)
         .where(
@@ -270,11 +286,12 @@ export const uploadsRouter = router({
         return { deletedCount: 0 }
       }
 
-      // Delete files from Supabase storage
       const supabase = await createClient({ admin: true })
-      await supabase.storage
-        .from('bank-statements')
-        .remove(uploadsToDelete.map((u) => u.filePath))
+      const filesToDelete = uploadsToDelete.flatMap((u) => [
+        u.filePath,
+        ...getPageImagePaths(u.id, u.pageCount),
+      ])
+      await supabase.storage.from('bank-statements').remove(filesToDelete)
 
       // Soft delete uploads and optionally transactions
       const uploadIds = uploadsToDelete.map((u) => u.id)

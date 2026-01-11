@@ -1,11 +1,11 @@
 import { db } from '@/db'
 import { upload } from '@/db/schema'
-import { type PdfPageImage, convertPdfToImages } from '@/lib/pdf'
-import { AbortTaskRunError, logger, retry, task } from '@trigger.dev/sdk/v3'
+import type { PdfPageImage } from '@/lib/pdf'
+import { type PageImage, getUploadImages } from '@/lib/uploads/get-page-images'
+import { AbortTaskRunError, logger, task } from '@trigger.dev/sdk/v3'
 import { generateObject } from 'ai'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
-import { getBankStatementPresignedUrlTask } from './get-bank-statement-presigned-url'
 import type { DocumentType } from './review-bank-statement'
 
 const extractedTransactionSchema = z.object({
@@ -56,7 +56,7 @@ export type ExtractedTransaction = z.infer<typeof extractedTransactionSchema>
 
 export type ExtractionResult = z.infer<typeof extractionResultSchema>
 
-function buildImageContent(images: PdfPageImage[]) {
+function buildImageContent(images: (PdfPageImage | PageImage)[]) {
   return images.map((img) => ({
     type: 'image' as const,
     image: Buffer.from(img.base64, 'base64'),
@@ -205,7 +205,11 @@ export const extractTransactionsTask = task({
     randomize: false,
   },
   run: async (
-    payload: { uploadId: string; documentType: DocumentType },
+    payload: {
+      uploadId: string
+      pageCount?: number
+      documentType: DocumentType
+    },
     { ctx },
   ) => {
     logger.info(
@@ -216,29 +220,11 @@ export const extractTransactionsTask = task({
       },
     )
 
-    const presignedUrl = await getBankStatementPresignedUrlTask
-      .triggerAndWait({
-        uploadId: payload.uploadId,
-      })
-      .unwrap()
-
-    if (!presignedUrl.url) {
-      throw new AbortTaskRunError(
-        `Failed to get presigned URL for upload ${payload.uploadId}`,
-      )
-    }
-
-    logger.info(
-      `Downloading bank statement for upload ${payload.uploadId} via presigned URL...`,
+    const images = await getUploadImages(
+      payload.uploadId,
+      'all',
+      payload.pageCount,
     )
-    const response = await retry.fetch(presignedUrl.url, {
-      method: 'GET',
-    })
-    const fileBuffer = await response.arrayBuffer()
-
-    logger.info('Converting PDF to images...')
-    const images = await convertPdfToImages(fileBuffer)
-    logger.info(`Converted ${images.length} pages to images`)
 
     if (images.length === 0) {
       throw new AbortTaskRunError('No pages could be extracted from the PDF')
@@ -254,9 +240,6 @@ export const extractTransactionsTask = task({
         `Upload ${payload.uploadId} not found in database`,
       )
     }
-
-    const { userId } = uploadRecord
-    logger.info(`The user that owns the upload is ${userId}`)
 
     logger.info('Extracting transactions with AI...')
     const result = await generateObject({
@@ -294,7 +277,7 @@ export const extractTransactionsTask = task({
     return {
       success: true,
       uploadId: payload.uploadId,
-      userId,
+      userId: uploadRecord.userId,
       ...result.object,
     }
   },
