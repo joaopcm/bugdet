@@ -195,6 +195,7 @@ export const transaction = pgTable(
     currency: text('currency').notNull(),
     confidence: integer('confidence').notNull().default(100),
     metadata: jsonb('metadata').$type<TransactionMetadata>(),
+    fingerprint: text('fingerprint'),
     deleted: boolean('deleted').notNull().default(false),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at')
@@ -220,6 +221,7 @@ export const transaction = pgTable(
     merchantNameIdx: index('transaction_merchant_name_idx')
       .on(table.merchantName)
       .concurrently(),
+    fingerprintIdx: index('transaction_fingerprint_idx').on(table.fingerprint),
   }),
 )
 
