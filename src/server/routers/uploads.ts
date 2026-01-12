@@ -55,6 +55,25 @@ export type SignedUploadUrl = {
 }
 
 export const uploadsRouter = router({
+  listForFilter: protectedProcedure.query(async ({ ctx }) => {
+    const uploads = await ctx.db
+      .select({
+        id: upload.id,
+        fileName: upload.fileName,
+        createdAt: upload.createdAt,
+      })
+      .from(upload)
+      .where(
+        and(
+          eq(upload.userId, ctx.user.id),
+          eq(upload.deleted, false),
+          eq(upload.status, 'completed'),
+        ),
+      )
+      .orderBy(desc(upload.createdAt))
+
+    return { data: uploads }
+  }),
   createSignedUploadUrls: protectedProcedure
     .input(z.object({ fileNames: z.array(z.string()).min(1).max(10) }))
     .mutation(async ({ input }) => {

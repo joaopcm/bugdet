@@ -2,12 +2,12 @@ import { db } from '@/db'
 import {
   categorizationRule,
   category,
-  merchantCategory,
   transaction,
   upload,
   user,
 } from '@/db/schema'
 import { env } from '@/env'
+import { generateTransactionFingerprint } from '@/lib/fingerprint'
 import { applyRules } from '@/lib/rules/apply-rules'
 import { sendUploadCompletedTask } from '@/trigger/emails/send-upload-completed'
 import { sendUploadFailedTask } from '@/trigger/emails/send-upload-failed'
@@ -54,9 +54,8 @@ Analyze the provided transactions and assign appropriate categories to each one.
 ### Confidence Scoring (BE CONSERVATIVE!)
 The confidence score should reflect how certain you are about the CATEGORY assignment.
 
-- 90-100: ONLY if merchant EXACTLY matches one from the "LEARNED MERCHANT MAPPINGS" list
-- 70-89: Category is very obvious from merchant name (e.g., "NETFLIX" → Entertainment, "UBER" → Transportation)
-- 50-69: Category is a reasonable guess but not certain
+- 80-100: Category is very obvious from merchant name (e.g., "NETFLIX" → Entertainment, "UBER" → Transportation)
+- 50-79: Category is a reasonable guess but not certain
 - 30-49: Category is uncertain, merchant name is ambiguous
 - Below 30: No idea what category this should be
 
@@ -69,23 +68,11 @@ The confidence score should reflect how certain you are about the CATEGORY assig
 function buildUserPrompt(
   transactions: ExtractedTransaction[],
   categories: { name: string }[],
-  merchantMappings: { merchantName: string; categoryName: string | null }[],
 ) {
   const categoryList =
     categories.length > 0
       ? categories.map((c) => `- ${c.name}`).join('\n')
       : '(No categories defined yet)'
-
-  const merchantList =
-    merchantMappings.length > 0
-      ? merchantMappings
-          .slice(0, 100) // Limit to avoid token overflow
-          .map(
-            (m) =>
-              `- "${m.merchantName}" → ${m.categoryName ?? 'Uncategorized'}`,
-          )
-          .join('\n')
-      : '(No merchant mappings yet)'
 
   const transactionsList = transactions
     .map(
@@ -99,10 +86,6 @@ Use these existing categories when appropriate:
 ${categoryList}
 
 You may suggest new categories if none fit well.
-
-## LEARNED MERCHANT MAPPINGS
-When you see these merchants, use the mapped category:
-${merchantList}
 
 ## TRANSACTIONS TO CATEGORIZE
 ${transactionsList}
@@ -183,17 +166,6 @@ export const categorizeAndImportTransactionsTask = task({
       `Found ${categories.length} categories for user ${payload.userId}`,
     )
 
-    const merchantCategories = await db
-      .select({
-        merchantName: merchantCategory.merchantName,
-        categoryName: category.name,
-      })
-      .from(merchantCategory)
-      .leftJoin(category, eq(merchantCategory.categoryId, category.id))
-      .where(eq(merchantCategory.userId, payload.userId))
-      .orderBy(desc(merchantCategory.updatedAt))
-    logger.info(`Found ${merchantCategories.length} merchant categories`)
-
     const rules = await db
       .select()
       .from(categorizationRule)
@@ -221,11 +193,7 @@ export const categorizeAndImportTransactionsTask = task({
         },
         {
           role: 'user',
-          content: buildUserPrompt(
-            payload.transactions,
-            categories,
-            merchantCategories,
-          ),
+          content: buildUserPrompt(payload.transactions, categories),
         },
       ],
     })
@@ -355,25 +323,73 @@ export const categorizeAndImportTransactionsTask = task({
         ]),
       )
 
-      await tx.insert(transaction).values(
-        processedTransactions.map((txn) => ({
-          uploadId: payload.uploadId,
+      const transactionsWithFingerprints = processedTransactions.map((txn) => ({
+        ...txn,
+        fingerprint: generateTransactionFingerprint({
           userId: upToDateUpload.userId,
-          categoryId:
-            txn.ruleCategoryId ??
-            (txn.category
-              ? (categoryNameToId.get(txn.category) ?? null)
-              : null),
           date: txn.date,
           merchantName: txn.merchantName,
           amount: txn.amount,
           currency: txn.currency,
-          confidence: txn.confidence,
-        })),
+        }),
+      }))
+
+      const fingerprints = transactionsWithFingerprints.map(
+        (t) => t.fingerprint,
       )
-      logger.info(
-        `Imported ${processedTransactions.length} transactions to the database for upload ${payload.uploadId}.`,
+      const existingFingerprints = new Set(
+        (
+          await tx
+            .select({ fingerprint: transaction.fingerprint })
+            .from(transaction)
+            .where(
+              and(
+                eq(transaction.userId, upToDateUpload.userId),
+                eq(transaction.deleted, false),
+                inArray(transaction.fingerprint, fingerprints),
+              ),
+            )
+        )
+          .map((r) => r.fingerprint)
+          .filter((fp): fp is string => fp !== null),
       )
+
+      const newTransactions = transactionsWithFingerprints.filter(
+        (txn) => !existingFingerprints.has(txn.fingerprint),
+      )
+
+      const skippedCount =
+        transactionsWithFingerprints.length - newTransactions.length
+      if (skippedCount > 0) {
+        logger.info(`Skipped ${skippedCount} duplicate transactions`)
+      }
+
+      if (newTransactions.length > 0) {
+        await tx.insert(transaction).values(
+          newTransactions.map((txn) => ({
+            uploadId: payload.uploadId,
+            userId: upToDateUpload.userId,
+            categoryId:
+              txn.ruleCategoryId ??
+              (txn.category
+                ? (categoryNameToId.get(txn.category) ?? null)
+                : null),
+            date: txn.date,
+            merchantName: txn.merchantName,
+            amount: txn.amount,
+            currency: txn.currency,
+            confidence: txn.confidence,
+            fingerprint: txn.fingerprint,
+          })),
+        )
+        logger.info(
+          `Imported ${newTransactions.length} transactions to the database for upload ${payload.uploadId}.`,
+        )
+      } else {
+        logger.info(
+          `All transactions are duplicates, nothing to import for upload ${payload.uploadId}.`,
+        )
+      }
 
       await tx
         .update(upload)
@@ -382,7 +398,7 @@ export const categorizeAndImportTransactionsTask = task({
         })
         .where(eq(upload.id, payload.uploadId))
 
-      transactionCount = processedTransactions.length
+      transactionCount = newTransactions.length
       categoriesCreated = newCategories.length
       uploadUserId = upToDateUpload.userId
       uploadFileName = upToDateUpload.fileName
