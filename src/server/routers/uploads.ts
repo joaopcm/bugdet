@@ -63,7 +63,13 @@ export const uploadsRouter = router({
         createdAt: upload.createdAt,
       })
       .from(upload)
-      .where(and(eq(upload.userId, ctx.user.id), eq(upload.deleted, false)))
+      .where(
+        and(
+          eq(upload.userId, ctx.user.id),
+          eq(upload.deleted, false),
+          eq(upload.status, 'completed'),
+        ),
+      )
       .orderBy(desc(upload.createdAt))
 
     return { data: uploads }
