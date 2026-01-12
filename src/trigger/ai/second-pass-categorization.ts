@@ -118,7 +118,6 @@ export const secondPassCategorizationTask = task({
       { payload, ctx },
     )
 
-    // Fetch low-confidence transactions for this upload
     const lowConfidenceTransactions = await db
       .select({
         id: transaction.id,
@@ -148,7 +147,6 @@ export const secondPassCategorizationTask = task({
       `Found ${lowConfidenceTransactions.length} low-confidence transactions to recategorize`,
     )
 
-    // Fetch categories for the user
     const categories = await db
       .select({ id: category.id, name: category.name })
       .from(category)
@@ -156,7 +154,6 @@ export const secondPassCategorizationTask = task({
         and(eq(category.userId, payload.userId), eq(category.deleted, false)),
       )
 
-    // Build category ID to name mapping
     const categoryIdToName = new Map(
       categories.map((cat) => [cat.id, cat.name]),
     )
@@ -164,7 +161,6 @@ export const secondPassCategorizationTask = task({
       categories.map((cat) => [cat.name, cat.id]),
     )
 
-    // Prepare transactions for AI
     const transactionsForAI = lowConfidenceTransactions.map((tx) => ({
       id: tx.id,
       merchantName: tx.merchantName,
@@ -177,9 +173,9 @@ export const secondPassCategorizationTask = task({
       currentConfidence: tx.confidence,
     }))
 
-    logger.info('Re-categorizing transactions with Claude Sonnet 4.5...')
+    logger.info('Re-categorizing transactions with AI...')
     const recategorizationResult = await generateObject({
-      model: 'anthropic/claude-sonnet-4-5-20250514',
+      model: 'anthropic/claude-sonnet-4.5',
       mode: 'json',
       schemaName: 'recategorize-transactions',
       schemaDescription:
@@ -202,7 +198,6 @@ export const secondPassCategorizationTask = task({
         recategorizationResult.object.recategorizedTransactions.length,
     })
 
-    // Update transactions with improved categorization
     let updatedCount = 0
     let improvedCount = 0
 
@@ -219,15 +214,12 @@ export const secondPassCategorizationTask = task({
         continue
       }
 
-      // Determine new category ID
       const newCategoryId = recategorized.category
         ? (categoryNameToId.get(recategorized.category) ?? null)
         : null
 
-      // Clamp confidence to valid range
       const newConfidence = Math.min(100, Math.max(0, recategorized.confidence))
 
-      // Only update if there's a meaningful change
       const hasNewCategory =
         newCategoryId !== null && newCategoryId !== originalTx.categoryId
       const hasHigherConfidence = newConfidence > originalTx.confidence

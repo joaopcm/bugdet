@@ -429,7 +429,6 @@ export const categorizeAndImportTransactionsTask = task({
         })
       }
 
-      // Trigger second-pass categorization only if there are low-confidence transactions
       if (lowConfidenceCount > 0) {
         logger.info(
           `Triggering second-pass categorization for ${lowConfidenceCount} low-confidence transactions in upload ${payload.uploadId}...`,
