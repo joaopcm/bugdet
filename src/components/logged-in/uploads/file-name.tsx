@@ -21,7 +21,7 @@ export function FileName({ uploadId, fileName, metadata }: FileNameProps) {
         <TooltipTrigger asChild>
           <Link
             href={transactionsUrl}
-            className="underline decoration-dashed underline-offset-2 hover:text-primary transition-colors"
+            className="underline decoration-dashed underline-offset-2"
           >
             {fileName}
           </Link>
@@ -68,14 +68,7 @@ export function FileName({ uploadId, fileName, metadata }: FileNameProps) {
     )
   }
 
-  return (
-    <Link
-      href={transactionsUrl}
-      className="underline decoration-dashed underline-offset-2 hover:text-primary transition-colors"
-    >
-      {fileName}
-    </Link>
-  )
+  return <Link href={transactionsUrl}>{fileName}</Link>
 }
 
 interface MetadataFieldProps {

@@ -11,7 +11,7 @@ import { UploadFilter } from './upload-filter'
 export function TransactionsFilters() {
   return (
     <>
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-2">
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-2">
         <SearchFilter />
         <DateRangeFilter />
         <CategoryFilter />
