@@ -3,7 +3,7 @@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { trpc } from '@/lib/trpc/client'
 import { IconFileUpload } from '@tabler/icons-react'
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 const REMINDER_MESSAGES = [
   {
@@ -108,12 +108,17 @@ export function UploadReminderAlert({
     return diffDays >= DAYS_THRESHOLD
   }, [data, isLoading])
 
-  const randomMessage = useMemo(() => {
-    const index = Math.floor(Math.random() * REMINDER_MESSAGES.length)
-    return REMINDER_MESSAGES[index]
+  const [randomMessage, setRandomMessage] = useState<
+    (typeof REMINDER_MESSAGES)[number] | null
+  >(null)
+
+  useEffect(() => {
+    setRandomMessage(
+      REMINDER_MESSAGES[Math.floor(Math.random() * REMINDER_MESSAGES.length)],
+    )
   }, [])
 
-  if (!shouldShowReminder) {
+  if (!shouldShowReminder || !randomMessage) {
     return null
   }
 
