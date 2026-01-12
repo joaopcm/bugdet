@@ -410,4 +410,18 @@ export const uploadsRouter = router({
 
       return { success: true }
     }),
+  getLatestUploadDate: protectedProcedure.query(async ({ ctx }) => {
+    const [latestUpload] = await ctx.db
+      .select({
+        createdAt: upload.createdAt,
+      })
+      .from(upload)
+      .where(and(eq(upload.userId, ctx.user.id), eq(upload.deleted, false)))
+      .orderBy(desc(upload.createdAt))
+      .limit(1)
+
+    return {
+      latestUploadDate: latestUpload?.createdAt ?? null,
+    }
+  }),
 })
