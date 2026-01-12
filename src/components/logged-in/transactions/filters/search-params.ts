@@ -8,6 +8,7 @@ export function useTransactionsFilters() {
     to: parseAsLocalDate,
     query: parseAsString.withDefault(''),
     ids: parseAsArrayOf(parseAsString).withDefault([]),
+    uploadId: parseAsString.withDefault('all'),
   })
 
   return {
