@@ -8,6 +8,7 @@ import {
   user,
 } from '@/db/schema'
 import { env } from '@/env'
+import { generateTransactionFingerprint } from '@/lib/fingerprint'
 import { applyRules } from '@/lib/rules/apply-rules'
 import { sendUploadCompletedTask } from '@/trigger/emails/send-upload-completed'
 import { sendUploadFailedTask } from '@/trigger/emails/send-upload-failed'
@@ -355,25 +356,73 @@ export const categorizeAndImportTransactionsTask = task({
         ]),
       )
 
-      await tx.insert(transaction).values(
-        processedTransactions.map((txn) => ({
-          uploadId: payload.uploadId,
+      const transactionsWithFingerprints = processedTransactions.map((txn) => ({
+        ...txn,
+        fingerprint: generateTransactionFingerprint({
           userId: upToDateUpload.userId,
-          categoryId:
-            txn.ruleCategoryId ??
-            (txn.category
-              ? (categoryNameToId.get(txn.category) ?? null)
-              : null),
           date: txn.date,
           merchantName: txn.merchantName,
           amount: txn.amount,
           currency: txn.currency,
-          confidence: txn.confidence,
-        })),
+        }),
+      }))
+
+      const fingerprints = transactionsWithFingerprints.map(
+        (t) => t.fingerprint,
       )
-      logger.info(
-        `Imported ${processedTransactions.length} transactions to the database for upload ${payload.uploadId}.`,
+      const existingFingerprints = new Set(
+        (
+          await tx
+            .select({ fingerprint: transaction.fingerprint })
+            .from(transaction)
+            .where(
+              and(
+                eq(transaction.userId, upToDateUpload.userId),
+                eq(transaction.deleted, false),
+                inArray(transaction.fingerprint, fingerprints),
+              ),
+            )
+        )
+          .map((r) => r.fingerprint)
+          .filter((fp): fp is string => fp !== null),
       )
+
+      const newTransactions = transactionsWithFingerprints.filter(
+        (txn) => !existingFingerprints.has(txn.fingerprint),
+      )
+
+      const skippedCount =
+        transactionsWithFingerprints.length - newTransactions.length
+      if (skippedCount > 0) {
+        logger.info(`Skipped ${skippedCount} duplicate transactions`)
+      }
+
+      if (newTransactions.length > 0) {
+        await tx.insert(transaction).values(
+          newTransactions.map((txn) => ({
+            uploadId: payload.uploadId,
+            userId: upToDateUpload.userId,
+            categoryId:
+              txn.ruleCategoryId ??
+              (txn.category
+                ? (categoryNameToId.get(txn.category) ?? null)
+                : null),
+            date: txn.date,
+            merchantName: txn.merchantName,
+            amount: txn.amount,
+            currency: txn.currency,
+            confidence: txn.confidence,
+            fingerprint: txn.fingerprint,
+          })),
+        )
+        logger.info(
+          `Imported ${newTransactions.length} transactions to the database for upload ${payload.uploadId}.`,
+        )
+      } else {
+        logger.info(
+          `All transactions are duplicates, nothing to import for upload ${payload.uploadId}.`,
+        )
+      }
 
       await tx
         .update(upload)
@@ -382,7 +431,7 @@ export const categorizeAndImportTransactionsTask = task({
         })
         .where(eq(upload.id, payload.uploadId))
 
-      transactionCount = processedTransactions.length
+      transactionCount = newTransactions.length
       categoriesCreated = newCategories.length
       uploadUserId = upToDateUpload.userId
       uploadFileName = upToDateUpload.fileName
