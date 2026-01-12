@@ -11,6 +11,7 @@ export const sendUploadCompletedTask = task({
       transactionCount: number
       categoriesCreated: number
       rulesApplied: number
+      lowConfidenceCount: number
       uploadsLink: string
     },
     { ctx },
@@ -28,6 +29,7 @@ export const sendUploadCompletedTask = task({
           transactionCount={payload.transactionCount}
           categoriesCreated={payload.categoriesCreated}
           rulesApplied={payload.rulesApplied}
+          lowConfidenceCount={payload.lowConfidenceCount}
           uploadsLink={payload.uploadsLink}
         />
       ),

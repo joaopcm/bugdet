@@ -1,3 +1,4 @@
+import { pluralize } from '@/lib/utils'
 import { Button, Link, Section, Text } from '@react-email/components'
 import { Layout } from '../components/layout'
 
@@ -6,6 +7,7 @@ interface UploadCompletedEmailProps {
   transactionCount: number
   categoriesCreated: number
   rulesApplied: number
+  lowConfidenceCount: number
   uploadsLink: string
 }
 
@@ -14,6 +16,7 @@ export default function UploadCompletedEmail({
   transactionCount = 100,
   categoriesCreated = 10,
   rulesApplied = 0,
+  lowConfidenceCount = 0,
   uploadsLink = 'https://bugdet.co/uploads',
 }: UploadCompletedEmailProps) {
   return (
@@ -41,18 +44,34 @@ export default function UploadCompletedEmail({
             Summary
           </Text>
           <Text className="text-[16px] text-gray-800 mb-[8px] m-0">
-            • <strong>{transactionCount}</strong> transaction
-            {transactionCount !== 1 ? 's' : ''} imported
+            • <strong>{transactionCount}</strong>{' '}
+            {pluralize(transactionCount, 'transaction')} imported
           </Text>
           <Text className="text-[16px] text-gray-800 mb-[8px] m-0">
-            • <strong>{categoriesCreated}</strong> new categor
-            {categoriesCreated !== 1 ? 'ies' : 'y'} created
+            • <strong>{categoriesCreated}</strong> new{' '}
+            {pluralize(categoriesCreated, 'category', 'categories')} created
           </Text>
           <Text className="text-[16px] text-gray-800 mb-[0px] m-0">
-            • <strong>{rulesApplied}</strong> rule match
-            {rulesApplied !== 1 ? 'es' : ''}
+            • <strong>{rulesApplied}</strong>{' '}
+            {pluralize(rulesApplied, 'rule match', 'rule matches')}
           </Text>
         </Section>
+
+        {lowConfidenceCount > 0 && (
+          <Section className="mb-[24px]">
+            <Text className="text-[16px] text-gray-800 m-0">
+              We noticed that{' '}
+              <strong>
+                {lowConfidenceCount}{' '}
+                {pluralize(lowConfidenceCount, 'transaction')}
+              </strong>{' '}
+              {pluralize(lowConfidenceCount, "wasn't", "weren't")} easy to
+              categorize automatically. Don't worry — our financial copilot is
+              taking a closer look in the background to improve the
+              categorization. You'll see the updated results shortly.
+            </Text>
+          </Section>
+        )}
 
         <Text className="text-[16px] text-gray-800 mb-[24px]">
           View your transactions and make any adjustments to categories as

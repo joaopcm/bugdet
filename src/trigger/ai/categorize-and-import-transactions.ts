@@ -1,3 +1,4 @@
+import { CONFIDENCE_THRESHOLD } from '@/constants/transactions'
 import { db } from '@/db'
 import {
   categorizationRule,
@@ -149,6 +150,7 @@ export const categorizeAndImportTransactionsTask = task({
             transactionCount: 0,
             categoriesCreated: 0,
             rulesApplied: 0,
+            lowConfidenceCount: 0,
             uploadsLink: `${env.NEXT_PUBLIC_APP_URL}/uploads`,
           })
         }
@@ -253,6 +255,7 @@ export const categorizeAndImportTransactionsTask = task({
 
     let transactionCount = 0
     let categoriesCreated = 0
+    let lowConfidenceCount = 0
     let uploadUserId: string | null = null
     let uploadFileName: string | null = null
 
@@ -401,6 +404,9 @@ export const categorizeAndImportTransactionsTask = task({
 
       transactionCount = newTransactions.length
       categoriesCreated = newCategories.length
+      lowConfidenceCount = newTransactions.filter(
+        (txn) => txn.confidence < CONFIDENCE_THRESHOLD,
+      ).length
       uploadUserId = upToDateUpload.userId
       uploadFileName = upToDateUpload.fileName
     })
@@ -418,19 +424,25 @@ export const categorizeAndImportTransactionsTask = task({
           transactionCount,
           categoriesCreated,
           rulesApplied: totalRulesApplied,
+          lowConfidenceCount,
           uploadsLink: `${env.NEXT_PUBLIC_APP_URL}/uploads`,
         })
       }
 
-      // Trigger second-pass categorization for low-confidence transactions
-      // This runs in the background using a smarter model (Sonnet 4.5)
-      logger.info(
-        `Triggering second-pass categorization for upload ${payload.uploadId}...`,
-      )
-      await secondPassCategorizationTask.trigger({
-        uploadId: payload.uploadId,
-        userId: uploadUserId,
-      })
+      // Trigger second-pass categorization only if there are low-confidence transactions
+      if (lowConfidenceCount > 0) {
+        logger.info(
+          `Triggering second-pass categorization for ${lowConfidenceCount} low-confidence transactions in upload ${payload.uploadId}...`,
+        )
+        await secondPassCategorizationTask.trigger({
+          uploadId: payload.uploadId,
+          userId: uploadUserId,
+        })
+      } else {
+        logger.info(
+          'No low-confidence transactions to re-evaluate, skipping second-pass categorization',
+        )
+      }
     }
 
     return {
