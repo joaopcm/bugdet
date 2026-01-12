@@ -228,7 +228,7 @@ export const transactionsRouter = router({
             conditions: [
               {
                 field: 'merchant_name',
-                operator: 'contains',
+                operator: 'eq',
                 value: input.merchantName,
               },
             ],
@@ -248,7 +248,7 @@ export const transactionsRouter = router({
             })
             .where(
               and(
-                ilike(transaction.merchantName, `%${input.merchantName}%`),
+                eq(transaction.merchantName, input.merchantName),
                 eq(transaction.userId, ctx.user.id),
                 eq(transaction.deleted, false),
               ),
