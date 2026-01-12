@@ -225,35 +225,6 @@ export const transaction = pgTable(
   }),
 )
 
-export type MerchantCategory = typeof merchantCategory.$inferSelect
-
-export const merchantCategory = pgTable(
-  'merchant_category',
-  {
-    id: uuid('id').defaultRandom().notNull().primaryKey(),
-    merchantName: text('merchant_name').notNull(),
-    userId: text('user_id')
-      .notNull()
-      .references(() => user.id, { onDelete: 'cascade' }),
-    categoryId: uuid('category_id').references(() => category.id, {
-      onDelete: 'cascade',
-    }),
-    createdAt: timestamp('created_at').notNull().defaultNow(),
-    updatedAt: timestamp('updated_at')
-      .notNull()
-      .defaultNow()
-      .$onUpdate(() => new Date()),
-  },
-  (table) => ({
-    userIdIdx: index('merchant_category_user_id_idx')
-      .on(table.userId)
-      .concurrently(),
-    categoryIdIdx: index('merchant_category_category_id_idx')
-      .on(table.categoryId)
-      .concurrently(),
-  }),
-)
-
 export type RuleCondition = {
   field: 'merchant_name' | 'amount'
   operator: 'contains' | 'neq' | 'gt' | 'lt' | 'gte' | 'lte' | 'eq'
