@@ -46,7 +46,7 @@ const transactionSchema = z.object({
   date: z.string().date(),
   merchantName: z.string().min(1).max(255),
   amount: z.string().min(3),
-  updateCategoryForSimilarTransactions: z.boolean().optional(),
+  createCategorizationRule: z.boolean().optional(),
 })
 
 export type TransactionFormValues = z.infer<typeof transactionSchema>
@@ -95,7 +95,7 @@ export function TransactionForm({
     },
   })
 
-  const hasChangedCategory = form.formState.dirtyFields.categoryId
+  const selectedCategoryId = form.watch('categoryId')
 
   return (
     <Form {...form}>
@@ -155,39 +155,41 @@ export function TransactionForm({
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="updateCategoryForSimilarTransactions"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center gap-2">
-              <FormControl>
-                <Checkbox
-                  id="updateCategoryForSimilarTransactions"
-                  checked={field.value ?? false}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-              <FormLabel
-                htmlFor="updateCategoryForSimilarTransactions"
-                className="flex items-center gap-1"
-              >
-                Update category for similar transactions
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <IconInfoCircle className="text-muted-foreground h-4 w-4" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="max-w-[240px]">
-                      Updates all existing transactions from this merchant to
-                      use the selected category, and saves the preference for
-                      future imports.
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </FormLabel>
-            </FormItem>
-          )}
-        />
+        {selectedCategoryId && (
+          <FormField
+            control={form.control}
+            name="createCategorizationRule"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center gap-2">
+                <FormControl>
+                  <Checkbox
+                    id="createCategorizationRule"
+                    checked={field.value ?? false}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <FormLabel
+                  htmlFor="createCategorizationRule"
+                  className="flex items-center gap-1"
+                >
+                  Create categorization rule
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <IconInfoCircle className="text-muted-foreground h-4 w-4" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-[240px]">
+                        Creates a rule that assigns this category to all
+                        existing and future transactions matching this merchant
+                        name.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </FormLabel>
+              </FormItem>
+            )}
+          />
+        )}
 
         <FormField
           control={form.control}

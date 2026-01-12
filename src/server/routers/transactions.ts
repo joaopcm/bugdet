@@ -5,7 +5,7 @@ import {
 import { SUGGESTED_TRANSACTION_FILTERS_DAYS } from '@/constants/suggested-transaction-filters'
 import { CONFIDENCE_THRESHOLD } from '@/constants/transactions'
 import { db } from '@/db'
-import { category, merchantCategory, transaction } from '@/db/schema'
+import { categorizationRule, category, transaction } from '@/db/schema'
 import { TRPCError } from '@trpc/server'
 import { format, subDays } from 'date-fns'
 import {
@@ -198,7 +198,7 @@ export const transactionsRouter = router({
         date: z.string().date(),
         merchantName: z.string().min(1).max(255),
         amount: z.number().max(Number.MAX_SAFE_INTEGER / 100),
-        updateCategoryForSimilarTransactions: z.boolean().optional(),
+        createCategorizationRule: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -221,11 +221,30 @@ export const transactionsRouter = router({
             ),
           )
 
-        if (input.updateCategoryForSimilarTransactions) {
+        if (input.createCategorizationRule && input.categoryId) {
+          await tx.insert(categorizationRule).values({
+            userId: ctx.user.id,
+            name: `Categorize ${input.merchantName}`,
+            conditions: [
+              {
+                field: 'merchant_name',
+                operator: 'eq',
+                value: input.merchantName,
+              },
+            ],
+            actions: [
+              {
+                type: 'set_category',
+                value: input.categoryId,
+              },
+            ],
+          })
+
           await tx
             .update(transaction)
             .set({
               categoryId: input.categoryId,
+              confidence: 100,
             })
             .where(
               and(
@@ -234,37 +253,6 @@ export const transactionsRouter = router({
                 eq(transaction.deleted, false),
               ),
             )
-        }
-
-        if (input.categoryId) {
-          const [existingMerchantCategory] = await tx
-            .select()
-            .from(merchantCategory)
-            .where(
-              and(
-                eq(merchantCategory.merchantName, input.merchantName),
-                eq(merchantCategory.userId, ctx.user.id),
-              ),
-            )
-
-          if (existingMerchantCategory) {
-            await tx
-              .update(merchantCategory)
-              .set({ categoryId: input.categoryId })
-              .where(
-                and(
-                  eq(merchantCategory.id, existingMerchantCategory.id),
-                  eq(merchantCategory.userId, ctx.user.id),
-                ),
-              )
-            return
-          }
-
-          await tx.insert(merchantCategory).values({
-            merchantName: input.merchantName,
-            userId: ctx.user.id,
-            categoryId: input.categoryId,
-          })
         }
       })
     }),

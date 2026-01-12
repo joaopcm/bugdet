@@ -2,7 +2,6 @@ import { db } from '@/db'
 import {
   categorizationRule,
   category,
-  merchantCategory,
   transaction,
   upload,
   user,
@@ -55,9 +54,8 @@ Analyze the provided transactions and assign appropriate categories to each one.
 ### Confidence Scoring (BE CONSERVATIVE!)
 The confidence score should reflect how certain you are about the CATEGORY assignment.
 
-- 90-100: ONLY if merchant EXACTLY matches one from the "LEARNED MERCHANT MAPPINGS" list
-- 70-89: Category is very obvious from merchant name (e.g., "NETFLIX" → Entertainment, "UBER" → Transportation)
-- 50-69: Category is a reasonable guess but not certain
+- 80-100: Category is very obvious from merchant name (e.g., "NETFLIX" → Entertainment, "UBER" → Transportation)
+- 50-79: Category is a reasonable guess but not certain
 - 30-49: Category is uncertain, merchant name is ambiguous
 - Below 30: No idea what category this should be
 
@@ -70,23 +68,11 @@ The confidence score should reflect how certain you are about the CATEGORY assig
 function buildUserPrompt(
   transactions: ExtractedTransaction[],
   categories: { name: string }[],
-  merchantMappings: { merchantName: string; categoryName: string | null }[],
 ) {
   const categoryList =
     categories.length > 0
       ? categories.map((c) => `- ${c.name}`).join('\n')
       : '(No categories defined yet)'
-
-  const merchantList =
-    merchantMappings.length > 0
-      ? merchantMappings
-          .slice(0, 100) // Limit to avoid token overflow
-          .map(
-            (m) =>
-              `- "${m.merchantName}" → ${m.categoryName ?? 'Uncategorized'}`,
-          )
-          .join('\n')
-      : '(No merchant mappings yet)'
 
   const transactionsList = transactions
     .map(
@@ -100,10 +86,6 @@ Use these existing categories when appropriate:
 ${categoryList}
 
 You may suggest new categories if none fit well.
-
-## LEARNED MERCHANT MAPPINGS
-When you see these merchants, use the mapped category:
-${merchantList}
 
 ## TRANSACTIONS TO CATEGORIZE
 ${transactionsList}
@@ -184,17 +166,6 @@ export const categorizeAndImportTransactionsTask = task({
       `Found ${categories.length} categories for user ${payload.userId}`,
     )
 
-    const merchantCategories = await db
-      .select({
-        merchantName: merchantCategory.merchantName,
-        categoryName: category.name,
-      })
-      .from(merchantCategory)
-      .leftJoin(category, eq(merchantCategory.categoryId, category.id))
-      .where(eq(merchantCategory.userId, payload.userId))
-      .orderBy(desc(merchantCategory.updatedAt))
-    logger.info(`Found ${merchantCategories.length} merchant categories`)
-
     const rules = await db
       .select()
       .from(categorizationRule)
@@ -222,11 +193,7 @@ export const categorizeAndImportTransactionsTask = task({
         },
         {
           role: 'user',
-          content: buildUserPrompt(
-            payload.transactions,
-            categories,
-            merchantCategories,
-          ),
+          content: buildUserPrompt(payload.transactions, categories),
         },
       ],
     })
