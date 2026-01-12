@@ -338,31 +338,6 @@ export const uploadsRouter = router({
 
       return { deletedCount: uploadsToDelete.length }
     }),
-  download: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
-    .mutation(async ({ input, ctx }) => {
-      const { id } = input
-
-      const existingUpload = await getExistingUpload(id, ctx.user.id)
-
-      const supabase = await createClient({ admin: true })
-
-      const { data: signedUrlData, error: signedUrlError } =
-        await supabase.storage
-          .from('bank-statements')
-          .createSignedUrl(existingUpload.filePath, 60 * 15) // 15 minutes
-
-      if (signedUrlError) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: `Failed to download ${existingUpload.filePath}: ${signedUrlError.message}`,
-        })
-      }
-
-      return {
-        url: signedUrlData.signedUrl,
-      }
-    }),
   setPassword: protectedProcedure
     .input(
       z.object({

@@ -40,10 +40,7 @@ export function LoadingState() {
             <Skeleton className="h-3.5 w-[187px]" />
           </TableCell>
           <TableCell className="w-[15%]">
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-[32px] w-[95px]" />
-              <Skeleton className="h-[32px] w-[71px]" />
-            </div>
+            <Skeleton className="h-[32px] w-[71px]" />
           </TableCell>
         </TableRow>
       ))}
