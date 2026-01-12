@@ -222,10 +222,9 @@ export const transactionsRouter = router({
           )
 
         if (input.createCategorizationRule && input.categoryId) {
-          // Create the categorization rule
           await tx.insert(categorizationRule).values({
             userId: ctx.user.id,
-            name: `Auto: ${input.merchantName}`,
+            name: `Categorize ${input.merchantName}`,
             conditions: [
               {
                 field: 'merchant_name',
@@ -241,7 +240,6 @@ export const transactionsRouter = router({
             ],
           })
 
-          // Apply the rule to existing transactions matching the merchant name
           await tx
             .update(transaction)
             .set({
