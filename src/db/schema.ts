@@ -22,6 +22,40 @@ export const user = pgTable('user', {
   twoFactorEnabled: boolean('two_factor_enabled'),
 })
 
+export const workTypeEnum = pgEnum('work_type', [
+  'employed',
+  'self_employed',
+  'business_owner',
+  'student',
+  'retired',
+  'unemployed',
+])
+
+export const primaryUseEnum = pgEnum('primary_use', [
+  'personal',
+  'business',
+  'both',
+])
+
+export type UserProfile = typeof userProfile.$inferSelect
+
+export const userProfile = pgTable('user_profile', {
+  id: uuid('id').defaultRandom().notNull().primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .unique()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  workType: workTypeEnum('work_type'),
+  primaryUse: primaryUseEnum('primary_use'),
+  industry: text('industry'),
+  onboardingCompleted: boolean('onboarding_completed').notNull().default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at')
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+})
+
 export const session = pgTable('session', {
   id: text('id').primaryKey(),
   expiresAt: timestamp('expires_at').notNull(),

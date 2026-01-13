@@ -3,6 +3,7 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator'
 import { categoriesRouter } from './routers/categories'
 import { categorizationRulesRouter } from './routers/categorization-rules'
 import { dashboardRouter } from './routers/dashboard'
+import { onboardingRouter } from './routers/onboarding'
 import { transactionsRouter } from './routers/transactions'
 import { uploadsRouter } from './routers/uploads'
 import { usersRouter } from './routers/users'
@@ -21,6 +22,7 @@ export const appRouter = router({
   dashboard: dashboardRouter,
   waitlist: waitlistRouter,
   users: usersRouter,
+  onboarding: onboardingRouter,
 })
 
 export type AppRouter = typeof appRouter
