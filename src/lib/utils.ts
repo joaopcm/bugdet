@@ -147,6 +147,6 @@ export function pluralize(
   return count === 1 ? singular : pluralForm
 }
 
-export function sleep(ms: number) {
+export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }

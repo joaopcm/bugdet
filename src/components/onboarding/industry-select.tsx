@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/button'
 import {
   Command,
+  CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
@@ -96,11 +97,7 @@ export function IndustrySelect({ value, onChange }: IndustrySelectProps) {
                   {industry.label}
                 </CommandItem>
               ))}
-              {filteredIndustries.length === 0 && (
-                <div className="text-muted-foreground py-6 text-center text-sm">
-                  No industry found.
-                </div>
-              )}
+              <CommandEmpty>No industry found.</CommandEmpty>
             </CommandGroup>
           </CommandList>
         </Command>
@@ -108,5 +105,3 @@ export function IndustrySelect({ value, onChange }: IndustrySelectProps) {
     </Popover>
   )
 }
-
-export { INDUSTRIES }

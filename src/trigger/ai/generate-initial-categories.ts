@@ -51,28 +51,16 @@ Your task is to suggest additional expense/income categories based on a user's p
 - Creative Professional: "Equipment", "Portfolio Costs", "Licensing"`
 }
 
-const INDUSTRY_LABELS = INDUSTRIES.reduce(
-  (acc, industry) => {
-    acc[industry.value] = industry.label
-    return acc
-  },
-  {} as Record<string, string>,
+const INDUSTRY_LABELS = Object.fromEntries(
+  INDUSTRIES.map((i) => [i.value, i.label]),
 )
 
-const WORK_TYPE_LABELS = WORK_TYPES.reduce(
-  (acc, workType) => {
-    acc[workType.value] = workType.label
-    return acc
-  },
-  {} as Record<string, string>,
+const WORK_TYPE_LABELS = Object.fromEntries(
+  WORK_TYPES.map((w) => [w.value, w.label]),
 )
 
-const PRIMARY_USE_LABELS = PRIMARY_USES.reduce(
-  (acc, primaryUse) => {
-    acc[primaryUse.value] = primaryUse.label
-    return acc
-  },
-  {} as Record<string, string>,
+const PRIMARY_USE_LABELS = Object.fromEntries(
+  PRIMARY_USES.map((p) => [p.value, p.label]),
 )
 
 function buildUserPrompt(profile: {

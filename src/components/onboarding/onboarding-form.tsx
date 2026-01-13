@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { PRIMARY_USES, WORK_TYPES } from '@/constants/onboarding'
+import { INDUSTRIES } from '@/constants/onboarding'
 import { trpc } from '@/lib/trpc/client'
 import { sleep } from '@/lib/utils'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -27,7 +28,7 @@ import { toast } from 'sonner'
 import { z } from 'zod'
 import { DialogClose, DialogFooter } from '../ui/dialog'
 import { Kbd, SHORTCUTS_VALUES } from '../ui/kbd'
-import { INDUSTRIES, IndustrySelect } from './industry-select'
+import { IndustrySelect } from './industry-select'
 
 const industryValues = INDUSTRIES.map((i) => i.value) as [string, ...string[]]
 
