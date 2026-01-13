@@ -78,7 +78,7 @@ export const TransactionsTable = () => {
           className="absolute -left-8 top-2.5 hidden opacity-0 hover:opacity-100 data-[state=checked]:opacity-100 data-[state=indeterminate]:opacity-100 md:block"
           aria-label="Select all transactions"
         />
-        <Table containerClassName="overflow-visible">
+        <Table containerClassName="md:overflow-visible">
           <TableHeader>
             <TableRow>
               <TableHead className="w-[15%]">Date</TableHead>
