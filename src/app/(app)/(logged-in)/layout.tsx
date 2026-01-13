@@ -1,6 +1,8 @@
 import { AppSidebar } from '@/components/logged-in/app-sidebar'
 import { SiteHeader } from '@/components/logged-in/site-header'
+import { OnboardingModal } from '@/components/onboarding/onboarding-modal'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
+import { getUserOnboardingStatus } from '@/data/user-profile'
 import { auth } from '@/lib/auth/auth'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
@@ -14,6 +16,8 @@ export default async function LoggedInLayout({ children }: PropsWithChildren) {
   if (!session) {
     redirect('/sign-in')
   }
+
+  const { completed } = await getUserOnboardingStatus(session.user.id)
 
   return (
     <SidebarProvider
@@ -35,6 +39,7 @@ export default async function LoggedInLayout({ children }: PropsWithChildren) {
           </div>
         </div>
       </SidebarInset>
+      <OnboardingModal open={!completed} />
     </SidebarProvider>
   )
 }
