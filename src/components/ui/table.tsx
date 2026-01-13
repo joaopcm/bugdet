@@ -20,7 +20,7 @@ function Table({ className, containerClassName, ...props }: TableProps) {
       <table
         data-slot="table"
         className={cn(
-          'w-full min-w-max caption-bottom text-sm border-separate border-spacing-0 border-none',
+          'w-full caption-bottom text-sm border-separate border-spacing-0 border-none',
           className,
         )}
         {...props}
