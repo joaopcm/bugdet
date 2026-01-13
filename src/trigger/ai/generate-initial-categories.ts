@@ -170,10 +170,32 @@ export const generateInitialCategoriesTask = task({
       categoriesToCreate.push(...aiCategories)
     }
 
+    const existingCategories = await db
+      .select({ name: category.name })
+      .from(category)
+      .where(eq(category.userId, payload.userId))
+
+    const existingNames = new Set(
+      existingCategories.map((c) => c.name.toLowerCase()),
+    )
+
+    const newCategories = categoriesToCreate.filter(
+      (name) => !existingNames.has(name.toLowerCase()),
+    )
+
+    if (newCategories.length === 0) {
+      logger.info('All categories already exist, skipping insertion')
+      return {
+        success: true,
+        categoriesCreated: 0,
+        categories: [],
+      }
+    }
+
     const insertedCategories = await db
       .insert(category)
       .values(
-        categoriesToCreate.map((name) => ({
+        newCategories.map((name) => ({
           name,
           userId: payload.userId,
         })),
