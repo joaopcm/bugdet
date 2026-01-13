@@ -16,8 +16,7 @@ import {
 } from '@/components/ui/popover'
 import { INDUSTRIES } from '@/constants/onboarding'
 import { cn } from '@/lib/utils'
-import { IconCheck } from '@tabler/icons-react'
-import { ChevronsUpDown } from 'lucide-react'
+import { Check, ChevronsUpDown } from 'lucide-react'
 import { useState } from 'react'
 
 interface IndustrySelectProps {
@@ -89,7 +88,7 @@ export function IndustrySelect({ value, onChange }: IndustrySelectProps) {
                     setOpen(false)
                   }}
                 >
-                  <IconCheck
+                  <Check
                     className={cn(
                       'mr-2 h-4 w-4',
                       value === industry.value ? 'opacity-100' : 'opacity-0',
