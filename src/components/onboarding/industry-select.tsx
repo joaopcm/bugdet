@@ -65,6 +65,7 @@ export function IndustrySelect({ value, onChange }: IndustrySelectProps) {
             onValueChange={setSearch}
           />
           <CommandList>
+            <CommandEmpty>No industry found.</CommandEmpty>
             <CommandGroup>
               {value && (
                 <CommandItem
@@ -97,7 +98,6 @@ export function IndustrySelect({ value, onChange }: IndustrySelectProps) {
                   {industry.label}
                 </CommandItem>
               ))}
-              <CommandEmpty>No industry found.</CommandEmpty>
             </CommandGroup>
           </CommandList>
         </Command>
