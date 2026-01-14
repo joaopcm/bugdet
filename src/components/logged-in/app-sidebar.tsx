@@ -22,7 +22,7 @@ import {
 import type { User } from 'better-auth'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useCallback, useRef } from 'react'
+import { useCallback } from 'react'
 import type * as React from 'react'
 
 const routes = [
@@ -55,14 +55,13 @@ const routes = [
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   user: User
+  fileInputRef: React.RefObject<HTMLInputElement | null>
 }
 
-export function AppSidebar({ user, ...props }: AppSidebarProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null)
-
+export function AppSidebar({ user, fileInputRef, ...props }: AppSidebarProps) {
   const handleUploadClick = useCallback(() => {
     fileInputRef.current?.click()
-  }, [])
+  }, [fileInputRef])
 
   return (
     <Sidebar collapsible="offcanvas" {...props}>
