@@ -99,7 +99,18 @@ For each transaction, provide:
 2. The suggested category (from the list above or a new one)
 3. Your confidence score (0-100)
 
-Return categorizations for ALL transactions.`
+Return categorizations for ALL transactions.
+
+## EXAMPLE OUTPUT
+\`\`\`json
+{
+  "categorizedTransactions": [
+    { "index": 0, "category": "Entertainment", "confidence": 95 },
+    { "index": 1, "category": "Transportation", "confidence": 85 },
+    { "index": 2, "category": null, "confidence": 25 }
+  ]
+}
+\`\`\``
 }
 
 export interface CategorizeAndImportPayload {

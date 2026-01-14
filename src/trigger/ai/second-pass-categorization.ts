@@ -102,7 +102,17 @@ For each transaction, provide:
 2. The suggested category (from the list above ONLY, or null if still uncertain)
 3. Your confidence score (0-100)
 
-Return categorizations for ALL transactions.`
+Return categorizations for ALL transactions.
+
+## EXAMPLE OUTPUT
+\`\`\`json
+{
+  "recategorizedTransactions": [
+    { "transactionId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890", "category": "Groceries", "confidence": 85 },
+    { "transactionId": "b2c3d4e5-f6a7-8901-bcde-f12345678901", "category": null, "confidence": 30 }
+  ]
+}
+\`\`\``
 }
 
 export interface SecondPassCategorizationPayload {
