@@ -14,7 +14,7 @@ import { and, desc, eq, ilike, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 import { protectedProcedure, router } from '../trpc'
 
-async function getExistingUpload(id: string, userId: string) {
+async function getExistingUpload(id: string, tenantId: string) {
   const [existingUpload] = await db
     .select({
       id: upload.id,
@@ -26,7 +26,7 @@ async function getExistingUpload(id: string, userId: string) {
       retryCount: upload.retryCount,
     })
     .from(upload)
-    .where(and(eq(upload.id, id), eq(upload.userId, userId)))
+    .where(and(eq(upload.id, id), eq(upload.tenantId, tenantId)))
 
   if (!existingUpload || existingUpload.deleted) {
     throw new TRPCError({
@@ -67,7 +67,7 @@ export const uploadsRouter = router({
       .from(upload)
       .where(
         and(
-          eq(upload.userId, ctx.user.id),
+          eq(upload.tenantId, ctx.tenant.tenantId),
           eq(upload.deleted, false),
           eq(upload.status, 'completed'),
         ),
@@ -131,7 +131,7 @@ export const uploadsRouter = router({
         .insert(upload)
         .values(
           files.map((file) => ({
-            userId: ctx.user.id,
+            tenantId: ctx.tenant.tenantId,
             fileName: file.fileName,
             filePath: file.filePath,
             fileSize: file.fileSize,
@@ -168,7 +168,7 @@ export const uploadsRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const whereClauses = [
-        eq(upload.userId, ctx.user.id),
+        eq(upload.tenantId, ctx.tenant.tenantId),
         eq(upload.deleted, false),
       ]
 
@@ -207,7 +207,7 @@ export const uploadsRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { id } = input
 
-      const existingUpload = await getExistingUpload(id, ctx.user.id)
+      const existingUpload = await getExistingUpload(id, ctx.tenant.tenantId)
 
       if (!CANCELLABLE_STATUSES.includes(existingUpload.status)) {
         throw new TRPCError({
@@ -226,7 +226,7 @@ export const uploadsRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { id } = input
 
-      const existingUpload = await getExistingUpload(id, ctx.user.id)
+      const existingUpload = await getExistingUpload(id, ctx.tenant.tenantId)
 
       if (existingUpload.status !== 'failed') {
         throw new TRPCError({
@@ -284,7 +284,7 @@ export const uploadsRouter = router({
     .mutation(async ({ input, ctx }) => {
       const { id } = input
 
-      const existingUpload = await getExistingUpload(id, ctx.user.id)
+      const existingUpload = await getExistingUpload(id, ctx.tenant.tenantId)
 
       if (!DELETABLE_STATUSES.includes(existingUpload.status)) {
         throw new TRPCError({
@@ -317,7 +317,7 @@ export const uploadsRouter = router({
           .where(
             and(
               eq(upload.id, existingUpload.id),
-              eq(upload.userId, ctx.user.id),
+              eq(upload.tenantId, ctx.tenant.tenantId),
             ),
           )
 
@@ -328,7 +328,7 @@ export const uploadsRouter = router({
             .where(
               and(
                 eq(transaction.uploadId, existingUpload.id),
-                eq(transaction.userId, ctx.user.id),
+                eq(transaction.tenantId, ctx.tenant.tenantId),
               ),
             )
         }
@@ -352,7 +352,7 @@ export const uploadsRouter = router({
         .where(
           and(
             inArray(upload.id, input.ids),
-            eq(upload.userId, ctx.user.id),
+            eq(upload.tenantId, ctx.tenant.tenantId),
             eq(upload.deleted, false),
             inArray(upload.status, DELETABLE_STATUSES),
           ),
@@ -377,7 +377,10 @@ export const uploadsRouter = router({
           .update(upload)
           .set({ deleted: true })
           .where(
-            and(inArray(upload.id, uploadIds), eq(upload.userId, ctx.user.id)),
+            and(
+              inArray(upload.id, uploadIds),
+              eq(upload.tenantId, ctx.tenant.tenantId),
+            ),
           )
 
         if (input.deleteRelatedTransactions) {
@@ -387,7 +390,7 @@ export const uploadsRouter = router({
             .where(
               and(
                 inArray(transaction.uploadId, uploadIds),
-                eq(transaction.userId, ctx.user.id),
+                eq(transaction.tenantId, ctx.tenant.tenantId),
               ),
             )
         }
@@ -412,7 +415,12 @@ export const uploadsRouter = router({
           deleted: upload.deleted,
         })
         .from(upload)
-        .where(and(eq(upload.id, uploadId), eq(upload.userId, ctx.user.id)))
+        .where(
+          and(
+            eq(upload.id, uploadId),
+            eq(upload.tenantId, ctx.tenant.tenantId),
+          ),
+        )
 
       if (!existingUpload || existingUpload.deleted) {
         throw new TRPCError({
@@ -448,7 +456,12 @@ export const uploadsRouter = router({
         createdAt: upload.createdAt,
       })
       .from(upload)
-      .where(and(eq(upload.userId, ctx.user.id), eq(upload.deleted, false)))
+      .where(
+        and(
+          eq(upload.tenantId, ctx.tenant.tenantId),
+          eq(upload.deleted, false),
+        ),
+      )
       .orderBy(desc(upload.createdAt))
       .limit(1)
 

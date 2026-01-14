@@ -105,6 +105,24 @@ export const twoFactor = pgTable('two_factor', {
     .references(() => user.id, { onDelete: 'cascade' }),
 })
 
+export type UserTenant = typeof userTenant.$inferSelect
+
+export const userTenant = pgTable(
+  'user_tenant',
+  {
+    id: uuid('id').defaultRandom().notNull().primaryKey(),
+    tenantId: uuid('tenant_id').notNull().unique(),
+    userIdHash: text('user_id_hash').notNull().unique(),
+    userIdEncrypted: text('user_id_encrypted').notNull(),
+    dekEncrypted: text('dek_encrypted').notNull(),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    tenantIdIdx: index('user_tenant_tenant_id_idx').on(table.tenantId),
+    userIdHashIdx: index('user_tenant_user_id_hash_idx').on(table.userIdHash),
+  }),
+)
+
 export type Waitlist = typeof waitlist.$inferSelect
 
 export const waitlist = pgTable(
@@ -154,9 +172,9 @@ export const upload = pgTable(
   'upload',
   {
     id: uuid('id').defaultRandom().notNull().primaryKey(),
-    userId: text('user_id')
+    tenantId: uuid('tenant_id')
       .notNull()
-      .references(() => user.id, { onDelete: 'cascade' }),
+      .references(() => userTenant.tenantId, { onDelete: 'cascade' }),
     fileName: text('file_name').notNull(),
     filePath: text('file_path').notNull(),
     fileSize: integer('file_size').notNull(),
@@ -175,7 +193,9 @@ export const upload = pgTable(
       .$onUpdate(() => new Date()),
   },
   (table) => ({
-    userIdIdx: index('upload_user_id_idx').on(table.userId).concurrently(),
+    tenantIdIdx: index('upload_tenant_id_idx')
+      .on(table.tenantId)
+      .concurrently(),
     deletedIdx: index('upload_deleted_idx').on(table.deleted).concurrently(),
   }),
 )
@@ -187,9 +207,9 @@ export const category = pgTable(
   {
     id: uuid('id').defaultRandom().notNull().primaryKey(),
     name: text('name').notNull(),
-    userId: text('user_id')
+    tenantId: uuid('tenant_id')
       .notNull()
-      .references(() => user.id, { onDelete: 'cascade' }),
+      .references(() => userTenant.tenantId, { onDelete: 'cascade' }),
     deleted: boolean('deleted').notNull().default(false),
     createdAt: timestamp('created_at').notNull().defaultNow(),
     updatedAt: timestamp('updated_at')
@@ -198,7 +218,9 @@ export const category = pgTable(
       .$onUpdate(() => new Date()),
   },
   (table) => ({
-    userIdIdx: index('category_user_id_idx').on(table.userId).concurrently(),
+    tenantIdIdx: index('category_tenant_id_idx')
+      .on(table.tenantId)
+      .concurrently(),
     deletedIdx: index('category_deleted_idx').on(table.deleted).concurrently(),
   }),
 )
@@ -219,9 +241,9 @@ export const transaction = pgTable(
     uploadId: uuid('upload_id').references(() => upload.id, {
       onDelete: 'set null',
     }),
-    userId: text('user_id')
+    tenantId: uuid('tenant_id')
       .notNull()
-      .references(() => user.id, { onDelete: 'cascade' }),
+      .references(() => userTenant.tenantId, { onDelete: 'cascade' }),
     categoryId: uuid('category_id').references(() => category.id, {
       onDelete: 'set null',
     }),
@@ -240,7 +262,9 @@ export const transaction = pgTable(
       .$onUpdate(() => new Date()),
   },
   (table) => ({
-    userIdIdx: index('transaction_user_id_idx').on(table.userId).concurrently(),
+    tenantIdIdx: index('transaction_tenant_id_idx')
+      .on(table.tenantId)
+      .concurrently(),
     uploadIdIdx: index('transaction_upload_id_idx')
       .on(table.uploadId)
       .concurrently(),
@@ -278,9 +302,9 @@ export const categorizationRule = pgTable(
   'categorization_rule',
   {
     id: uuid('id').defaultRandom().notNull().primaryKey(),
-    userId: text('user_id')
+    tenantId: uuid('tenant_id')
       .notNull()
-      .references(() => user.id, { onDelete: 'cascade' }),
+      .references(() => userTenant.tenantId, { onDelete: 'cascade' }),
     name: text('name').notNull(),
     priority: integer('priority').notNull().default(0),
     logicOperator: text('logic_operator')
@@ -298,7 +322,7 @@ export const categorizationRule = pgTable(
       .$onUpdate(() => new Date()),
   },
   (table) => ({
-    userIdIdx: index('categorization_rule_user_id_idx').on(table.userId),
+    tenantIdIdx: index('categorization_rule_tenant_id_idx').on(table.tenantId),
     priorityIdx: index('categorization_rule_priority_idx').on(table.priority),
     deletedIdx: index('categorization_rule_deleted_idx').on(table.deleted),
   }),

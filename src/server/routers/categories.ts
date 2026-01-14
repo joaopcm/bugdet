@@ -10,14 +10,14 @@ import { and, count, desc, eq, ilike, inArray } from 'drizzle-orm'
 import { z } from 'zod'
 import { protectedProcedure, router } from '../trpc'
 
-async function getExistingCategory(id: string, userId: string) {
+async function getExistingCategory(id: string, tenantId: string) {
   const [existingCategory] = await db
     .select({
       id: category.id,
       deleted: category.deleted,
     })
     .from(category)
-    .where(and(eq(category.id, id), eq(category.userId, userId)))
+    .where(and(eq(category.id, id), eq(category.tenantId, tenantId)))
 
   if (!existingCategory || existingCategory.deleted) {
     throw new TRPCError({
@@ -48,7 +48,7 @@ export const categoriesRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const whereClauses = [
-        eq(category.userId, ctx.user.id),
+        eq(category.tenantId, ctx.tenant.tenantId),
         eq(category.deleted, false),
       ]
 
@@ -87,7 +87,10 @@ export const categoriesRouter = router({
   preview: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      const existingCategory = await getExistingCategory(input.id, ctx.user.id)
+      const existingCategory = await getExistingCategory(
+        input.id,
+        ctx.tenant.tenantId,
+      )
 
       const lastTransactions = await db
         .select({
@@ -101,7 +104,7 @@ export const categoriesRouter = router({
         .where(
           and(
             eq(transaction.categoryId, existingCategory.id),
-            eq(transaction.userId, ctx.user.id),
+            eq(transaction.tenantId, ctx.tenant.tenantId),
             eq(transaction.deleted, false),
           ),
         )
@@ -113,7 +116,10 @@ export const categoriesRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const existingCategory = await getExistingCategory(input.id, ctx.user.id)
+      const existingCategory = await getExistingCategory(
+        input.id,
+        ctx.tenant.tenantId,
+      )
 
       await db
         .update(category)
@@ -121,7 +127,7 @@ export const categoriesRouter = router({
         .where(
           and(
             eq(category.id, existingCategory.id),
-            eq(category.userId, ctx.user.id),
+            eq(category.tenantId, ctx.tenant.tenantId),
           ),
         )
     }),
@@ -138,7 +144,7 @@ export const categoriesRouter = router({
         .where(
           and(
             inArray(category.id, input.ids),
-            eq(category.userId, ctx.user.id),
+            eq(category.tenantId, ctx.tenant.tenantId),
             eq(category.deleted, false),
           ),
         )
@@ -150,7 +156,7 @@ export const categoriesRouter = router({
         .insert(category)
         .values({
           ...input,
-          userId: ctx.user.id,
+          tenantId: ctx.tenant.tenantId,
         })
         .returning({ id: category.id, name: category.name })
 
@@ -161,7 +167,10 @@ export const categoriesRouter = router({
       z.object({ id: z.string().uuid(), name: z.string().min(1).max(255) }),
     )
     .mutation(async ({ ctx, input }) => {
-      const existingCategory = await getExistingCategory(input.id, ctx.user.id)
+      const existingCategory = await getExistingCategory(
+        input.id,
+        ctx.tenant.tenantId,
+      )
 
       await db
         .update(category)
@@ -169,7 +178,7 @@ export const categoriesRouter = router({
         .where(
           and(
             eq(category.id, existingCategory.id),
-            eq(category.userId, ctx.user.id),
+            eq(category.tenantId, ctx.tenant.tenantId),
           ),
         )
     }),

@@ -11,6 +11,7 @@ import { env } from '@/env'
 import { generateTransactionFingerprint } from '@/lib/fingerprint'
 import { applyRules } from '@/lib/rules/apply-rules'
 import { createLambdaClient } from '@/lib/supabase/server'
+import { getUserIdFromTenant } from '@/lib/tenant'
 import { sendUploadCompletedTask } from '@/trigger/emails/send-upload-completed'
 import { sendUploadFailedTask } from '@/trigger/emails/send-upload-failed'
 import { logger, task } from '@trigger.dev/sdk/v3'
@@ -115,7 +116,7 @@ Return categorizations for ALL transactions.
 
 export interface CategorizeAndImportPayload {
   uploadId: string
-  userId: string
+  tenantId: string
   transactions: ExtractedTransaction[]
   statementCurrency: string
   openingBalance?: number
@@ -147,7 +148,7 @@ export const categorizeAndImportTransactionsTask = task({
       const [uploadData] = await db
         .select({
           fileName: upload.fileName,
-          userId: upload.userId,
+          tenantId: upload.tenantId,
           filePath: upload.filePath,
         })
         .from(upload)
@@ -169,21 +170,24 @@ export const categorizeAndImportTransactionsTask = task({
             .where(eq(upload.id, payload.uploadId))
         }
 
-        const [uploadUser] = await db
-          .select({ email: user.email })
-          .from(user)
-          .where(eq(user.id, uploadData.userId))
+        const userId = await getUserIdFromTenant(uploadData.tenantId)
+        if (userId) {
+          const [uploadUser] = await db
+            .select({ email: user.email })
+            .from(user)
+            .where(eq(user.id, userId))
 
-        if (uploadUser) {
-          await sendUploadCompletedTask.trigger({
-            to: uploadUser.email,
-            fileName: uploadData.fileName,
-            transactionCount: 0,
-            categoriesCreated: 0,
-            rulesApplied: 0,
-            lowConfidenceCount: 0,
-            uploadsLink: `${env.NEXT_PUBLIC_APP_URL}/uploads`,
-          })
+          if (uploadUser) {
+            await sendUploadCompletedTask.trigger({
+              to: uploadUser.email,
+              fileName: uploadData.fileName,
+              transactionCount: 0,
+              categoriesCreated: 0,
+              rulesApplied: 0,
+              lowConfidenceCount: 0,
+              uploadsLink: `${env.NEXT_PUBLIC_APP_URL}/uploads`,
+            })
+          }
         }
       }
 
@@ -194,18 +198,19 @@ export const categorizeAndImportTransactionsTask = task({
       .select({ id: category.id, name: category.name })
       .from(category)
       .where(
-        and(eq(category.userId, payload.userId), eq(category.deleted, false)),
+        and(
+          eq(category.tenantId, payload.tenantId),
+          eq(category.deleted, false),
+        ),
       )
-    logger.info(
-      `Found ${categories.length} categories for user ${payload.userId}`,
-    )
+    logger.info(`Found ${categories.length} categories for tenant`)
 
     const rules = await db
       .select()
       .from(categorizationRule)
       .where(
         and(
-          eq(categorizationRule.userId, payload.userId),
+          eq(categorizationRule.tenantId, payload.tenantId),
           eq(categorizationRule.deleted, false),
           eq(categorizationRule.enabled, true),
         ),
@@ -287,7 +292,7 @@ export const categorizeAndImportTransactionsTask = task({
     let transactionCount = 0
     let categoriesCreated = 0
     let lowConfidenceCount = 0
-    let uploadUserId: string | null = null
+    let uploadTenantId: string | null = null
     let uploadFileName: string | null = null
     let uploadFilePath: string | null = null
 
@@ -295,7 +300,7 @@ export const categorizeAndImportTransactionsTask = task({
       const [upToDateUpload] = await tx
         .select({
           status: upload.status,
-          userId: upload.userId,
+          tenantId: upload.tenantId,
           fileName: upload.fileName,
           filePath: upload.filePath,
         })
@@ -323,7 +328,7 @@ export const categorizeAndImportTransactionsTask = task({
         .from(category)
         .where(
           and(
-            eq(category.userId, upToDateUpload.userId),
+            eq(category.tenantId, upToDateUpload.tenantId),
             eq(category.deleted, false),
             inArray(category.name, uniqueCategories),
           ),
@@ -344,7 +349,7 @@ export const categorizeAndImportTransactionsTask = task({
           .values(
             categoriesToInsert.map((categoryName) => ({
               name: categoryName,
-              userId: upToDateUpload.userId,
+              tenantId: upToDateUpload.tenantId,
             })),
           )
           .returning({ id: category.id, name: category.name })
@@ -363,7 +368,7 @@ export const categorizeAndImportTransactionsTask = task({
       const transactionsWithFingerprints = processedTransactions.map((txn) => ({
         ...txn,
         fingerprint: generateTransactionFingerprint({
-          userId: upToDateUpload.userId,
+          tenantId: upToDateUpload.tenantId,
           date: txn.date,
           merchantName: txn.merchantName,
           amount: txn.amount,
@@ -381,7 +386,7 @@ export const categorizeAndImportTransactionsTask = task({
             .from(transaction)
             .where(
               and(
-                eq(transaction.userId, upToDateUpload.userId),
+                eq(transaction.tenantId, upToDateUpload.tenantId),
                 eq(transaction.deleted, false),
                 inArray(transaction.fingerprint, fingerprints),
               ),
@@ -405,7 +410,7 @@ export const categorizeAndImportTransactionsTask = task({
         await tx.insert(transaction).values(
           newTransactions.map((txn) => ({
             uploadId: payload.uploadId,
-            userId: upToDateUpload.userId,
+            tenantId: upToDateUpload.tenantId,
             categoryId:
               txn.ruleCategoryId ??
               (txn.category
@@ -440,7 +445,7 @@ export const categorizeAndImportTransactionsTask = task({
       lowConfidenceCount = newTransactions.filter(
         (txn) => txn.confidence < CONFIDENCE_THRESHOLD,
       ).length
-      uploadUserId = upToDateUpload.userId
+      uploadTenantId = upToDateUpload.tenantId
       uploadFileName = upToDateUpload.fileName
       uploadFilePath = upToDateUpload.filePath
     })
@@ -462,22 +467,25 @@ export const categorizeAndImportTransactionsTask = task({
       }
     }
 
-    if (uploadUserId && uploadFileName) {
-      const [uploadUser] = await db
-        .select({ email: user.email })
-        .from(user)
-        .where(eq(user.id, uploadUserId))
+    if (uploadTenantId && uploadFileName) {
+      const userId = await getUserIdFromTenant(uploadTenantId)
+      if (userId) {
+        const [uploadUser] = await db
+          .select({ email: user.email })
+          .from(user)
+          .where(eq(user.id, userId))
 
-      if (uploadUser) {
-        await sendUploadCompletedTask.trigger({
-          to: uploadUser.email,
-          fileName: uploadFileName,
-          transactionCount,
-          categoriesCreated,
-          rulesApplied: totalRulesApplied,
-          lowConfidenceCount,
-          uploadsLink: `${env.NEXT_PUBLIC_APP_URL}/uploads`,
-        })
+        if (uploadUser) {
+          await sendUploadCompletedTask.trigger({
+            to: uploadUser.email,
+            fileName: uploadFileName,
+            transactionCount,
+            categoriesCreated,
+            rulesApplied: totalRulesApplied,
+            lowConfidenceCount,
+            uploadsLink: `${env.NEXT_PUBLIC_APP_URL}/uploads`,
+          })
+        }
       }
 
       if (lowConfidenceCount > 0) {
@@ -486,7 +494,7 @@ export const categorizeAndImportTransactionsTask = task({
         )
         await secondPassCategorizationTask.trigger({
           uploadId: payload.uploadId,
-          userId: uploadUserId,
+          tenantId: uploadTenantId,
         })
       } else {
         logger.info(
@@ -509,7 +517,7 @@ export const categorizeAndImportTransactionsTask = task({
     })
 
     const [failedUpload] = await db
-      .select({ fileName: upload.fileName, userId: upload.userId })
+      .select({ fileName: upload.fileName, tenantId: upload.tenantId })
       .from(upload)
       .where(eq(upload.id, payload.uploadId))
 
@@ -525,17 +533,20 @@ export const categorizeAndImportTransactionsTask = task({
       )
 
     if (failedUpload) {
-      const [uploadUser] = await db
-        .select({ email: user.email })
-        .from(user)
-        .where(eq(user.id, failedUpload.userId))
+      const userId = await getUserIdFromTenant(failedUpload.tenantId)
+      if (userId) {
+        const [uploadUser] = await db
+          .select({ email: user.email })
+          .from(user)
+          .where(eq(user.id, userId))
 
-      if (uploadUser) {
-        await sendUploadFailedTask.trigger({
-          to: uploadUser.email,
-          fileName: failedUpload.fileName,
-          uploadsLink: `${env.NEXT_PUBLIC_APP_URL}/uploads`,
-        })
+        if (uploadUser) {
+          await sendUploadFailedTask.trigger({
+            to: uploadUser.email,
+            fileName: failedUpload.fileName,
+            uploadsLink: `${env.NEXT_PUBLIC_APP_URL}/uploads`,
+          })
+        }
       }
     }
 

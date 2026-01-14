@@ -211,6 +211,13 @@
       "when": 1768350944228,
       "tag": "0029_far_chamber",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1768424423789,
+      "tag": "0030_deep_living_mummy",
+      "breakpoints": true
     }
   ]
 }

@@ -5,14 +5,14 @@ function normalizeMerchant(name: string): string {
 }
 
 export function generateTransactionFingerprint(params: {
-  userId: string
+  tenantId: string
   date: string
   merchantName: string
   amount: number
   currency: string
 }): string {
   const data = [
-    params.userId,
+    params.tenantId,
     params.date,
     normalizeMerchant(params.merchantName),
     params.amount.toString(),

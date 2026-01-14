@@ -20,7 +20,7 @@ const ruleActionSchema = z.object({
   value: z.string().optional(),
 })
 
-async function getExistingRule(id: string, userId: string) {
+async function getExistingRule(id: string, tenantId: string) {
   const [existingRule] = await db
     .select({
       id: categorizationRule.id,
@@ -29,7 +29,7 @@ async function getExistingRule(id: string, userId: string) {
     .where(
       and(
         eq(categorizationRule.id, id),
-        eq(categorizationRule.userId, userId),
+        eq(categorizationRule.tenantId, tenantId),
         eq(categorizationRule.deleted, false),
       ),
     )
@@ -64,7 +64,7 @@ export const categorizationRulesRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const whereClauses = [
-        eq(categorizationRule.userId, ctx.user.id),
+        eq(categorizationRule.tenantId, ctx.tenant.tenantId),
         eq(categorizationRule.deleted, false),
       ]
 
@@ -122,7 +122,7 @@ export const categorizationRulesRouter = router({
         .insert(categorizationRule)
         .values({
           ...input,
-          userId: ctx.user.id,
+          tenantId: ctx.tenant.tenantId,
         })
         .returning({ id: categorizationRule.id })
 
@@ -142,7 +142,7 @@ export const categorizationRulesRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const existingRule = await getExistingRule(input.id, ctx.user.id)
+      const existingRule = await getExistingRule(input.id, ctx.tenant.tenantId)
       const { id, ...updateData } = input
 
       await db
@@ -151,7 +151,7 @@ export const categorizationRulesRouter = router({
         .where(
           and(
             eq(categorizationRule.id, existingRule.id),
-            eq(categorizationRule.userId, ctx.user.id),
+            eq(categorizationRule.tenantId, ctx.tenant.tenantId),
           ),
         )
     }),
@@ -159,7 +159,7 @@ export const categorizationRulesRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const existingRule = await getExistingRule(input.id, ctx.user.id)
+      const existingRule = await getExistingRule(input.id, ctx.tenant.tenantId)
 
       await db
         .update(categorizationRule)
@@ -167,7 +167,7 @@ export const categorizationRulesRouter = router({
         .where(
           and(
             eq(categorizationRule.id, existingRule.id),
-            eq(categorizationRule.userId, ctx.user.id),
+            eq(categorizationRule.tenantId, ctx.tenant.tenantId),
           ),
         )
     }),
@@ -185,7 +185,7 @@ export const categorizationRulesRouter = router({
         .where(
           and(
             inArray(categorizationRule.id, input.ids),
-            eq(categorizationRule.userId, ctx.user.id),
+            eq(categorizationRule.tenantId, ctx.tenant.tenantId),
             eq(categorizationRule.deleted, false),
           ),
         )
@@ -211,7 +211,7 @@ export const categorizationRulesRouter = router({
         .where(
           and(
             inArray(categorizationRule.id, ruleIds),
-            eq(categorizationRule.userId, ctx.user.id),
+            eq(categorizationRule.tenantId, ctx.tenant.tenantId),
             eq(categorizationRule.deleted, false),
           ),
         )
@@ -231,7 +231,7 @@ export const categorizationRulesRouter = router({
             .where(
               and(
                 eq(categorizationRule.id, rule.id),
-                eq(categorizationRule.userId, ctx.user.id),
+                eq(categorizationRule.tenantId, ctx.tenant.tenantId),
               ),
             ),
         ),
