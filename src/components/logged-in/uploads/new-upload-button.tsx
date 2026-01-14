@@ -2,15 +2,16 @@
 
 import { Button } from '@/components/ui/button'
 import { Kbd } from '@/components/ui/kbd'
-import { useUploadContext } from '@/contexts/upload-context'
 import { useHotkeys } from 'react-hotkeys-hook'
 
 const NEW_UPLOAD_SHORTCUT = 'N'
 
 export function NewUploadButton() {
-  const { triggerUpload } = useUploadContext()
+  function triggerUpload() {
+    document.getElementById('bank-statement-upload')?.click()
+  }
 
-  useHotkeys(NEW_UPLOAD_SHORTCUT, () => triggerUpload())
+  useHotkeys(NEW_UPLOAD_SHORTCUT, triggerUpload)
 
   return (
     <Button onClick={triggerUpload}>

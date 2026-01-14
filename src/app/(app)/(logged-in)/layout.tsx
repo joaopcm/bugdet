@@ -1,4 +1,4 @@
-import { LoggedInLayoutClient } from '@/components/logged-in/logged-in-layout-client'
+import { AppSidebar } from '@/components/logged-in/app-sidebar'
 import { SiteHeader } from '@/components/logged-in/site-header'
 import { OnboardingModal } from '@/components/onboarding/onboarding-modal'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
@@ -28,19 +28,18 @@ export default async function LoggedInLayout({ children }: PropsWithChildren) {
         } as React.CSSProperties
       }
     >
-      <LoggedInLayoutClient user={session.user}>
-        <SidebarInset>
-          <SiteHeader />
-          <div className="flex flex-1 flex-col">
-            <div className="@container/main flex flex-1 flex-col gap-2">
-              <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 md:px-6">
-                {children}
-              </div>
+      <AppSidebar variant="inset" user={session.user} />
+      <SidebarInset>
+        <SiteHeader />
+        <div className="flex flex-1 flex-col">
+          <div className="@container/main flex flex-1 flex-col gap-2">
+            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 md:px-6">
+              {children}
             </div>
           </div>
-        </SidebarInset>
-        <OnboardingModal open={!completed} />
-      </LoggedInLayoutClient>
+        </div>
+      </SidebarInset>
+      <OnboardingModal open={!completed} />
     </SidebarProvider>
   )
 }

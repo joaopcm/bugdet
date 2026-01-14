@@ -166,6 +166,7 @@ export function NavMain({
         <SidebarMenu>
           <SidebarMenuItem className="flex items-center gap-2">
             <input
+              id="bank-statement-upload"
               type="file"
               ref={fileInputRef}
               onChange={handleFileSelect}
