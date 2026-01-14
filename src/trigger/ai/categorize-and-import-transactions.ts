@@ -10,6 +10,7 @@ import {
 import { env } from '@/env'
 import { generateTransactionFingerprint } from '@/lib/fingerprint'
 import { applyRules } from '@/lib/rules/apply-rules'
+import { createLambdaClient } from '@/lib/supabase/server'
 import { sendUploadCompletedTask } from '@/trigger/emails/send-upload-completed'
 import { sendUploadFailedTask } from '@/trigger/emails/send-upload-failed'
 import { logger, task } from '@trigger.dev/sdk/v3'
@@ -98,7 +99,18 @@ For each transaction, provide:
 2. The suggested category (from the list above or a new one)
 3. Your confidence score (0-100)
 
-Return categorizations for ALL transactions.`
+Return categorizations for ALL transactions.
+
+## EXAMPLE OUTPUT
+\`\`\`json
+{
+  "categorizedTransactions": [
+    { "index": 0, "category": "Entertainment", "confidence": 95 },
+    { "index": 1, "category": "Transportation", "confidence": 85 },
+    { "index": 2, "category": null, "confidence": 25 }
+  ]
+}
+\`\`\``
 }
 
 export interface CategorizeAndImportPayload {
@@ -133,11 +145,30 @@ export const categorizeAndImportTransactionsTask = task({
         .where(eq(upload.id, payload.uploadId))
 
       const [uploadData] = await db
-        .select({ fileName: upload.fileName, userId: upload.userId })
+        .select({
+          fileName: upload.fileName,
+          userId: upload.userId,
+          filePath: upload.filePath,
+        })
         .from(upload)
         .where(eq(upload.id, payload.uploadId))
 
       if (uploadData) {
+        logger.info(`Deleting original PDF for upload ${payload.uploadId}...`)
+        const supabase = createLambdaClient()
+        const { error: deleteError } = await supabase.storage
+          .from('bank-statements')
+          .remove([uploadData.filePath])
+
+        if (deleteError) {
+          logger.warn(`Failed to delete original PDF: ${deleteError.message}`)
+        } else {
+          await db
+            .update(upload)
+            .set({ pdfDeleted: true })
+            .where(eq(upload.id, payload.uploadId))
+        }
+
         const [uploadUser] = await db
           .select({ email: user.email })
           .from(user)
@@ -258,6 +289,7 @@ export const categorizeAndImportTransactionsTask = task({
     let lowConfidenceCount = 0
     let uploadUserId: string | null = null
     let uploadFileName: string | null = null
+    let uploadFilePath: string | null = null
 
     await db.transaction(async (tx) => {
       const [upToDateUpload] = await tx
@@ -265,6 +297,7 @@ export const categorizeAndImportTransactionsTask = task({
           status: upload.status,
           userId: upload.userId,
           fileName: upload.fileName,
+          filePath: upload.filePath,
         })
         .from(upload)
         .where(eq(upload.id, payload.uploadId))
@@ -409,7 +442,25 @@ export const categorizeAndImportTransactionsTask = task({
       ).length
       uploadUserId = upToDateUpload.userId
       uploadFileName = upToDateUpload.fileName
+      uploadFilePath = upToDateUpload.filePath
     })
+
+    if (uploadFilePath) {
+      logger.info(`Deleting original PDF for upload ${payload.uploadId}...`)
+      const supabase = createLambdaClient()
+      const { error: deleteError } = await supabase.storage
+        .from('bank-statements')
+        .remove([uploadFilePath])
+
+      if (deleteError) {
+        logger.warn(`Failed to delete original PDF: ${deleteError.message}`)
+      } else {
+        await db
+          .update(upload)
+          .set({ pdfDeleted: true })
+          .where(eq(upload.id, payload.uploadId))
+      }
+    }
 
     if (uploadUserId && uploadFileName) {
       const [uploadUser] = await db

@@ -111,7 +111,26 @@ You will be provided with up to 5 pages of the document.`,
           content: [
             {
               type: 'text',
-              text: 'Please analyze these document pages and determine if this is a valid bank statement.',
+              text: `Please analyze these document pages and determine if this is a valid bank statement.
+
+## EXAMPLE OUTPUT
+\`\`\`json
+{
+  "isValid": true,
+  "documentType": "checking_statement",
+  "documentLanguage": "English"
+}
+\`\`\`
+
+Or if invalid:
+\`\`\`json
+{
+  "isValid": false,
+  "reason": "This appears to be a screenshot of a banking app, not an official bank statement.",
+  "documentType": "unknown",
+  "documentLanguage": "English"
+}
+\`\`\``,
             },
             ...buildImageContent(images),
           ],

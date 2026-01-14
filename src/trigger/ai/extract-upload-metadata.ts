@@ -124,7 +124,25 @@ Be precise with dates and numbers. Preserve the original formatting of monetary 
           content: [
             {
               type: 'text',
-              text: 'Extract the metadata from this bank statement. Focus on the header and summary sections.',
+              text: `Extract the metadata from this bank statement. Focus on the header and summary sections.
+
+## EXAMPLE OUTPUT
+\`\`\`json
+{
+  "documentType": "Credit Card Statement",
+  "bankName": "Chase",
+  "statementPeriod": {
+    "startDate": "01 DEC 2024",
+    "endDate": "31 DEC 2024"
+  },
+  "accountNumber": "****1234",
+  "extraInformation": [
+    { "key": "Credit Limit", "value": "USD 5,000.00" },
+    { "key": "Due Date", "value": "15 JAN 2025" },
+    { "key": "Minimum Payment", "value": "USD 35.00" }
+  ]
+}
+\`\`\``,
             },
             ...buildImageContent(images),
           ],
