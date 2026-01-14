@@ -22,7 +22,8 @@ export default function UploadFailedEmail({
         </Text>
 
         <Text className="text-[16px] text-gray-800 mb-[24px]">
-          You can try uploading the file again or delete it from your uploads:
+          You can retry processing by clicking the "Retry" button on your
+          uploads page, or delete the file if you no longer need it:
         </Text>
 
         <Button

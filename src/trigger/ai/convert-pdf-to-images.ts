@@ -97,15 +97,6 @@ export const convertPdfToImagesTask = task({
       .set({ pageCount: images.length })
       .where(eq(upload.id, payload.uploadId))
 
-    logger.info(`Deleting original PDF for upload ${payload.uploadId}...`)
-    const { error: deleteError } = await supabase.storage
-      .from('bank-statements')
-      .remove([existingUpload.filePath])
-
-    if (deleteError) {
-      logger.warn(`Failed to delete original PDF: ${deleteError.message}`)
-    }
-
     logger.info(
       `PDF conversion complete for upload ${payload.uploadId}: ${images.length} pages`,
     )

@@ -15,7 +15,7 @@ import type { upload } from '@/db/schema'
 import { useUploads } from '@/hooks/use-uploads'
 import { trpc } from '@/lib/trpc/client'
 import { formatBytes } from '@/lib/utils'
-import { IconInfoCircle } from '@tabler/icons-react'
+import { IconInfoCircle, IconRefresh } from '@tabler/icons-react'
 import { format } from 'date-fns'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -34,6 +34,8 @@ interface UploadItemProps {
     | 'failedReason'
     | 'fileSize'
     | 'metadata'
+    | 'pdfDeleted'
+    | 'retryCount'
   >
   isSelected?: boolean
   onSelect?: (id: string, event: React.MouseEvent) => void
@@ -76,6 +78,17 @@ export function UploadItem({
       },
       onError: (error) => {
         toast.error(error.message, { id: `delete-upload-${upload.id}` })
+      },
+    })
+
+  const { mutate: retryUpload, isPending: isRetrying } =
+    trpc.uploads.retry.useMutation({
+      onSuccess: () => {
+        refetchUploads()
+        toast.success(`Retrying "${upload.fileName}"...`)
+      },
+      onError: (error) => {
+        toast.error(error.message)
       },
     })
 
@@ -124,6 +137,21 @@ export function UploadItem({
             </Button>
           </DoubleConfirmationAlertDialog>
         )}
+
+        {upload.status === 'failed' &&
+          !upload.pdfDeleted &&
+          upload.retryCount < 3 && (
+            <DoubleConfirmationAlertDialog
+              title="Retry processing this upload?"
+              description="This will restart processing from the beginning."
+              onConfirm={() => retryUpload({ id: upload.id })}
+            >
+              <Button variant="outline" size="sm" disabled={isRetrying}>
+                <IconRefresh className="mr-1 h-4 w-4" />
+                Retry
+              </Button>
+            </DoubleConfirmationAlertDialog>
+          )}
 
         {DELETABLE_STATUSES.includes(upload.status) && (
           <DoubleConfirmationAlertDialog

@@ -22,6 +22,8 @@ async function getExistingUpload(id: string, userId: string) {
       status: upload.status,
       filePath: upload.filePath,
       pageCount: upload.pageCount,
+      pdfDeleted: upload.pdfDeleted,
+      retryCount: upload.retryCount,
     })
     .from(upload)
     .where(and(eq(upload.id, id), eq(upload.userId, userId)))
@@ -185,6 +187,8 @@ export const uploadsRouter = router({
           status: upload.status,
           failedReason: upload.failedReason,
           metadata: upload.metadata,
+          pdfDeleted: upload.pdfDeleted,
+          retryCount: upload.retryCount,
           createdAt: upload.createdAt,
         })
         .from(upload)
@@ -216,6 +220,59 @@ export const uploadsRouter = router({
         .update(upload)
         .set({ status: 'cancelled' })
         .where(eq(upload.id, existingUpload.id))
+    }),
+  retry: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ input, ctx }) => {
+      const { id } = input
+
+      const existingUpload = await getExistingUpload(id, ctx.user.id)
+
+      if (existingUpload.status !== 'failed') {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Only failed uploads can be retried.',
+        })
+      }
+
+      if (existingUpload.pdfDeleted) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Cannot retry: original PDF has been deleted.',
+        })
+      }
+
+      if (existingUpload.retryCount >= 3) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Maximum retry attempts reached (3).',
+        })
+      }
+
+      const supabase = await createClient({ admin: true })
+
+      const pageImagePaths = getPageImagePaths(
+        existingUpload.id,
+        existingUpload.pageCount,
+      )
+      if (pageImagePaths.length > 0) {
+        await supabase.storage.from('bank-statements').remove(pageImagePaths)
+      }
+
+      await ctx.db
+        .update(upload)
+        .set({
+          status: 'queued',
+          failedReason: null,
+          pageCount: null,
+          metadata: null,
+          retryCount: existingUpload.retryCount + 1,
+        })
+        .where(eq(upload.id, existingUpload.id))
+
+      await tasks.trigger('upload-breakdown', { uploadId: existingUpload.id })
+
+      return { success: true }
     }),
   delete: protectedProcedure
     .input(
