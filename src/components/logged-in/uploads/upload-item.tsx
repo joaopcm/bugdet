@@ -15,7 +15,7 @@ import type { upload } from '@/db/schema'
 import { useUploads } from '@/hooks/use-uploads'
 import { trpc } from '@/lib/trpc/client'
 import { formatBytes } from '@/lib/utils'
-import { IconInfoCircle, IconRefresh } from '@tabler/icons-react'
+import { IconInfoCircle } from '@tabler/icons-react'
 import { format } from 'date-fns'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -83,12 +83,17 @@ export function UploadItem({
 
   const { mutate: retryUpload, isPending: isRetrying } =
     trpc.uploads.retry.useMutation({
+      onMutate: () => {
+        toast.loading('Retrying upload...', { id: `retry-upload-${upload.id}` })
+      },
       onSuccess: () => {
         refetchUploads()
-        toast.success(`Retrying "${upload.fileName}"...`)
+        toast.success(`Retrying "${upload.fileName}"...`, {
+          id: `retry-upload-${upload.id}`,
+        })
       },
       onError: (error) => {
-        toast.error(error.message)
+        toast.error(error.message, { id: `retry-upload-${upload.id}` })
       },
     })
 
@@ -147,7 +152,6 @@ export function UploadItem({
               onConfirm={() => retryUpload({ id: upload.id })}
             >
               <Button variant="outline" size="sm" disabled={isRetrying}>
-                <IconRefresh className="mr-1 h-4 w-4" />
                 Retry
               </Button>
             </DoubleConfirmationAlertDialog>
