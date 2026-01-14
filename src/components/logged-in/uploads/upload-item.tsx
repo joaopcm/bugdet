@@ -88,8 +88,9 @@ export function UploadItem({
       },
       onSuccess: () => {
         refetchUploads()
-        toast.success(`Retrying "${upload.fileName}"...`, {
+        toast.success('Processing restarted', {
           id: `retry-upload-${upload.id}`,
+          description: "We'll email you once it's done.",
         })
       },
       onError: (error) => {
