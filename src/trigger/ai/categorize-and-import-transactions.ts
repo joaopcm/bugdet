@@ -151,12 +151,12 @@ export const categorizeAndImportTransactionsTask = task({
 
         if (deleteError) {
           logger.warn(`Failed to delete original PDF: ${deleteError.message}`)
+        } else {
+          await db
+            .update(upload)
+            .set({ pdfDeleted: true })
+            .where(eq(upload.id, payload.uploadId))
         }
-
-        await db
-          .update(upload)
-          .set({ pdfDeleted: true })
-          .where(eq(upload.id, payload.uploadId))
 
         const [uploadUser] = await db
           .select({ email: user.email })
@@ -443,12 +443,12 @@ export const categorizeAndImportTransactionsTask = task({
 
       if (deleteError) {
         logger.warn(`Failed to delete original PDF: ${deleteError.message}`)
+      } else {
+        await db
+          .update(upload)
+          .set({ pdfDeleted: true })
+          .where(eq(upload.id, payload.uploadId))
       }
-
-      await db
-        .update(upload)
-        .set({ pdfDeleted: true })
-        .where(eq(upload.id, payload.uploadId))
     }
 
     if (uploadUserId && uploadFileName) {
