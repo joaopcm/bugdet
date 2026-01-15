@@ -10,7 +10,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Kbd } from '@/components/ui/kbd'
-import { useCategories } from '@/hooks/use-categories'
+import { useInvalidateCategories } from '@/hooks/use-categories'
 import { trpc } from '@/lib/trpc/client'
 import { useState } from 'react'
 import { useHotkeys } from 'react-hotkeys-hook'
@@ -21,12 +21,12 @@ const NEW_CATEGORY_SHORTCUT = 'N'
 
 export function CreateCategoryDialog() {
   const [isOpen, setIsOpen] = useState(false)
-  const { refetch: refetchCategories } = useCategories()
+  const invalidate = useInvalidateCategories()
 
   const { mutate: createCategory, isPending: isCreating } =
     trpc.categories.create.useMutation({
       onSuccess: (_, { name }) => {
-        refetchCategories()
+        invalidate()
         toast.success(`You have created the category "${name}".`)
         setIsOpen(false)
       },

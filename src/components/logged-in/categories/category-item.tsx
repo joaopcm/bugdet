@@ -5,7 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { InternalLink } from '@/components/ui/internal-link'
 import { TableCell, TableRow } from '@/components/ui/table'
 import type { category } from '@/db/schema'
-import { useCategories } from '@/hooks/use-categories'
+import { useInvalidateCategories } from '@/hooks/use-categories'
 import { trpc } from '@/lib/trpc/client'
 import { toast } from 'sonner'
 import { DoubleConfirmationAlertDialog } from '../double-confirmation-alert-dialog'
@@ -25,7 +25,7 @@ export function CategoryItem({
   isSelected = false,
   onSelect,
 }: CategoryItemProps) {
-  const { refetch: refetchCategories } = useCategories()
+  const invalidate = useInvalidateCategories()
 
   const { mutate: deleteCategory, isPending: isDeleting } =
     trpc.categories.delete.useMutation({
@@ -35,7 +35,7 @@ export function CategoryItem({
         })
       },
       onSuccess: () => {
-        refetchCategories()
+        invalidate()
         toast.success(`You have deleted the category "${category.name}".`, {
           id: `delete-category-${category.id}`,
         })

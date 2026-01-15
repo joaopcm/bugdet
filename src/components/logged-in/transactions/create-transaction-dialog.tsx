@@ -10,7 +10,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Kbd } from '@/components/ui/kbd'
-import { useTransactions } from '@/hooks/use-transactions'
+import { useInvalidateTransactions } from '@/hooks/use-transactions'
 import { trpc } from '@/lib/trpc/client'
 import { getCurrencyCode, parseCurrency } from '@/lib/utils'
 import { useState } from 'react'
@@ -22,12 +22,12 @@ const NEW_TRANSACTION_SHORTCUT = 'N'
 
 export function CreateTransactionDialog() {
   const [isOpen, setIsOpen] = useState(false)
-  const { refetch: refetchTransactions } = useTransactions()
+  const invalidate = useInvalidateTransactions()
 
   const { mutate: createTransaction, isPending: isCreating } =
     trpc.transactions.create.useMutation({
       onSuccess: () => {
-        refetchTransactions()
+        invalidate()
         toast.success('You have created the transaction.')
         setIsOpen(false)
       },

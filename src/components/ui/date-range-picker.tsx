@@ -70,7 +70,7 @@ export function DateRangePicker({
 
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation()
-    onChange?.(undefined)
+    onChange?.(undefined, undefined)
   }
 
   return (

@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useUploads } from '@/hooks/use-uploads'
+import { useInvalidateUploads } from '@/hooks/use-uploads'
 import { trpc } from '@/lib/trpc/client'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -30,7 +30,7 @@ export function PasswordDialog({
 }: PasswordDialogProps) {
   const [open, setOpen] = useState(false)
   const [password, setPassword] = useState('')
-  const { refetch } = useUploads()
+  const invalidate = useInvalidateUploads()
 
   const { mutate: setUploadPassword, isPending } =
     trpc.uploads.setPassword.useMutation({
@@ -38,7 +38,7 @@ export function PasswordDialog({
         toast.success('Password submitted. Processing will resume shortly.')
         setOpen(false)
         setPassword('')
-        refetch()
+        invalidate()
       },
       onError: (error) => {
         toast.error(error.message)
