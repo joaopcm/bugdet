@@ -75,37 +75,32 @@ export function DateRangePicker({
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <div className="flex items-center">
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            className={cn(
-              'justify-start text-left font-normal',
-              !hasValue && 'text-muted-foreground',
-              showClear && hasValue && 'rounded-r-none border-r-0',
-              className,
-            )}
-          >
-            <CalendarIcon className="mr-2 size-4" />
-            {hasValue && value.from && value.to ? (
-              `${format(value.from, 'MMM d')} - ${format(value.to, 'MMM d')}`
-            ) : (
-              <span>{placeholder}</span>
-            )}
-          </Button>
-        </PopoverTrigger>
-        {showClear && hasValue && (
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={handleClear}
-            aria-label="Clear date range"
-            className="size-9 rounded-l-none"
-          >
-            <XIcon className="size-4 opacity-50" />
-          </Button>
-        )}
-      </div>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          className={cn(
+            'justify-start text-left font-normal',
+            !hasValue && 'text-muted-foreground',
+            className,
+          )}
+        >
+          <CalendarIcon className="mr-2 size-4" />
+          {hasValue && value.from && value.to ? (
+            `${format(value.from, 'MMM d')} - ${format(value.to, 'MMM d')}`
+          ) : (
+            <span>{placeholder}</span>
+          )}
+          {showClear && hasValue && (
+            <span
+              onClick={handleClear}
+              aria-hidden="true"
+              className="ml-auto -mr-1 rounded p-1 hover:bg-accent"
+            >
+              <XIcon className="size-4 opacity-50" />
+            </span>
+          )}
+        </Button>
+      </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <div className="flex">
           <div className="flex flex-col gap-1 border-r p-3">
