@@ -231,7 +231,7 @@ export const extractTransactionsTask = task({
     }
 
     const [uploadRecord] = await db
-      .select({ userId: upload.userId })
+      .select({ tenantId: upload.tenantId })
       .from(upload)
       .where(eq(upload.id, payload.uploadId))
 
@@ -277,7 +277,7 @@ export const extractTransactionsTask = task({
     return {
       success: true,
       uploadId: payload.uploadId,
-      userId: uploadRecord.userId,
+      tenantId: uploadRecord.tenantId,
       ...result.object,
     }
   },

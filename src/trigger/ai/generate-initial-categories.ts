@@ -1,6 +1,7 @@
 import { INDUSTRIES, PRIMARY_USES, WORK_TYPES } from '@/constants/onboarding'
 import { db } from '@/db'
 import { category, userProfile } from '@/db/schema'
+import { getUserIdFromTenant } from '@/lib/tenant'
 import { logger, task } from '@trigger.dev/sdk/v3'
 import { generateObject } from 'ai'
 import { eq } from 'drizzle-orm'
@@ -98,7 +99,7 @@ Based on this profile, suggest additional categories that would be useful for th
 }
 
 export interface GenerateInitialCategoriesPayload {
-  userId: string
+  tenantId: string
 }
 
 export const generateInitialCategoriesTask = task({
@@ -107,7 +108,13 @@ export const generateInitialCategoriesTask = task({
     randomize: false,
   },
   run: async (payload: GenerateInitialCategoriesPayload) => {
-    logger.info(`Generating initial categories for user ${payload.userId}`)
+    logger.info('Generating initial categories for tenant')
+
+    const userId = await getUserIdFromTenant(payload.tenantId)
+    if (!userId) {
+      logger.error('Tenant not found')
+      return { success: false, categoriesCreated: 0, categories: [] }
+    }
 
     const [profile] = await db
       .select({
@@ -116,7 +123,7 @@ export const generateInitialCategoriesTask = task({
         industry: userProfile.industry,
       })
       .from(userProfile)
-      .where(eq(userProfile.userId, payload.userId))
+      .where(eq(userProfile.userId, userId))
 
     const categoriesToCreate = [...UNIVERSAL_CATEGORIES]
 
@@ -161,7 +168,7 @@ export const generateInitialCategoriesTask = task({
     const existingCategories = await db
       .select({ name: category.name })
       .from(category)
-      .where(eq(category.userId, payload.userId))
+      .where(eq(category.tenantId, payload.tenantId))
 
     const existingNames = new Set(
       existingCategories.map((c) => c.name.toLowerCase()),
@@ -185,17 +192,14 @@ export const generateInitialCategoriesTask = task({
       .values(
         newCategories.map((name) => ({
           name,
-          userId: payload.userId,
+          tenantId: payload.tenantId,
         })),
       )
       .returning({ id: category.id, name: category.name })
 
-    logger.info(
-      `Created ${insertedCategories.length} categories for user ${payload.userId}`,
-      {
-        insertedCategories,
-      },
-    )
+    logger.info(`Created ${insertedCategories.length} categories for tenant`, {
+      insertedCategories,
+    })
 
     return {
       success: true,

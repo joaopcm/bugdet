@@ -69,6 +69,13 @@ export const auth = betterAuth({
           .where(eq(waitlist.email, email))
           .limit(1)
 
+        if (!entry) {
+          throw new APIError('NOT_FOUND', {
+            message:
+              "You're not on the waitlist. Please join the waitlist to get access.",
+          })
+        }
+
         if (!entry?.grantedAccess) {
           throw new APIError('FORBIDDEN', {
             message:

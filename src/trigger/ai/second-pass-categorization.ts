@@ -117,7 +117,7 @@ Return categorizations for ALL transactions.
 
 export interface SecondPassCategorizationPayload {
   uploadId: string
-  userId: string
+  tenantId: string
 }
 
 export const secondPassCategorizationTask = task({
@@ -142,7 +142,7 @@ export const secondPassCategorizationTask = task({
       .where(
         and(
           eq(transaction.uploadId, payload.uploadId),
-          eq(transaction.userId, payload.userId),
+          eq(transaction.tenantId, payload.tenantId),
           eq(transaction.deleted, false),
           lt(transaction.confidence, CONFIDENCE_THRESHOLD),
         ),
@@ -161,7 +161,10 @@ export const secondPassCategorizationTask = task({
       .select({ id: category.id, name: category.name })
       .from(category)
       .where(
-        and(eq(category.userId, payload.userId), eq(category.deleted, false)),
+        and(
+          eq(category.tenantId, payload.tenantId),
+          eq(category.deleted, false),
+        ),
       )
 
     const categoryIdToName = new Map(

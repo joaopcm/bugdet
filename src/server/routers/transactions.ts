@@ -23,14 +23,14 @@ import {
 import { z } from 'zod'
 import { protectedProcedure, router } from '../trpc'
 
-async function getExistingTransaction(id: string, userId: string) {
+async function getExistingTransaction(id: string, tenantId: string) {
   const [existingTransaction] = await db
     .select({
       id: transaction.id,
       deleted: transaction.deleted,
     })
     .from(transaction)
-    .where(and(eq(transaction.id, id), eq(transaction.userId, userId)))
+    .where(and(eq(transaction.id, id), eq(transaction.tenantId, tenantId)))
 
   if (!existingTransaction || existingTransaction.deleted) {
     throw new TRPCError({
@@ -66,7 +66,7 @@ export const transactionsRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const whereClauses = [
-        eq(transaction.userId, ctx.user.id),
+        eq(transaction.tenantId, ctx.tenant.tenantId),
         eq(transaction.deleted, false),
       ]
 
@@ -138,7 +138,7 @@ export const transactionsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const existingTransaction = await getExistingTransaction(
         input.id,
-        ctx.user.id,
+        ctx.tenant.tenantId,
       )
 
       await ctx.db
@@ -147,7 +147,7 @@ export const transactionsRouter = router({
         .where(
           and(
             eq(transaction.id, existingTransaction.id),
-            eq(transaction.userId, ctx.user.id),
+            eq(transaction.tenantId, ctx.tenant.tenantId),
           ),
         )
     }),
@@ -164,7 +164,7 @@ export const transactionsRouter = router({
         .where(
           and(
             inArray(transaction.id, input.ids),
-            eq(transaction.userId, ctx.user.id),
+            eq(transaction.tenantId, ctx.tenant.tenantId),
             eq(transaction.deleted, false),
           ),
         )
@@ -187,7 +187,7 @@ export const transactionsRouter = router({
         merchantName: input.merchantName,
         currency: input.currency,
         confidence: 100,
-        userId: ctx.user.id,
+        tenantId: ctx.tenant.tenantId,
       })
     }),
   update: protectedProcedure
@@ -204,7 +204,7 @@ export const transactionsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const existingTransaction = await getExistingTransaction(
         input.id,
-        ctx.user.id,
+        ctx.tenant.tenantId,
       )
 
       await ctx.db.transaction(async (tx) => {
@@ -217,13 +217,13 @@ export const transactionsRouter = router({
           .where(
             and(
               eq(transaction.id, existingTransaction.id),
-              eq(transaction.userId, ctx.user.id),
+              eq(transaction.tenantId, ctx.tenant.tenantId),
             ),
           )
 
         if (input.createCategorizationRule && input.categoryId) {
           await tx.insert(categorizationRule).values({
-            userId: ctx.user.id,
+            tenantId: ctx.tenant.tenantId,
             name: `Categorize ${input.merchantName}`,
             conditions: [
               {
@@ -249,7 +249,7 @@ export const transactionsRouter = router({
             .where(
               and(
                 eq(transaction.merchantName, input.merchantName),
-                eq(transaction.userId, ctx.user.id),
+                eq(transaction.tenantId, ctx.tenant.tenantId),
                 eq(transaction.deleted, false),
               ),
             )
@@ -262,7 +262,7 @@ export const transactionsRouter = router({
       .from(transaction)
       .where(
         and(
-          eq(transaction.userId, ctx.user.id),
+          eq(transaction.tenantId, ctx.tenant.tenantId),
           eq(transaction.deleted, false),
           lt(transaction.confidence, CONFIDENCE_THRESHOLD),
         ),
@@ -280,7 +280,7 @@ export const transactionsRouter = router({
       .from(transaction)
       .where(
         and(
-          eq(transaction.userId, ctx.user.id),
+          eq(transaction.tenantId, ctx.tenant.tenantId),
           eq(transaction.deleted, false),
           gte(transaction.date, format(dateRange, 'yyyy-MM-dd')),
         ),
@@ -309,7 +309,7 @@ export const transactionsRouter = router({
       )
       .where(
         and(
-          eq(transaction.userId, ctx.user.id),
+          eq(transaction.tenantId, ctx.tenant.tenantId),
           eq(transaction.deleted, false),
           gte(transaction.date, format(dateRange, 'yyyy-MM-dd')),
           isNotNull(transaction.categoryId),
@@ -333,7 +333,7 @@ export const transactionsRouter = router({
       .from(transaction)
       .where(
         and(
-          eq(transaction.userId, ctx.user.id),
+          eq(transaction.tenantId, ctx.tenant.tenantId),
           eq(transaction.deleted, false),
           gte(transaction.date, format(dateRange, 'yyyy-MM-dd')),
         ),
@@ -345,9 +345,9 @@ export const transactionsRouter = router({
     return result[0] || null
   }),
   getMostExpensiveCategory: protectedProcedure.query(async ({ ctx }) => {
-    const dateRange = subDays(new Date(), 45)
+    const dateRange = subDays(new Date(), SUGGESTED_TRANSACTION_FILTERS_DAYS)
 
-    const result = await db
+    const result = await ctx.db
       .select({
         categoryId: transaction.categoryId,
         categoryName: category.name,
@@ -364,7 +364,7 @@ export const transactionsRouter = router({
       )
       .where(
         and(
-          eq(transaction.userId, ctx.user.id),
+          eq(transaction.tenantId, ctx.tenant.tenantId),
           eq(transaction.deleted, false),
           gte(transaction.date, format(dateRange, 'yyyy-MM-dd')),
         ),

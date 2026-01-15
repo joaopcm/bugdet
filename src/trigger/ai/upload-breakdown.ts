@@ -8,6 +8,7 @@ import {
   decryptPdf,
 } from '@/lib/pdf'
 import { createLambdaClient } from '@/lib/supabase/server'
+import { getUserIdFromTenant } from '@/lib/tenant'
 import { sendPasswordRequiredTask } from '@/trigger/emails/send-password-required'
 import { sendUploadFailedTask } from '@/trigger/emails/send-upload-failed'
 import { sendWrongPasswordTask } from '@/trigger/emails/send-wrong-password'
@@ -29,7 +30,7 @@ export const uploadBreakdownTask = task({
         id: upload.id,
         fileName: upload.fileName,
         filePath: upload.filePath,
-        userId: upload.userId,
+        tenantId: upload.tenantId,
         encryptedPassword: upload.encryptedPassword,
       })
       .from(upload)
@@ -40,13 +41,19 @@ export const uploadBreakdownTask = task({
       return { success: false, reason: 'Upload not found' }
     }
 
+    const userId = await getUserIdFromTenant(existingUpload.tenantId)
+    if (!userId) {
+      logger.error('Tenant not found for upload')
+      return { success: false, reason: 'Tenant not found' }
+    }
+
     const [uploadUser] = await db
       .select({ email: user.email })
       .from(user)
-      .where(eq(user.id, existingUpload.userId))
+      .where(eq(user.id, userId))
 
     if (!uploadUser) {
-      logger.error(`User ${existingUpload.userId} not found`)
+      logger.error('User not found for upload')
       return { success: false, reason: 'User not found' }
     }
 
@@ -226,7 +233,7 @@ export const uploadBreakdownTask = task({
     )
     await categorizeAndImportTransactionsTask.trigger({
       uploadId: payload.uploadId,
-      userId: extractionResult.userId,
+      tenantId: extractionResult.tenantId,
       transactions: extractionResult.transactions,
       statementCurrency: extractionResult.statementCurrency,
       openingBalance: extractionResult.openingBalance,
@@ -242,7 +249,7 @@ export const uploadBreakdownTask = task({
     })
 
     const [failedUpload] = await db
-      .select({ fileName: upload.fileName, userId: upload.userId })
+      .select({ fileName: upload.fileName, tenantId: upload.tenantId })
       .from(upload)
       .where(eq(upload.id, payload.uploadId))
 
@@ -258,17 +265,20 @@ export const uploadBreakdownTask = task({
       )
 
     if (failedUpload) {
-      const [uploadUser] = await db
-        .select({ email: user.email })
-        .from(user)
-        .where(eq(user.id, failedUpload.userId))
+      const userId = await getUserIdFromTenant(failedUpload.tenantId)
+      if (userId) {
+        const [uploadUser] = await db
+          .select({ email: user.email })
+          .from(user)
+          .where(eq(user.id, userId))
 
-      if (uploadUser) {
-        await sendUploadFailedTask.trigger({
-          to: uploadUser.email,
-          fileName: failedUpload.fileName,
-          uploadsLink: `${env.NEXT_PUBLIC_APP_URL}/uploads`,
-        })
+        if (uploadUser) {
+          await sendUploadFailedTask.trigger({
+            to: uploadUser.email,
+            fileName: failedUpload.fileName,
+            uploadsLink: `${env.NEXT_PUBLIC_APP_URL}/uploads`,
+          })
+        }
       }
     }
 

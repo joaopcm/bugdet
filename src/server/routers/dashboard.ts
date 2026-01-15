@@ -22,7 +22,7 @@ export const dashboardRouter = router({
         .from(transaction)
         .where(
           and(
-            eq(transaction.userId, ctx.user.id),
+            eq(transaction.tenantId, ctx.tenant.tenantId),
             eq(transaction.deleted, false),
             between(transaction.date, input.from, input.to),
           ),
@@ -44,7 +44,7 @@ export const dashboardRouter = router({
         .from(transaction)
         .where(
           and(
-            eq(transaction.userId, ctx.user.id),
+            eq(transaction.tenantId, ctx.tenant.tenantId),
             eq(transaction.deleted, false),
             eq(transaction.currency, primaryCurrency),
             gt(transaction.amount, 0),
@@ -73,7 +73,7 @@ export const dashboardRouter = router({
         .from(transaction)
         .where(
           and(
-            eq(transaction.userId, ctx.user.id),
+            eq(transaction.tenantId, ctx.tenant.tenantId),
             eq(transaction.deleted, false),
             between(transaction.date, input.from, input.to),
           ),
@@ -101,7 +101,7 @@ export const dashboardRouter = router({
         )
         .where(
           and(
-            eq(transaction.userId, ctx.user.id),
+            eq(transaction.tenantId, ctx.tenant.tenantId),
             eq(transaction.deleted, false),
             eq(transaction.currency, primaryCurrency),
             gt(transaction.amount, 0),
@@ -136,7 +136,7 @@ export const dashboardRouter = router({
         .from(transaction)
         .where(
           and(
-            eq(transaction.userId, ctx.user.id),
+            eq(transaction.tenantId, ctx.tenant.tenantId),
             eq(transaction.deleted, false),
             between(transaction.date, input.from, input.to),
           ),
@@ -161,7 +161,7 @@ export const dashboardRouter = router({
         .from(transaction)
         .where(
           and(
-            eq(transaction.userId, ctx.user.id),
+            eq(transaction.tenantId, ctx.tenant.tenantId),
             eq(transaction.deleted, false),
             eq(transaction.currency, primaryCurrency),
             gt(transaction.amount, 0),
@@ -191,7 +191,7 @@ export const dashboardRouter = router({
         .from(transaction)
         .where(
           and(
-            eq(transaction.userId, ctx.user.id),
+            eq(transaction.tenantId, ctx.tenant.tenantId),
             eq(transaction.deleted, false),
             between(transaction.date, input.from, input.to),
           ),
@@ -211,7 +211,7 @@ export const dashboardRouter = router({
         .from(transaction)
         .where(
           and(
-            eq(transaction.userId, ctx.user.id),
+            eq(transaction.tenantId, ctx.tenant.tenantId),
             eq(transaction.deleted, false),
             eq(transaction.currency, primaryCurrency),
             gt(transaction.amount, 0),
@@ -249,7 +249,7 @@ export const dashboardRouter = router({
         .from(transaction)
         .where(
           and(
-            eq(transaction.userId, ctx.user.id),
+            eq(transaction.tenantId, ctx.tenant.tenantId),
             eq(transaction.deleted, false),
             lt(transaction.confidence, CONFIDENCE_THRESHOLD),
             between(transaction.date, input.from, input.to),

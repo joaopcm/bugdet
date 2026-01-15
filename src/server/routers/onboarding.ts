@@ -62,7 +62,7 @@ export const onboardingRouter = router({
         })
 
       await generateInitialCategoriesTask.trigger({
-        userId: ctx.user.id,
+        tenantId: ctx.tenant.tenantId,
       })
 
       return {

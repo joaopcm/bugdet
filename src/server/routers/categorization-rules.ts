@@ -20,7 +20,7 @@ const ruleActionSchema = z.object({
   value: z.string().optional(),
 })
 
-async function getExistingRule(id: string, userId: string) {
+async function getExistingRule(id: string, tenantId: string) {
   const [existingRule] = await db
     .select({
       id: categorizationRule.id,
@@ -29,7 +29,7 @@ async function getExistingRule(id: string, userId: string) {
     .where(
       and(
         eq(categorizationRule.id, id),
-        eq(categorizationRule.userId, userId),
+        eq(categorizationRule.tenantId, tenantId),
         eq(categorizationRule.deleted, false),
       ),
     )
@@ -64,7 +64,7 @@ export const categorizationRulesRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const whereClauses = [
-        eq(categorizationRule.userId, ctx.user.id),
+        eq(categorizationRule.tenantId, ctx.tenant.tenantId),
         eq(categorizationRule.deleted, false),
       ]
 
@@ -80,7 +80,7 @@ export const categorizationRulesRouter = router({
 
       const offset = (input.pagination.page - 1) * input.pagination.limit
 
-      const rules = await db
+      const rules = await ctx.db
         .select({
           id: categorizationRule.id,
           name: categorizationRule.name,
@@ -118,11 +118,11 @@ export const categorizationRulesRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const [rule] = await db
+      const [rule] = await ctx.db
         .insert(categorizationRule)
         .values({
           ...input,
-          userId: ctx.user.id,
+          tenantId: ctx.tenant.tenantId,
         })
         .returning({ id: categorizationRule.id })
 
@@ -142,16 +142,16 @@ export const categorizationRulesRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const existingRule = await getExistingRule(input.id, ctx.user.id)
+      const existingRule = await getExistingRule(input.id, ctx.tenant.tenantId)
       const { id, ...updateData } = input
 
-      await db
+      await ctx.db
         .update(categorizationRule)
         .set(updateData)
         .where(
           and(
             eq(categorizationRule.id, existingRule.id),
-            eq(categorizationRule.userId, ctx.user.id),
+            eq(categorizationRule.tenantId, ctx.tenant.tenantId),
           ),
         )
     }),
@@ -159,15 +159,15 @@ export const categorizationRulesRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const existingRule = await getExistingRule(input.id, ctx.user.id)
+      const existingRule = await getExistingRule(input.id, ctx.tenant.tenantId)
 
-      await db
+      await ctx.db
         .update(categorizationRule)
         .set({ deleted: true })
         .where(
           and(
             eq(categorizationRule.id, existingRule.id),
-            eq(categorizationRule.userId, ctx.user.id),
+            eq(categorizationRule.tenantId, ctx.tenant.tenantId),
           ),
         )
     }),
@@ -185,7 +185,7 @@ export const categorizationRulesRouter = router({
         .where(
           and(
             inArray(categorizationRule.id, input.ids),
-            eq(categorizationRule.userId, ctx.user.id),
+            eq(categorizationRule.tenantId, ctx.tenant.tenantId),
             eq(categorizationRule.deleted, false),
           ),
         )
@@ -205,13 +205,13 @@ export const categorizationRulesRouter = router({
     .mutation(async ({ ctx, input }) => {
       const ruleIds = input.rules.map((r) => r.id)
 
-      const existingRules = await db
+      const existingRules = await ctx.db
         .select({ id: categorizationRule.id })
         .from(categorizationRule)
         .where(
           and(
             inArray(categorizationRule.id, ruleIds),
-            eq(categorizationRule.userId, ctx.user.id),
+            eq(categorizationRule.tenantId, ctx.tenant.tenantId),
             eq(categorizationRule.deleted, false),
           ),
         )
@@ -223,18 +223,20 @@ export const categorizationRulesRouter = router({
         })
       }
 
-      await Promise.all(
-        input.rules.map((rule) =>
-          db
-            .update(categorizationRule)
-            .set({ priority: rule.priority })
-            .where(
-              and(
-                eq(categorizationRule.id, rule.id),
-                eq(categorizationRule.userId, ctx.user.id),
+      await ctx.db.transaction(async (tx) => {
+        await Promise.all(
+          input.rules.map((rule) =>
+            tx
+              .update(categorizationRule)
+              .set({ priority: rule.priority })
+              .where(
+                and(
+                  eq(categorizationRule.id, rule.id),
+                  eq(categorizationRule.tenantId, ctx.tenant.tenantId),
+                ),
               ),
-            ),
-        ),
-      )
+          ),
+        )
+      })
     }),
 })
