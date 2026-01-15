@@ -131,7 +131,7 @@ export const sendWeeklyBudgetSummaryTask = schedules.task({
         })
 
         emailsSent++
-        logger.info(`Sent budget summary to ${userData.email}`)
+        logger.info('Sent budget summary email', { tenantId, userId })
       } catch (error) {
         errors++
         logger.error(`Failed to send email for tenant ${tenantId}`, { error })
