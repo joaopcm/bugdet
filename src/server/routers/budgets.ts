@@ -26,6 +26,29 @@ async function getExistingBudget(id: string, tenantId: string) {
   return existingBudget
 }
 
+async function validateCategoryOwnership(
+  categoryIds: string[],
+  tenantId: string,
+) {
+  const validCategories = await db
+    .select({ id: category.id })
+    .from(category)
+    .where(
+      and(
+        inArray(category.id, categoryIds),
+        eq(category.tenantId, tenantId),
+        eq(category.deleted, false),
+      ),
+    )
+
+  if (validCategories.length !== categoryIds.length) {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: 'One or more categories not found.',
+    })
+  }
+}
+
 export const budgetsRouter = router({
   getCurrencies: protectedProcedure.query(async ({ ctx }) => {
     const currencies = await db
@@ -139,6 +162,8 @@ export const budgetsRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { categoryIds, ...budgetData } = input
 
+      await validateCategoryOwnership(categoryIds, ctx.tenant.tenantId)
+
       const [newBudget] = await db
         .insert(budget)
         .values({
@@ -174,6 +199,8 @@ export const budgetsRouter = router({
       )
 
       const { categoryIds, id, ...budgetData } = input
+
+      await validateCategoryOwnership(categoryIds, ctx.tenant.tenantId)
 
       await db.transaction(async (tx) => {
         await tx

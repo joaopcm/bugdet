@@ -77,7 +77,7 @@ export function TransactionForm({
     closeButtonRef.current.click()
   })
 
-  useHotkeys(['meta+enter'], () => {
+  useHotkeys(['mod+enter'], () => {
     if (isLoading || !submitButtonRef.current) {
       return
     }

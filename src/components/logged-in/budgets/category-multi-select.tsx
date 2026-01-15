@@ -132,6 +132,7 @@ export function CategoryMultiSelect({
                     onClick={(e) => handleRemove(category.id, e)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
                         handleRemove(
                           category.id,
                           e as unknown as React.MouseEvent,
