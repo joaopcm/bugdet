@@ -10,7 +10,7 @@ import {
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 import { CalendarIcon } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   DATE_PRESETS,
   type DatePreset,
@@ -21,6 +21,14 @@ import {
 export function DashboardFilters() {
   const { filters, setFilters } = useDashboardFilters()
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
+
+  const selectedRange = useMemo(
+    () => ({
+      from: filters.from ? new Date(filters.from) : undefined,
+      to: filters.to ? new Date(filters.to) : undefined,
+    }),
+    [filters.from, filters.to],
+  )
 
   const handlePresetClick = (preset: DatePreset) => {
     if (preset === 'custom') {
@@ -74,10 +82,7 @@ export function DashboardFilters() {
         <PopoverContent className="w-auto p-0" align="start">
           <Calendar
             mode="range"
-            selected={{
-              from: filters.from ? new Date(filters.from) : undefined,
-              to: filters.to ? new Date(filters.to) : undefined,
-            }}
+            selected={selectedRange}
             onSelect={handleDateSelect}
             captionLayout="dropdown"
             numberOfMonths={2}

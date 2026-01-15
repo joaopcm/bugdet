@@ -1,7 +1,15 @@
 import { useCategoriesFilters } from '@/components/logged-in/categories/filters/search-params'
 import { MAX_LIMIT_PER_PAGE } from '@/constants/pagination'
 import { trpc } from '@/lib/trpc/client'
+import { useCallback } from 'react'
 import { usePagination } from './use-pagination'
+
+export function useInvalidateCategories() {
+  const utils = trpc.useUtils()
+  return useCallback(() => {
+    utils.categories.invalidate()
+  }, [utils])
+}
 
 export function useCategories(
   params: {

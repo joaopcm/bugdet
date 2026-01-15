@@ -25,6 +25,17 @@ interface NavUserProps {
   user: User
 }
 
+function UserAvatar({ user, className }: { user: User; className?: string }) {
+  return (
+    <Avatar className={className ?? 'h-8 w-8 rounded-lg'}>
+      <AvatarImage src={user.image ?? undefined} alt={user.name} />
+      <AvatarFallback className="rounded-lg bg-primary">
+        {user.name.charAt(0)}
+      </AvatarFallback>
+    </Avatar>
+  )
+}
+
 export function NavUser({ user }: NavUserProps) {
   const { isMobile } = useSidebar()
   const router = useRouter()
@@ -43,12 +54,7 @@ export function NavUser({ user }: NavUserProps) {
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:cursor-pointer"
             >
-              <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={user.image ?? undefined} alt={user.name} />
-                <AvatarFallback className="rounded-lg bg-primary">
-                  {user.name.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
+              <UserAvatar user={user} />
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
                 <span className="text-muted-foreground truncate text-xs">
@@ -66,12 +72,7 @@ export function NavUser({ user }: NavUserProps) {
           >
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user.image ?? undefined} alt={user.name} />
-                  <AvatarFallback className="rounded-lg">
-                    {user.name.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
+                <UserAvatar user={user} />
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.name}</span>
                   <span className="text-muted-foreground truncate text-xs">

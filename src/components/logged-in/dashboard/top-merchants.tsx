@@ -40,11 +40,9 @@ export function TopMerchants() {
       <CardContent>
         {isLoading ? (
           <div className="space-y-1">
-            <MerchantSkeleton />
-            <MerchantSkeleton />
-            <MerchantSkeleton />
-            <MerchantSkeleton />
-            <MerchantSkeleton />
+            {Array.from({ length: 5 }, (_, i) => (
+              <MerchantSkeleton key={String(i)} />
+            ))}
           </div>
         ) : !data?.data.length ? (
           <div className="flex h-[200px] items-center justify-center">
