@@ -1,13 +1,13 @@
 import { randomUUID } from 'node:crypto'
 import { db } from '@/db'
 import { userTenant } from '@/db/schema'
-import { eq } from 'drizzle-orm'
 import {
   decryptWithKEK,
   encryptWithKEK,
   generateDEK,
   hashWithKEK,
-} from './crypto'
+} from '@/lib/crypto'
+import { eq } from 'drizzle-orm'
 
 export interface TenantContext {
   tenantId: string

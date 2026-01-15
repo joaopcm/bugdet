@@ -345,9 +345,9 @@ export const transactionsRouter = router({
     return result[0] || null
   }),
   getMostExpensiveCategory: protectedProcedure.query(async ({ ctx }) => {
-    const dateRange = subDays(new Date(), 45)
+    const dateRange = subDays(new Date(), SUGGESTED_TRANSACTION_FILTERS_DAYS)
 
-    const result = await db
+    const result = await ctx.db
       .select({
         categoryId: transaction.categoryId,
         categoryName: category.name,

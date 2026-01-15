@@ -28,6 +28,9 @@ export function encryptWithKEK(data: string): string {
 export function decryptWithKEK(encryptedData: string): string {
   const kek = getKEK()
   const [ivB64, authTagB64, encryptedB64] = encryptedData.split(':')
+  if (!ivB64 || !authTagB64 || !encryptedB64) {
+    throw new Error('Invalid encrypted data format')
+  }
   const iv = Buffer.from(ivB64, 'base64')
   const authTag = Buffer.from(authTagB64, 'base64')
   const encrypted = Buffer.from(encryptedB64, 'base64')

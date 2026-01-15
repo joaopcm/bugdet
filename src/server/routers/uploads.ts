@@ -444,7 +444,12 @@ export const uploadsRouter = router({
           encryptedPassword: encrypted,
           status: 'queued',
         })
-        .where(eq(upload.id, uploadId))
+        .where(
+          and(
+            eq(upload.id, uploadId),
+            eq(upload.tenantId, ctx.tenant.tenantId),
+          ),
+        )
 
       await tasks.trigger('upload-breakdown', { uploadId })
 

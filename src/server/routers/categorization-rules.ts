@@ -223,18 +223,20 @@ export const categorizationRulesRouter = router({
         })
       }
 
-      await Promise.all(
-        input.rules.map((rule) =>
-          db
-            .update(categorizationRule)
-            .set({ priority: rule.priority })
-            .where(
-              and(
-                eq(categorizationRule.id, rule.id),
-                eq(categorizationRule.tenantId, ctx.tenant.tenantId),
+      await db.transaction(async (tx) => {
+        await Promise.all(
+          input.rules.map((rule) =>
+            tx
+              .update(categorizationRule)
+              .set({ priority: rule.priority })
+              .where(
+                and(
+                  eq(categorizationRule.id, rule.id),
+                  eq(categorizationRule.tenantId, ctx.tenant.tenantId),
+                ),
               ),
-            ),
-        ),
-      )
+          ),
+        )
+      })
     }),
 })
