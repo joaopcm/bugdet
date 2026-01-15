@@ -1,5 +1,6 @@
 'use client'
 
+import { CategorySelect } from '@/components/logged-in/transactions/category-select'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -9,7 +10,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import type { RuleAction } from '@/db/schema'
-import { useCategories } from '@/hooks/use-categories'
 import { IconPlus, IconTrash } from '@tabler/icons-react'
 import type { FieldError, FieldErrorsImpl, Merge } from 'react-hook-form'
 
@@ -40,13 +40,6 @@ export function ActionBuilder({
   onChange,
   errors,
 }: ActionBuilderProps) {
-  const { data: categoriesData } = useCategories({
-    ignoreFilters: true,
-    ignorePagination: true,
-  })
-
-  const categories = categoriesData?.data ?? []
-
   const addAction = () => {
     onChange([...actions, { type: 'set_category', value: '' }])
   }
@@ -114,23 +107,12 @@ export function ActionBuilder({
               </Select>
 
               {action.type === 'set_category' && (
-                <Select
-                  value={action.value ?? ''}
-                  onValueChange={(value) => updateAction(index, { value })}
-                >
-                  <SelectTrigger
-                    className={`flex-1 ${error ? 'border-destructive' : ''}`}
-                  >
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <CategorySelect
+                  value={action.value ?? null}
+                  onChange={(value) => updateAction(index, { value: value ?? '' })}
+                  placeholder="Select category"
+                  className={`flex-1 ${error ? 'border-destructive' : ''}`}
+                />
               )}
 
               {action.type === 'set_sign' && (
