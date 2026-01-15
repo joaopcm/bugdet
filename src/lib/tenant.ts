@@ -37,15 +37,35 @@ export async function getOrCreateTenant(
 
   const tenantId = randomUUID()
   const dek = generateDEK()
+  const dekEncrypted = encryptWithKEK(dek)
 
-  await db.insert(userTenant).values({
-    tenantId,
-    userIdHash,
-    userIdEncrypted: encryptWithKEK(userId),
-    dekEncrypted: encryptWithKEK(dek),
-  })
+  await db
+    .insert(userTenant)
+    .values({
+      tenantId,
+      userIdHash,
+      userIdEncrypted: encryptWithKEK(userId),
+      dekEncrypted,
+    })
+    .onConflictDoNothing({ target: userTenant.userIdHash })
 
-  return { tenantId, dek }
+  const [tenant] = await db
+    .select({
+      tenantId: userTenant.tenantId,
+      dekEncrypted: userTenant.dekEncrypted,
+    })
+    .from(userTenant)
+    .where(eq(userTenant.userIdHash, userIdHash))
+    .limit(1)
+
+  if (!tenant) {
+    throw new Error('Failed to create or retrieve tenant')
+  }
+
+  return {
+    tenantId: tenant.tenantId,
+    dek: decryptWithKEK(tenant.dekEncrypted),
+  }
 }
 
 export async function resolveTenantFromUserId(

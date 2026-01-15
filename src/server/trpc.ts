@@ -40,7 +40,16 @@ export const protectedProcedure = t.procedure.use(async ({ ctx, next }) => {
     })
   }
 
-  const tenant = await getOrCreateTenant(ctx.user.id)
+  let tenant: TenantContext
+  try {
+    tenant = await getOrCreateTenant(ctx.user.id)
+  } catch (error) {
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Failed to resolve tenant context.',
+      cause: error,
+    })
+  }
 
   return next({
     ctx: {
