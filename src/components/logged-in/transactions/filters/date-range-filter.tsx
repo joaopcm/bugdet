@@ -17,7 +17,10 @@ export function DateRangeFilter() {
       ? { from: transactionFilters.from, to: transactionFilters.to }
       : undefined
 
-  const handleChange = (range: DateRange | undefined, _preset?: DateRangePreset) => {
+  const handleChange = (
+    range: DateRange | undefined,
+    _preset?: DateRangePreset,
+  ) => {
     if (!range) {
       setTransactionFilters({ from: null, to: null })
     } else {

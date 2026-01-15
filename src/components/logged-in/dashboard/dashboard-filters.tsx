@@ -22,10 +22,20 @@ const PRESET_MAP: Record<DateRangePreset, DatePreset> = {
 export function DashboardFilters() {
   const { filters, setFilters } = useDashboardFilters()
 
-  const dateRange = getDateRangeFromPreset(filters.preset, filters.from, filters.to)
+  const dateRange = getDateRangeFromPreset(
+    filters.preset,
+    filters.from,
+    filters.to,
+  )
 
-  const handleChange = (range: DateRange | undefined, preset?: DateRangePreset) => {
-    if (!range?.from || !range?.to) return
+  const handleChange = (
+    range: DateRange | undefined,
+    preset?: DateRangePreset,
+  ) => {
+    if (!range?.from || !range?.to) {
+      setFilters({ preset: '30d', from: null, to: null })
+      return
+    }
 
     if (preset && preset !== 'custom') {
       setFilters({ preset: PRESET_MAP[preset], from: null, to: null })
@@ -34,6 +44,7 @@ export function DashboardFilters() {
     }
   }
 
+  // 'ytd' exists in dashboard filters but not in DateRangePicker presets
   const currentPreset = filters.preset === 'ytd' ? 'custom' : filters.preset
 
   return (
