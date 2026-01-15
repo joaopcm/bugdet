@@ -9,6 +9,7 @@ import { useTransactions } from '@/hooks/use-transactions'
 import { trpc } from '@/lib/trpc/client'
 import { formatCurrency } from '@/lib/utils'
 import { format, parseISO } from 'date-fns'
+import { memo } from 'react'
 import { toast } from 'sonner'
 import { DoubleConfirmationAlertDialog } from '../double-confirmation-alert-dialog'
 import { Amount } from './amount'
@@ -35,12 +36,12 @@ interface TransactionItemProps {
   onSelect?: (id: string, event: React.MouseEvent) => void
 }
 
-export function TransactionItem({
+export const TransactionItem = memo(function TransactionItem({
   transaction,
   isSelected = false,
   onSelect,
 }: TransactionItemProps) {
-  const { refetch: refetchTransactions } = useTransactions()
+  const { invalidate } = useTransactions()
 
   const { mutate: deleteTransaction, isPending: isDeleting } =
     trpc.transactions.delete.useMutation({
@@ -50,7 +51,7 @@ export function TransactionItem({
         })
       },
       onSuccess: () => {
-        refetchTransactions()
+        invalidate()
         toast.success(
           `You have deleted the transaction "${formatCurrency(transaction.amount, transaction.currency)} - ${transaction.merchantName}".`,
           { id: `delete-transaction-${transaction.id}` },
@@ -113,4 +114,4 @@ export function TransactionItem({
       </TableCell>
     </TableRow>
   )
-}
+})

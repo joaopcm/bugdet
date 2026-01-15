@@ -22,12 +22,12 @@ const NEW_TRANSACTION_SHORTCUT = 'N'
 
 export function CreateTransactionDialog() {
   const [isOpen, setIsOpen] = useState(false)
-  const { refetch: refetchTransactions } = useTransactions()
+  const { invalidate } = useTransactions()
 
   const { mutate: createTransaction, isPending: isCreating } =
     trpc.transactions.create.useMutation({
       onSuccess: () => {
-        refetchTransactions()
+        invalidate()
         toast.success('You have created the transaction.')
         setIsOpen(false)
       },

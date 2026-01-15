@@ -18,7 +18,7 @@ import { trpc } from '@/lib/trpc/client'
 import { cn } from '@/lib/utils'
 import { IconCheck, IconLoader2, IconPlus } from '@tabler/icons-react'
 import { ChevronsUpDown } from 'lucide-react'
-import { useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 interface CategorySelectProps {
@@ -58,21 +58,28 @@ export function CategorySelect({
 
   const selectedCategory = categories?.data.find((cat) => cat.id === value)
 
-  const filteredCategories =
-    categories?.data.filter((cat) =>
-      cat.name.toLowerCase().includes(search.toLowerCase()),
-    ) ?? []
+  const filteredCategories = useMemo(
+    () =>
+      categories?.data.filter((cat) =>
+        cat.name.toLowerCase().includes(search.toLowerCase()),
+      ) ?? [],
+    [categories?.data, search],
+  )
 
-  const exactMatch = categories?.data.some(
-    (cat) => cat.name.toLowerCase() === search.toLowerCase(),
+  const exactMatch = useMemo(
+    () =>
+      categories?.data.some(
+        (cat) => cat.name.toLowerCase() === search.toLowerCase(),
+      ),
+    [categories?.data, search],
   )
 
   const showCreateOption = search.trim() && !exactMatch
 
-  function handleCreateCategory() {
+  const handleCreateCategory = useCallback(() => {
     if (!search.trim()) return
     createCategory({ name: search.trim() })
-  }
+  }, [search, createCategory])
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

@@ -36,12 +36,12 @@ export function EditTransactionDialog({
   transaction,
 }: EditTransactionDialogProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const { refetch: refetchTransactions } = useTransactions()
+  const { invalidate } = useTransactions()
 
   const { mutate: updateTransaction, isPending: isUpdating } =
     trpc.transactions.update.useMutation({
       onSuccess: () => {
-        refetchTransactions()
+        invalidate()
         toast.success(
           `You have updated the transaction "${formatCurrency(transaction.amount, transaction.currency)} - ${transaction.merchantName}".`,
         )

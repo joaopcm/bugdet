@@ -26,7 +26,7 @@ import { TransactionsPagination } from './transactions-pagination'
 
 export const TransactionsTable = () => {
   const isMobile = useIsMobile()
-  const { data: transactions, isLoading, refetch } = useTransactions()
+  const { data: transactions, isLoading, invalidate } = useTransactions()
 
   const itemIds = useMemo(
     () => transactions?.data?.map((t) => t.id) ?? [],
@@ -56,7 +56,7 @@ export const TransactionsTable = () => {
           { id: 'delete-transactions' },
         )
         clearSelection()
-        refetch()
+        invalidate()
       },
       onError: (error) => {
         toast.error(error.message, { id: 'delete-transactions' })
