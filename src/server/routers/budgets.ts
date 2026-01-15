@@ -154,7 +154,7 @@ export const budgetsRouter = router({
     .input(
       z.object({
         name: z.string().min(1).max(255),
-        targetAmount: z.number().int().positive(),
+        targetAmount: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
         currency: z.string().min(3).max(3),
         categoryIds: z.array(z.string().uuid()).min(1),
       }),
@@ -189,7 +189,7 @@ export const budgetsRouter = router({
       z.object({
         id: z.string().uuid(),
         name: z.string().min(1).max(255),
-        targetAmount: z.number().int().positive(),
+        targetAmount: z.number().int().positive().max(Number.MAX_SAFE_INTEGER),
         currency: z.string().min(3).max(3),
         categoryIds: z.array(z.string().uuid()).min(1),
       }),
