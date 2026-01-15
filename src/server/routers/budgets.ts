@@ -164,20 +164,24 @@ export const budgetsRouter = router({
 
       await validateCategoryOwnership(categoryIds, ctx.tenant.tenantId)
 
-      const [newBudget] = await db
-        .insert(budget)
-        .values({
-          ...budgetData,
-          tenantId: ctx.tenant.tenantId,
-        })
-        .returning({ id: budget.id })
+      return await db.transaction(async (tx) => {
+        const [newBudget] = await tx
+          .insert(budget)
+          .values({
+            ...budgetData,
+            tenantId: ctx.tenant.tenantId,
+          })
+          .returning({ id: budget.id })
 
-      await db.insert(budgetCategory).values(
-        categoryIds.map((categoryId) => ({
-          budgetId: newBudget.id,
-          categoryId,
-        })),
-      )
+        await tx.insert(budgetCategory).values(
+          categoryIds.map((categoryId) => ({
+            budgetId: newBudget.id,
+            categoryId,
+          })),
+        )
+
+        return newBudget
+      })
 
       return newBudget
     }),
