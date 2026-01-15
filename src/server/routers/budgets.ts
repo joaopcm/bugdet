@@ -182,8 +182,6 @@ export const budgetsRouter = router({
 
         return newBudget
       })
-
-      return newBudget
     }),
 
   update: protectedProcedure
