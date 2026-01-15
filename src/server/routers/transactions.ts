@@ -1,11 +1,8 @@
-import {
-  DEFAULT_LIMIT_PER_PAGE,
-  MAX_LIMIT_PER_PAGE,
-} from '@/constants/pagination'
 import { SUGGESTED_TRANSACTION_FILTERS_DAYS } from '@/constants/suggested-transaction-filters'
 import { CONFIDENCE_THRESHOLD } from '@/constants/transactions'
 import { db } from '@/db'
 import { categorizationRule, category, transaction } from '@/db/schema'
+import { paginationSchema } from '@/schemas/pagination'
 import { TRPCError } from '@trpc/server'
 import { format, subDays } from 'date-fns'
 import {
@@ -54,14 +51,7 @@ export const transactionsRouter = router({
           to: z.string().date().nullable(),
           query: z.string().min(1).max(255).nullable(),
         }),
-        pagination: z.object({
-          page: z.number().min(1).default(1),
-          limit: z
-            .number()
-            .min(1)
-            .max(MAX_LIMIT_PER_PAGE)
-            .default(DEFAULT_LIMIT_PER_PAGE),
-        }),
+        pagination: paginationSchema,
       }),
     )
     .query(async ({ ctx, input }) => {

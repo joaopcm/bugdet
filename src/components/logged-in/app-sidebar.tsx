@@ -17,6 +17,7 @@ import {
   IconDashboard,
   IconFilter,
   IconList,
+  IconPigMoney,
   IconUpload,
 } from '@tabler/icons-react'
 import type { User } from 'better-auth'
@@ -40,6 +41,11 @@ const routes = [
     title: 'Categories',
     url: '/categories',
     icon: IconCategory,
+  },
+  {
+    title: 'Budgets',
+    url: '/budgets',
+    icon: IconPigMoney,
   },
   {
     title: 'Rules',

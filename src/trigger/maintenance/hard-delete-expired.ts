@@ -1,5 +1,11 @@
 import { db } from '@/db'
-import { categorizationRule, category, transaction, upload } from '@/db/schema'
+import {
+  budget,
+  categorizationRule,
+  category,
+  transaction,
+  upload,
+} from '@/db/schema'
 import { createLambdaClient } from '@/lib/supabase/server'
 import { logger, schedules } from '@trigger.dev/sdk/v3'
 import { subDays } from 'date-fns'
@@ -96,12 +102,23 @@ export const hardDeleteExpiredTask = schedules.task({
       logger.info(`Hard deleted ${deletedRules.length} categorization rules`)
     }
 
+    // Delete budgets (budgetCategory junction records cascade automatically)
+    const deletedBudgets = await db
+      .delete(budget)
+      .where(and(eq(budget.deleted, true), lt(budget.updatedAt, cutoffDate)))
+      .returning({ id: budget.id })
+
+    if (deletedBudgets.length > 0) {
+      logger.info(`Hard deleted ${deletedBudgets.length} budgets`)
+    }
+
     return {
       success: true,
       deletedUploads: uploadsToDelete.length,
       deletedTransactions: deletedTransactions.length,
       deletedCategories: deletedCategories.length,
       deletedRules: deletedRules.length,
+      deletedBudgets: deletedBudgets.length,
     }
   },
 })

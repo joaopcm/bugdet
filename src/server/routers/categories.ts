@@ -1,10 +1,7 @@
 import { MAX_TRANSACTIONS_PREVIEW } from '@/constants/categories'
-import {
-  DEFAULT_LIMIT_PER_PAGE,
-  MAX_LIMIT_PER_PAGE,
-} from '@/constants/pagination'
 import { db } from '@/db'
 import { category, transaction } from '@/db/schema'
+import { paginationSchema } from '@/schemas/pagination'
 import { TRPCError } from '@trpc/server'
 import { and, count, desc, eq, ilike, inArray } from 'drizzle-orm'
 import { z } from 'zod'
@@ -36,14 +33,7 @@ export const categoriesRouter = router({
         filters: z.object({
           query: z.string().min(1).max(255).nullable(),
         }),
-        pagination: z.object({
-          page: z.number().min(1).default(1),
-          limit: z
-            .number()
-            .min(1)
-            .max(MAX_LIMIT_PER_PAGE)
-            .default(DEFAULT_LIMIT_PER_PAGE),
-        }),
+        pagination: paginationSchema,
       }),
     )
     .query(async ({ ctx, input }) => {

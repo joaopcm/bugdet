@@ -1,13 +1,10 @@
 import { randomUUID } from 'node:crypto'
-import {
-  DEFAULT_LIMIT_PER_PAGE,
-  MAX_LIMIT_PER_PAGE,
-} from '@/constants/pagination'
 import { CANCELLABLE_STATUSES, DELETABLE_STATUSES } from '@/constants/uploads'
 import { db } from '@/db'
 import { transaction, upload } from '@/db/schema'
 import { encryptPassword } from '@/lib/crypto'
 import { createClient } from '@/lib/supabase/server'
+import { paginationSchema } from '@/schemas/pagination'
 import { tasks } from '@trigger.dev/sdk/v3'
 import { TRPCError } from '@trpc/server'
 import { and, desc, eq, ilike, inArray } from 'drizzle-orm'
@@ -156,14 +153,7 @@ export const uploadsRouter = router({
         filters: z.object({
           query: z.string().min(1).max(255).nullable(),
         }),
-        pagination: z.object({
-          page: z.number().min(1).default(1),
-          limit: z
-            .number()
-            .min(1)
-            .max(MAX_LIMIT_PER_PAGE)
-            .default(DEFAULT_LIMIT_PER_PAGE),
-        }),
+        pagination: paginationSchema,
       }),
     )
     .query(async ({ ctx, input }) => {
