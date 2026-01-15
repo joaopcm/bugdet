@@ -327,3 +327,54 @@ export const categorizationRule = pgTable(
     deletedIdx: index('categorization_rule_deleted_idx').on(table.deleted),
   }),
 )
+
+export type Budget = typeof budget.$inferSelect
+
+export const budget = pgTable(
+  'budget',
+  {
+    id: uuid('id').defaultRandom().notNull().primaryKey(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => userTenant.tenantId, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    targetAmount: integer('target_amount').notNull(),
+    currency: text('currency').notNull(),
+    deleted: boolean('deleted').notNull().default(false),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at')
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => ({
+    tenantIdIdx: index('budget_tenant_id_idx').on(table.tenantId),
+    deletedIdx: index('budget_deleted_idx').on(table.deleted),
+  }),
+)
+
+export type BudgetCategory = typeof budgetCategory.$inferSelect
+
+export const budgetCategory = pgTable(
+  'budget_category',
+  {
+    id: uuid('id').defaultRandom().notNull().primaryKey(),
+    budgetId: uuid('budget_id')
+      .notNull()
+      .references(() => budget.id, { onDelete: 'cascade' }),
+    categoryId: uuid('category_id')
+      .notNull()
+      .references(() => category.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    budgetIdIdx: index('budget_category_budget_id_idx').on(table.budgetId),
+    categoryIdIdx: index('budget_category_category_id_idx').on(
+      table.categoryId,
+    ),
+    uniqueBudgetCategory: index('budget_category_unique_idx').on(
+      table.budgetId,
+      table.categoryId,
+    ),
+  }),
+)

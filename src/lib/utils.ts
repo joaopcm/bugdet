@@ -150,3 +150,11 @@ export function pluralize(
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
+
+export function getMonthDateRange(month: string) {
+  const [year, monthNum] = month.split('-').map(Number)
+  const startDate = `${year}-${String(monthNum).padStart(2, '0')}-01`
+  const lastDay = new Date(year, monthNum, 0).getDate()
+  const endDate = `${year}-${String(monthNum).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+  return { startDate, endDate }
+}
