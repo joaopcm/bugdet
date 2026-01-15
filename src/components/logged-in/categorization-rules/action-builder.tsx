@@ -109,7 +109,9 @@ export function ActionBuilder({
               {action.type === 'set_category' && (
                 <CategorySelect
                   value={action.value ?? null}
-                  onChange={(value) => updateAction(index, { value: value ?? '' })}
+                  onChange={(value) =>
+                    updateAction(index, { value: value ?? '' })
+                  }
                   placeholder="Select category"
                   className={`flex-1 ${error ? 'border-destructive' : ''}`}
                 />
