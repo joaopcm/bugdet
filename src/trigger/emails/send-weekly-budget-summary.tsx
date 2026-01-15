@@ -96,7 +96,10 @@ export const sendWeeklyBudgetSummaryTask = schedules.task({
             spentAmount = result?.spent ?? 0
           }
 
-          const percentUsed = Math.round((spentAmount / b.targetAmount) * 100)
+          const percentUsed =
+            b.targetAmount > 0
+              ? Math.round((spentAmount / b.targetAmount) * 100)
+              : 0
 
           return {
             name: b.name,

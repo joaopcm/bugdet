@@ -8,6 +8,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core'
 
@@ -372,7 +373,7 @@ export const budgetCategory = pgTable(
     categoryIdIdx: index('budget_category_category_id_idx').on(
       table.categoryId,
     ),
-    uniqueBudgetCategory: index('budget_category_unique_idx').on(
+    uniqueBudgetCategory: uniqueIndex('budget_category_unique_idx').on(
       table.budgetId,
       table.categoryId,
     ),

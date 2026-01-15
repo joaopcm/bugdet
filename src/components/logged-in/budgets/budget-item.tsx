@@ -58,10 +58,13 @@ export function BudgetItem({
       },
     })
 
-  const percentUsed = Math.min(
-    Math.round((budget.spentAmount / budget.targetAmount) * 100),
-    100,
-  )
+  const percentUsed =
+    budget.targetAmount > 0
+      ? Math.min(
+          Math.round((budget.spentAmount / budget.targetAmount) * 100),
+          100,
+        )
+      : 0
   const isOverBudget = budget.spentAmount > budget.targetAmount
   const isNearLimit = !isOverBudget && percentUsed >= NEAR_LIMIT_THRESHOLD
 

@@ -175,26 +175,28 @@ export const budgetsRouter = router({
 
       const { categoryIds, id, ...budgetData } = input
 
-      await db
-        .update(budget)
-        .set(budgetData)
-        .where(
-          and(
-            eq(budget.id, existingBudget.id),
-            eq(budget.tenantId, ctx.tenant.tenantId),
-          ),
+      await db.transaction(async (tx) => {
+        await tx
+          .update(budget)
+          .set(budgetData)
+          .where(
+            and(
+              eq(budget.id, existingBudget.id),
+              eq(budget.tenantId, ctx.tenant.tenantId),
+            ),
+          )
+
+        await tx
+          .delete(budgetCategory)
+          .where(eq(budgetCategory.budgetId, existingBudget.id))
+
+        await tx.insert(budgetCategory).values(
+          categoryIds.map((categoryId) => ({
+            budgetId: existingBudget.id,
+            categoryId,
+          })),
         )
-
-      await db
-        .delete(budgetCategory)
-        .where(eq(budgetCategory.budgetId, existingBudget.id))
-
-      await db.insert(budgetCategory).values(
-        categoryIds.map((categoryId) => ({
-          budgetId: existingBudget.id,
-          categoryId,
-        })),
-      )
+      })
     }),
 
   delete: protectedProcedure
@@ -223,7 +225,7 @@ export const budgetsRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await ctx.db
+      await db
         .update(budget)
         .set({ deleted: true })
         .where(

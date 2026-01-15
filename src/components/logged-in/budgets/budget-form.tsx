@@ -142,10 +142,7 @@ export function BudgetForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel htmlFor="currency">Currency</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger id="currency" className="w-full">
                       <SelectValue placeholder="Select currency" />

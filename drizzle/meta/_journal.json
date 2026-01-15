@@ -225,6 +225,13 @@
       "when": 1768513007657,
       "tag": "0031_rainy_ben_parker",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1768518111955,
+      "tag": "0032_mean_bruce_banner",
+      "breakpoints": true
     }
   ]
 }
