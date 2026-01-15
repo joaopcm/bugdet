@@ -8,7 +8,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from '@/components/ui/sidebar'
-import { useUploads } from '@/hooks/use-uploads'
+import { useInvalidateUploads } from '@/hooks/use-uploads'
 import { trpc } from '@/lib/trpc/client'
 import { uploadToSignedUrlAction } from '@/server/actions/uploads'
 import type { SignedUploadUrl } from '@/server/routers/uploads'
@@ -41,7 +41,7 @@ export function NavMain({
   const router = useRouter()
   const internalFileInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = externalFileInputRef ?? internalFileInputRef
-  const { refetch: refetchUploads } = useUploads()
+  const invalidate = useInvalidateUploads()
 
   useHotkeys(IMPORT_BANK_STATEMENT_SHORTCUT, () => handleImportClick())
 
@@ -132,7 +132,7 @@ export function NavMain({
         description:
           'You will be notified via email when an update about the processing is available.',
       })
-      refetchUploads()
+      invalidate()
       router.push('/uploads')
     },
     onSettled: () => {

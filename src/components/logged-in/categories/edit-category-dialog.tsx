@@ -9,7 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { useCategories } from '@/hooks/use-categories'
+import { useInvalidateCategories } from '@/hooks/use-categories'
 import { trpc } from '@/lib/trpc/client'
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -25,12 +25,12 @@ export function EditCategoryDialog({
   name,
 }: EditCategoryDialogProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const { refetch: refetchCategories } = useCategories()
+  const invalidate = useInvalidateCategories()
 
   const { mutate: updateCategory, isPending: isUpdating } =
     trpc.categories.update.useMutation({
       onSuccess: (_, { name }) => {
-        refetchCategories()
+        invalidate()
         toast.success(`You have updated the category "${name}".`)
         setIsOpen(false)
       },

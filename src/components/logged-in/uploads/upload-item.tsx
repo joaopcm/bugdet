@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/tooltip'
 import { CANCELLABLE_STATUSES, DELETABLE_STATUSES } from '@/constants/uploads'
 import type { upload } from '@/db/schema'
-import { useUploads } from '@/hooks/use-uploads'
+import { useInvalidateUploads } from '@/hooks/use-uploads'
 import { trpc } from '@/lib/trpc/client'
 import { formatBytes } from '@/lib/utils'
 import { IconInfoCircle } from '@tabler/icons-react'
@@ -46,14 +46,14 @@ export function UploadItem({
   isSelected = false,
   onSelect,
 }: UploadItemProps) {
-  const { refetch: refetchUploads } = useUploads()
+  const invalidate = useInvalidateUploads()
   const [deleteRelatedTransactions, setDeleteRelatedTransactions] =
     useState(false)
 
   const { mutate: cancelUpload, isPending: isCancelling } =
     trpc.uploads.cancel.useMutation({
       onSuccess: () => {
-        refetchUploads()
+        invalidate()
         toast.success(
           `You have cancelled the processing of "${upload.fileName}".`,
         )
@@ -71,7 +71,7 @@ export function UploadItem({
         })
       },
       onSuccess: () => {
-        refetchUploads()
+        invalidate()
         toast.success(`You have deleted the file "${upload.fileName}".`, {
           id: `delete-upload-${upload.id}`,
         })
@@ -87,7 +87,7 @@ export function UploadItem({
         toast.loading('Retrying upload...', { id: `retry-upload-${upload.id}` })
       },
       onSuccess: () => {
-        refetchUploads()
+        invalidate()
         toast.success('Processing restarted', {
           id: `retry-upload-${upload.id}`,
           description: "We'll email you once it's done.",

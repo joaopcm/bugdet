@@ -36,7 +36,7 @@ import { IconInfoCircle } from '@tabler/icons-react'
 import { format } from 'date-fns'
 import { CalendarIcon } from 'lucide-react'
 import { useRef } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { useHotkeys } from 'react-hotkeys-hook'
 import z from 'zod'
 import { CategorySelect } from './category-select'
@@ -95,7 +95,10 @@ export function TransactionForm({
     },
   })
 
-  const selectedCategoryId = form.watch('categoryId')
+  const selectedCategoryId = useWatch({
+    control: form.control,
+    name: 'categoryId',
+  })
 
   return (
     <Form {...form}>

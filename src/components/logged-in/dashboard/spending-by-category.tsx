@@ -128,7 +128,7 @@ export function SpendingByCategory() {
             <Bar dataKey="amount" radius={4}>
               {chartData.map((entry, index) => (
                 <Cell
-                  key={entry.category}
+                  key={`${entry.category}-${index}`}
                   fill={CHART_COLORS[index % CHART_COLORS.length]}
                 />
               ))}
