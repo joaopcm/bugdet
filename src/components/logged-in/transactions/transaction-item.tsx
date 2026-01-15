@@ -5,7 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { TableCell, TableRow } from '@/components/ui/table'
 import { CONFIDENCE_THRESHOLD } from '@/constants/transactions'
 import type { transaction } from '@/db/schema'
-import { useTransactions } from '@/hooks/use-transactions'
+import { useInvalidateTransactions } from '@/hooks/use-transactions'
 import { trpc } from '@/lib/trpc/client'
 import { formatCurrency } from '@/lib/utils'
 import { format, parseISO } from 'date-fns'
@@ -41,7 +41,7 @@ export const TransactionItem = memo(function TransactionItem({
   isSelected = false,
   onSelect,
 }: TransactionItemProps) {
-  const { invalidate } = useTransactions()
+  const invalidate = useInvalidateTransactions()
 
   const { mutate: deleteTransaction, isPending: isDeleting } =
     trpc.transactions.delete.useMutation({

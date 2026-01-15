@@ -4,6 +4,13 @@ import { format } from 'date-fns'
 import { useCallback } from 'react'
 import { usePagination } from './use-pagination'
 
+export function useInvalidateTransactions() {
+  const utils = trpc.useUtils()
+  return useCallback(() => {
+    utils.transactions.invalidate()
+  }, [utils])
+}
+
 export function useTransactions() {
   const { transactionFilters } = useTransactionsFilters()
   const { pagination } = usePagination('transactions')

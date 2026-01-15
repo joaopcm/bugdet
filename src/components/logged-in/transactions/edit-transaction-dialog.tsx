@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog'
 import { CONFIDENCE_THRESHOLD } from '@/constants/transactions'
 import type { transaction } from '@/db/schema'
-import { useTransactions } from '@/hooks/use-transactions'
+import { useInvalidateTransactions } from '@/hooks/use-transactions'
 import { trpc } from '@/lib/trpc/client'
 import { formatCurrency, getCurrencySymbol, parseCurrency } from '@/lib/utils'
 import { useState } from 'react'
@@ -36,7 +36,7 @@ export function EditTransactionDialog({
   transaction,
 }: EditTransactionDialogProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const { invalidate } = useTransactions()
+  const invalidate = useInvalidateTransactions()
 
   const { mutate: updateTransaction, isPending: isUpdating } =
     trpc.transactions.update.useMutation({
