@@ -46,6 +46,7 @@ export default function WeeklyBudgetSummaryEmail({
   return (
     <Layout
       preview={`Your weekly budget summary for ${month}. ${overBudgetCount > 0 ? `${overBudgetCount} ${pluralize(overBudgetCount, 'budget is', 'budgets are')} over limit.` : 'All budgets on track!'}`}
+      title="Weekly Budget Summary"
     >
       <Section className="px-[24px] py-[32px] bg-white">
         <Text className="text-[16px] text-gray-800 mb-[24px]">Hi,</Text>
