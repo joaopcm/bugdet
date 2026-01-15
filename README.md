@@ -124,7 +124,16 @@ Create a `.env` file based on `.env.example`. Here are the required variables:
 | `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST token |
 | `BACKOFFICE_API_KEY` | API key for admin operations |
 | `NEXT_PUBLIC_APP_URL` | Public application URL |
-| `UPLOAD_PASSWORD_ENCRYPTION_KEY` | Encryption key used to store passwords for password-protected PDF files |
+| `DATA_ENCRYPTION_KEK` | 32-byte hex key for tenant data encryption |
+| `UPLOAD_PASSWORD_ENCRYPTION_KEY` | 32-byte hex key for PDF password encryption |
+
+### Generating Encryption Keys
+
+Both `DATA_ENCRYPTION_KEK` and `UPLOAD_PASSWORD_ENCRYPTION_KEY` require 32-byte hex strings (64 characters). Generate them with:
+
+```bash
+openssl rand -hex 32
+```
 
 ## Project Structure
 
