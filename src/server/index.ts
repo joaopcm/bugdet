@@ -1,5 +1,6 @@
 import { db } from '@/db'
 import { migrate } from 'drizzle-orm/node-postgres/migrator'
+import { budgetsRouter } from './routers/budgets'
 import { categoriesRouter } from './routers/categories'
 import { categorizationRulesRouter } from './routers/categorization-rules'
 import { dashboardRouter } from './routers/dashboard'
@@ -19,6 +20,7 @@ export const appRouter = router({
   transactions: transactionsRouter,
   categories: categoriesRouter,
   categorizationRules: categorizationRulesRouter,
+  budgets: budgetsRouter,
   dashboard: dashboardRouter,
   waitlist: waitlistRouter,
   users: usersRouter,

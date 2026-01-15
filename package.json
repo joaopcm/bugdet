@@ -15,7 +15,8 @@
     "db:start": "docker compose -f infra/compose.yml up -d",
     "db:stop": "docker compose -f infra/compose.yml down",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "db:migrate:ci": "drizzle-kit migrate --config drizzle.ci.config.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "6.3.1",

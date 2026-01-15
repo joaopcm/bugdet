@@ -100,7 +100,7 @@ export function OnboardingForm() {
     handleSkip()
   })
 
-  useHotkeys(['meta+enter'], () => {
+  useHotkeys(['mod+enter'], () => {
     if (completeOnboarding.isPending) {
       return
     }

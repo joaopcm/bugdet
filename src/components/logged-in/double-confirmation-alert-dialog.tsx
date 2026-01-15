@@ -36,7 +36,7 @@ export function DoubleConfirmationAlertDialog({
     setIsOpen(false)
   })
 
-  useHotkeys(['meta+enter'], () => {
+  useHotkeys(['mod+enter'], () => {
     if (!isOpen) {
       return
     }

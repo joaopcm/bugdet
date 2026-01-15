@@ -72,7 +72,7 @@ export function FloatingActionBar({
     setIsDialogOpen(false)
   })
 
-  useHotkeys(['meta+enter'], () => {
+  useHotkeys(['mod+enter'], () => {
     if (!isDialogOpen) return
     onDelete()
     setIsDialogOpen(false)

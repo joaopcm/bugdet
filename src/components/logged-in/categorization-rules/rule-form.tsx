@@ -106,7 +106,7 @@ export function RuleForm({
     closeButtonRef.current.click()
   })
 
-  useHotkeys(['meta+enter'], () => {
+  useHotkeys(['mod+enter'], () => {
     if (isLoading || !submitButtonRef.current) return
     submitButtonRef.current.click()
   })

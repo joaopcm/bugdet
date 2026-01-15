@@ -10,6 +10,7 @@ export type PaginationPageKey =
   | 'categories'
   | 'uploads'
   | 'categorization-rules'
+  | 'budgets'
 
 function getStorageKey(pageKey: PaginationPageKey): string {
   return `pagination-limit-${pageKey}`
