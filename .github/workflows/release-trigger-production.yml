@@ -3,7 +3,7 @@ name: Deploy to Trigger.dev (prod)
 on:
   push:
     branches:
-      - main
+      - production
 
 jobs:
   deploy:

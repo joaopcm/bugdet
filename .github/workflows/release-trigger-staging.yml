@@ -1,8 +1,9 @@
 name: Deploy to Trigger.dev (staging)
 
-# Requires manually calling the workflow from a branch / commit to deploy to staging
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
   deploy:
