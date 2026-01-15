@@ -150,12 +150,19 @@ export function BackupCodesDialog({
                   placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && password && !isLoading) {
+                      e.preventDefault()
+                      handleGetBackupCodes()
+                    }
+                  }}
                   disabled={isLoading}
                 />
               </div>
             </div>
             <DialogFooter>
               <Button
+                type="button"
                 onClick={handleGetBackupCodes}
                 disabled={isLoading || !password}
               >
@@ -184,6 +191,7 @@ export function BackupCodesDialog({
               </div>
               <div className="flex gap-2">
                 <Button
+                  type="button"
                   variant="outline"
                   className="flex-1"
                   onClick={handleCopyBackupCodes}
@@ -196,6 +204,7 @@ export function BackupCodesDialog({
                   {copiedCodes ? 'Copied!' : 'Copy'}
                 </Button>
                 <Button
+                  type="button"
                   variant="outline"
                   className="flex-1"
                   onClick={handleDownloadBackupCodes}
@@ -205,6 +214,7 @@ export function BackupCodesDialog({
                 </Button>
               </div>
               <Button
+                type="button"
                 variant="outline"
                 onClick={handleRegenerateCodes}
                 disabled={isLoading}
@@ -214,7 +224,9 @@ export function BackupCodesDialog({
               </Button>
             </div>
             <DialogFooter>
-              <Button onClick={() => handleOpenChange(false)}>Done</Button>
+              <Button type="button" onClick={() => handleOpenChange(false)}>
+                Done
+              </Button>
             </DialogFooter>
           </>
         )}

@@ -51,7 +51,7 @@ export function TwoFactorSettings() {
                   variant="outline"
                   onClick={() => setShowBackupCodesDialog(true)}
                 >
-                  View backup codes
+                  Regenerate backup codes
                 </Button>
                 <Button
                   variant="destructive"
