@@ -5,6 +5,10 @@ on:
     branches:
       - main
 
+concurrency:
+  group: db-migrate-staging
+  cancel-in-progress: false
+
 jobs:
   migrate:
     runs-on: ubuntu-latest

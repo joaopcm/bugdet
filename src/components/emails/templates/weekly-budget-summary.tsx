@@ -55,11 +55,11 @@ export default function WeeklyBudgetSummaryEmail({
           Here's your weekly budget summary for <strong>{month}</strong>.
         </Text>
 
-        {budgets.map((budget) => {
+        {budgets.map((budget, index) => {
           const isOverBudget = budget.spentAmount > budget.targetAmount
           return (
             <Section
-              key={budget.name}
+              key={String(index)}
               className="bg-[#F4F4F0] p-[16px] mb-[16px] rounded-[8px]"
               style={{
                 borderTop: '1px solid #999A5E',

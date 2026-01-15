@@ -33,110 +33,119 @@ export const sendWeeklyBudgetSummaryTask = schedules.task({
     logger.info(`Found ${tenantsWithBudgets.length} tenants with budgets`)
 
     let emailsSent = 0
+    let errors = 0
 
     for (const { tenantId } of tenantsWithBudgets) {
-      const userId = await getUserIdFromTenant(tenantId)
-      if (!userId) {
-        logger.warn(`Could not find user for tenant ${tenantId}`)
-        continue
-      }
+      try {
+        const userId = await getUserIdFromTenant(tenantId)
+        if (!userId) {
+          logger.warn(`Could not find user for tenant ${tenantId}`)
+          continue
+        }
 
-      const [userData] = await db
-        .select({ email: user.email })
-        .from(user)
-        .where(eq(user.id, userId))
-        .limit(1)
+        const [userData] = await db
+          .select({ email: user.email })
+          .from(user)
+          .where(eq(user.id, userId))
+          .limit(1)
 
-      if (!userData?.email) {
-        logger.warn(`Could not find email for user ${userId}`)
-        continue
-      }
+        if (!userData?.email) {
+          logger.warn(`Could not find email for user ${userId}`)
+          continue
+        }
 
-      const budgets = await db
-        .select({
-          id: budget.id,
-          name: budget.name,
-          targetAmount: budget.targetAmount,
-          currency: budget.currency,
-        })
-        .from(budget)
-        .where(and(eq(budget.tenantId, tenantId), eq(budget.deleted, false)))
+        const budgets = await db
+          .select({
+            id: budget.id,
+            name: budget.name,
+            targetAmount: budget.targetAmount,
+            currency: budget.currency,
+          })
+          .from(budget)
+          .where(and(eq(budget.tenantId, tenantId), eq(budget.deleted, false)))
 
-      const budgetsWithProgress = await Promise.all(
-        budgets.map(async (b) => {
-          const categories = await db
-            .select({
-              id: category.id,
-              name: category.name,
-            })
-            .from(budgetCategory)
-            .innerJoin(category, eq(budgetCategory.categoryId, category.id))
-            .where(eq(budgetCategory.budgetId, b.id))
-
-          const categoryIds = categories.map((c) => c.id)
-          const categoryNames = categories.map((c) => c.name)
-
-          let spentAmount = 0
-          if (categoryIds.length > 0) {
-            const [result] = await db
+        const budgetsWithProgress = await Promise.all(
+          budgets.map(async (b) => {
+            const categories = await db
               .select({
-                spent: sql<number>`coalesce(sum(${transaction.amount}), 0)`,
+                id: category.id,
+                name: category.name,
               })
-              .from(transaction)
-              .where(
-                and(
-                  eq(transaction.tenantId, tenantId),
-                  eq(transaction.deleted, false),
-                  eq(transaction.currency, b.currency),
-                  inArray(transaction.categoryId, categoryIds),
-                  between(transaction.date, startDate, endDate),
-                  gt(transaction.amount, 0),
-                ),
-              )
-            spentAmount = result?.spent ?? 0
-          }
+              .from(budgetCategory)
+              .innerJoin(category, eq(budgetCategory.categoryId, category.id))
+              .where(eq(budgetCategory.budgetId, b.id))
 
-          const percentUsed =
-            b.targetAmount > 0
-              ? Math.round((spentAmount / b.targetAmount) * 100)
-              : 0
+            const categoryIds = categories.map((c) => c.id)
+            const categoryNames = categories.map((c) => c.name)
 
-          return {
-            name: b.name,
-            targetAmount: b.targetAmount,
-            spentAmount,
-            currency: b.currency,
-            categories: categoryNames,
-            percentUsed,
-          }
-        }),
-      )
+            let spentAmount = 0
+            if (categoryIds.length > 0) {
+              const [result] = await db
+                .select({
+                  spent: sql<number>`coalesce(sum(${transaction.amount}), 0)`,
+                })
+                .from(transaction)
+                .where(
+                  and(
+                    eq(transaction.tenantId, tenantId),
+                    eq(transaction.deleted, false),
+                    eq(transaction.currency, b.currency),
+                    inArray(transaction.categoryId, categoryIds),
+                    between(transaction.date, startDate, endDate),
+                    gt(transaction.amount, 0),
+                  ),
+                )
+              spentAmount = result?.spent ?? 0
+            }
 
-      if (budgetsWithProgress.length === 0) {
-        continue
+            const percentUsed =
+              b.targetAmount > 0
+                ? Math.round((spentAmount / b.targetAmount) * 100)
+                : 0
+
+            return {
+              name: b.name,
+              targetAmount: b.targetAmount,
+              spentAmount,
+              currency: b.currency,
+              categories: categoryNames,
+              percentUsed,
+            }
+          }),
+        )
+
+        if (budgetsWithProgress.length === 0) {
+          continue
+        }
+
+        await resend.sendEmail({
+          to: userData.email,
+          subject: `Your weekly budget summary for ${monthDisplay}`,
+          react: (
+            <WeeklyBudgetSummaryEmail
+              budgets={budgetsWithProgress}
+              month={monthDisplay}
+              budgetsLink={`${env.NEXT_PUBLIC_APP_URL}/budgets`}
+            />
+          ),
+        })
+
+        emailsSent++
+        logger.info(`Sent budget summary to ${userData.email}`)
+      } catch (error) {
+        errors++
+        logger.error(`Failed to send email for tenant ${tenantId}`, { error })
       }
-
-      await resend.sendEmail({
-        to: userData.email,
-        subject: `Your weekly budget summary for ${monthDisplay}`,
-        react: (
-          <WeeklyBudgetSummaryEmail
-            budgets={budgetsWithProgress}
-            month={monthDisplay}
-            budgetsLink={`${env.NEXT_PUBLIC_APP_URL}/budgets`}
-          />
-        ),
-      })
-
-      emailsSent++
-      logger.info(`Sent budget summary to ${userData.email}`)
     }
 
-    logger.info(`Weekly budget summary complete. Sent ${emailsSent} emails.`)
+    logger.info(
+      `Weekly budget summary complete. Sent ${emailsSent} emails, ${errors} errors.`,
+    )
 
     return {
-      success: true,
+      success: errors === 0,
       emailsSent,
+      errors,
       tenantsProcessed: tenantsWithBudgets.length,
     }
   },
