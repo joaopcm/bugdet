@@ -1,89 +1,46 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
-import { Calendar } from '@/components/ui/calendar'
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
-import { cn } from '@/lib/utils'
-import { format } from 'date-fns'
-import { CalendarIcon } from 'lucide-react'
-import { useState } from 'react'
+  DateRangePicker,
+  type DateRangePreset,
+} from '@/components/ui/date-range-picker'
+import type { DateRange } from 'react-day-picker'
 import {
-  DATE_PRESETS,
   type DatePreset,
-  getPresetLabel,
+  getDateRangeFromPreset,
   useDashboardFilters,
 } from './search-params'
 
+const PRESET_MAP: Record<DateRangePreset, DatePreset> = {
+  '7d': '7d',
+  '30d': '30d',
+  '3m': '3m',
+  '6m': '6m',
+  custom: 'custom',
+}
+
 export function DashboardFilters() {
   const { filters, setFilters } = useDashboardFilters()
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false)
 
-  const handlePresetClick = (preset: DatePreset) => {
-    if (preset === 'custom') {
-      setIsCalendarOpen(true)
-      return
+  const dateRange = getDateRangeFromPreset(filters.preset, filters.from, filters.to)
+
+  const handleChange = (range: DateRange | undefined, preset?: DateRangePreset) => {
+    if (!range?.from || !range?.to) return
+
+    if (preset && preset !== 'custom') {
+      setFilters({ preset: PRESET_MAP[preset], from: null, to: null })
+    } else {
+      setFilters({ preset: 'custom', from: range.from, to: range.to })
     }
-    setFilters({ preset, from: null, to: null })
   }
 
-  const handleDateSelect = (range: { from?: Date; to?: Date } | undefined) => {
-    if (range?.from) {
-      setFilters({ from: range.from, preset: 'custom' })
-    }
-    if (range?.to) {
-      setFilters({ to: range.to, preset: 'custom' })
-      setIsCalendarOpen(false)
-    }
-  }
+  const currentPreset = filters.preset === 'ytd' ? 'custom' : filters.preset
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      {DATE_PRESETS.filter((p) => p !== 'custom').map((preset) => (
-        <Button
-          key={preset}
-          variant={filters.preset === preset ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => handlePresetClick(preset)}
-        >
-          {getPresetLabel(preset)}
-        </Button>
-      ))}
-
-      <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant={filters.preset === 'custom' ? 'default' : 'outline'}
-            size="sm"
-            className={cn(
-              'min-w-[140px] justify-start text-left font-normal',
-              filters.preset !== 'custom' && 'text-muted-foreground',
-            )}
-          >
-            <CalendarIcon className="mr-2 size-4" />
-            {filters.preset === 'custom' && filters.from && filters.to ? (
-              `${format(filters.from, 'MMM d')} - ${format(filters.to, 'MMM d')}`
-            ) : (
-              <span>Pick a date range</span>
-            )}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            mode="range"
-            selected={{
-              from: filters.from ? new Date(filters.from) : undefined,
-              to: filters.to ? new Date(filters.to) : undefined,
-            }}
-            onSelect={handleDateSelect}
-            captionLayout="dropdown"
-            numberOfMonths={2}
-          />
-        </PopoverContent>
-      </Popover>
-    </div>
+    <DateRangePicker
+      value={dateRange}
+      onChange={handleChange}
+      preset={currentPreset}
+    />
   )
 }

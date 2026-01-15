@@ -1,116 +1,37 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
-import { Calendar } from '@/components/ui/calendar'
-import { Kbd } from '@/components/ui/kbd'
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+  DateRangePicker,
+  type DateRangePreset,
+} from '@/components/ui/date-range-picker'
 import { usePagination } from '@/hooks/use-pagination'
-import { cn } from '@/lib/utils'
-import { format } from 'date-fns'
-import { CalendarIcon, XIcon } from 'lucide-react'
-import { useState } from 'react'
-import { useHotkeys } from 'react-hotkeys-hook'
+import type { DateRange } from 'react-day-picker'
 import { useTransactionsFilters } from './search-params'
-
-const DATE_RANGE_SHORTCUT = 'D'
 
 export function DateRangeFilter() {
   const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
   const { setPagination } = usePagination('transactions')
-  const [isOpen, setIsOpen] = useState(false)
 
-  const hasValues = !!transactionFilters.from && !!transactionFilters.to
+  const value: DateRange | undefined =
+    transactionFilters.from && transactionFilters.to
+      ? { from: transactionFilters.from, to: transactionFilters.to }
+      : undefined
 
-  const handleClear = (e: React.MouseEvent) => {
-    e.stopPropagation() // Prevent popover from opening
-    setTransactionFilters({
-      from: null,
-      to: null,
-    })
+  const handleChange = (range: DateRange | undefined, _preset?: DateRangePreset) => {
+    if (!range) {
+      setTransactionFilters({ from: null, to: null })
+    } else {
+      setTransactionFilters({ from: range.from ?? null, to: range.to ?? null })
+    }
     setPagination({ page: 1 })
   }
 
-  useHotkeys(DATE_RANGE_SHORTCUT, (e) => {
-    e.preventDefault()
-    setIsOpen(!isOpen)
-  })
-
   return (
-    <Tooltip>
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
-        <TooltipTrigger asChild>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className={cn(
-                'pl-3 text-left font-normal active:scale-100 w-full',
-                !hasValues && 'text-muted-foreground',
-              )}
-            >
-              {!!transactionFilters.from && !!transactionFilters.to ? (
-                `${format(transactionFilters.from, 'PP')} - ${format(transactionFilters.to, 'PP')}`
-              ) : (
-                <span>Pick a date range</span>
-              )}
-              <div className="ml-auto flex items-center">
-                {hasValues ? (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleClear}
-                    aria-label="Clear date range"
-                    className="size-7 -mr-1.5"
-                  >
-                    <XIcon className="opacity-50" />
-                  </Button>
-                ) : (
-                  <CalendarIcon className="size-4 opacity-50" />
-                )}
-              </div>
-            </Button>
-          </PopoverTrigger>
-        </TooltipTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
-            mode="range"
-            selected={{
-              from: transactionFilters.from
-                ? new Date(transactionFilters.from)
-                : undefined,
-              to: transactionFilters.to
-                ? new Date(transactionFilters.to)
-                : undefined,
-            }}
-            onSelect={(value) => {
-              if (value?.from) {
-                setTransactionFilters({
-                  from: value.from,
-                })
-              }
-              if (value?.to) {
-                setTransactionFilters({
-                  to: value.to,
-                })
-              }
-              setPagination({ page: 1 })
-            }}
-            captionLayout="dropdown"
-          />
-        </PopoverContent>
-      </Popover>
-      <TooltipContent>
-        Or press <Kbd variant="outline">{DATE_RANGE_SHORTCUT}</Kbd> to pick a
-        date range
-      </TooltipContent>
-    </Tooltip>
+    <DateRangePicker
+      value={value}
+      onChange={handleChange}
+      showClear
+      className="w-full"
+    />
   )
 }
