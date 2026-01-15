@@ -80,7 +80,7 @@ export const categorizationRulesRouter = router({
 
       const offset = (input.pagination.page - 1) * input.pagination.limit
 
-      const rules = await db
+      const rules = await ctx.db
         .select({
           id: categorizationRule.id,
           name: categorizationRule.name,
@@ -118,7 +118,7 @@ export const categorizationRulesRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const [rule] = await db
+      const [rule] = await ctx.db
         .insert(categorizationRule)
         .values({
           ...input,
@@ -145,7 +145,7 @@ export const categorizationRulesRouter = router({
       const existingRule = await getExistingRule(input.id, ctx.tenant.tenantId)
       const { id, ...updateData } = input
 
-      await db
+      await ctx.db
         .update(categorizationRule)
         .set(updateData)
         .where(
@@ -161,7 +161,7 @@ export const categorizationRulesRouter = router({
     .mutation(async ({ ctx, input }) => {
       const existingRule = await getExistingRule(input.id, ctx.tenant.tenantId)
 
-      await db
+      await ctx.db
         .update(categorizationRule)
         .set({ deleted: true })
         .where(
@@ -205,7 +205,7 @@ export const categorizationRulesRouter = router({
     .mutation(async ({ ctx, input }) => {
       const ruleIds = input.rules.map((r) => r.id)
 
-      const existingRules = await db
+      const existingRules = await ctx.db
         .select({ id: categorizationRule.id })
         .from(categorizationRule)
         .where(
@@ -223,7 +223,7 @@ export const categorizationRulesRouter = router({
         })
       }
 
-      await db.transaction(async (tx) => {
+      await ctx.db.transaction(async (tx) => {
         await Promise.all(
           input.rules.map((rule) =>
             tx

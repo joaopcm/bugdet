@@ -32,9 +32,9 @@ ALTER TABLE "category" ADD CONSTRAINT "category_tenant_id_user_tenant_tenant_id_
 ALTER TABLE "transaction" ADD CONSTRAINT "transaction_tenant_id_user_tenant_tenant_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."user_tenant"("tenant_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "upload" ADD CONSTRAINT "upload_tenant_id_user_tenant_tenant_id_fk" FOREIGN KEY ("tenant_id") REFERENCES "public"."user_tenant"("tenant_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "categorization_rule_tenant_id_idx" ON "categorization_rule" USING btree ("tenant_id");--> statement-breakpoint
-CREATE INDEX CONCURRENTLY "category_tenant_id_idx" ON "category" USING btree ("tenant_id");--> statement-breakpoint
-CREATE INDEX CONCURRENTLY "transaction_tenant_id_idx" ON "transaction" USING btree ("tenant_id");--> statement-breakpoint
-CREATE INDEX CONCURRENTLY "upload_tenant_id_idx" ON "upload" USING btree ("tenant_id");--> statement-breakpoint
+CREATE INDEX "category_tenant_id_idx" ON "category" USING btree ("tenant_id");--> statement-breakpoint
+CREATE INDEX "transaction_tenant_id_idx" ON "transaction" USING btree ("tenant_id");--> statement-breakpoint
+CREATE INDEX "upload_tenant_id_idx" ON "upload" USING btree ("tenant_id");--> statement-breakpoint
 ALTER TABLE "categorization_rule" DROP COLUMN "user_id";--> statement-breakpoint
 ALTER TABLE "category" DROP COLUMN "user_id";--> statement-breakpoint
 ALTER TABLE "transaction" DROP COLUMN "user_id";--> statement-breakpoint
