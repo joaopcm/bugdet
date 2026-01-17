@@ -13,7 +13,7 @@ import { formatCurrency } from '@/lib/utils'
 import { format, parseISO } from 'date-fns'
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 import {
-  getDateRangeFromPreset,
+  getActivePreset,
   getGroupByFromPreset,
   useDashboardFilters,
 } from './search-params'
@@ -27,18 +27,17 @@ const chartConfig = {
 
 export function SpendingOverTime() {
   const { filters } = useDashboardFilters()
-  const { from, to } = getDateRangeFromPreset(
-    filters.preset,
-    filters.from,
-    filters.to,
-  )
-  const groupBy = getGroupByFromPreset(filters.preset)
+  const activePreset = getActivePreset(filters.from, filters.to)
+  const groupBy = getGroupByFromPreset(activePreset)
 
-  const { data, isLoading } = trpc.dashboard.getSpendingOverTime.useQuery({
-    from: format(from, 'yyyy-MM-dd'),
-    to: format(to, 'yyyy-MM-dd'),
-    groupBy,
-  })
+  const { data, isLoading } = trpc.dashboard.getSpendingOverTime.useQuery(
+    {
+      from: filters.from ? format(filters.from, 'yyyy-MM-dd') : '',
+      to: filters.to ? format(filters.to, 'yyyy-MM-dd') : '',
+      groupBy,
+    },
+    { enabled: !!filters.from && !!filters.to },
+  )
 
   if (isLoading) {
     return (

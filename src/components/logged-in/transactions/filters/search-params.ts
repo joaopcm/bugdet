@@ -1,52 +1,48 @@
 import {
   DATE_PRESETS,
   type DatePreset,
+  getActivePreset,
+  getDateRangeFromPreset,
 } from '@/components/logged-in/shared/date-range-filter'
 import { parseAsLocalDate } from '@/lib/utils'
-import {
-  parseAsArrayOf,
-  parseAsString,
-  parseAsStringLiteral,
-  useQueryStates,
-} from 'nuqs'
+import { parseAsArrayOf, parseAsString, useQueryStates } from 'nuqs'
 import { useCallback, useEffect, useRef } from 'react'
 
 const STORAGE_KEY = 'transactions-date-preset'
-const DEFAULT_PRESET: DatePreset = '30d'
+const DEFAULT_PRESET: Exclude<DatePreset, 'custom'> = '30d'
 
-function getStoredPreset(): DatePreset {
+function getStoredPreset(): Exclude<DatePreset, 'custom'> {
   if (typeof window === 'undefined') return DEFAULT_PRESET
 
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
     if (!stored) return DEFAULT_PRESET
 
-    if (DATE_PRESETS.includes(stored as DatePreset)) {
-      return stored as DatePreset
+    const validPresets = DATE_PRESETS.filter((p) => p !== 'custom')
+    if (validPresets.includes(stored as Exclude<DatePreset, 'custom'>)) {
+      return stored as Exclude<DatePreset, 'custom'>
     }
   } catch {
-    // localStorage unavailable or blocked, fall through to default
+    // localStorage unavailable or blocked
   }
 
   return DEFAULT_PRESET
 }
 
-function setStoredPreset(preset: DatePreset): void {
+function setStoredPreset(preset: Exclude<DatePreset, 'custom'>): void {
   if (typeof window === 'undefined') return
   try {
     localStorage.setItem(STORAGE_KEY, preset)
   } catch {
-    // localStorage unavailable or blocked, silently fail
+    // localStorage unavailable or blocked
   }
 }
 
 export function useTransactionsFilters() {
-  const initialPreset = getStoredPreset()
-  const storedPresetRef = useRef<DatePreset>(initialPreset)
+  const initializedRef = useRef(false)
 
   const [transactionFilters, setQueryFilters] = useQueryStates({
     category: parseAsString.withDefault('all'),
-    preset: parseAsStringLiteral(DATE_PRESETS).withDefault(initialPreset),
     from: parseAsLocalDate,
     to: parseAsLocalDate,
     query: parseAsString.withDefault(''),
@@ -54,19 +50,37 @@ export function useTransactionsFilters() {
     uploadId: parseAsString.withDefault('all'),
   })
 
-  // Sync external URL changes (browser navigation) to localStorage
+  // Initialize from localStorage on first render if URL has no dates
   useEffect(() => {
-    if (transactionFilters.preset !== storedPresetRef.current) {
-      setStoredPreset(transactionFilters.preset)
-      storedPresetRef.current = transactionFilters.preset
+    if (initializedRef.current) return
+    initializedRef.current = true
+
+    if (!transactionFilters.from && !transactionFilters.to) {
+      const storedPreset = getStoredPreset()
+      const range = getDateRangeFromPreset(storedPreset)
+      setQueryFilters({ from: range.from, to: range.to })
     }
-  }, [transactionFilters.preset])
+  }, [transactionFilters.from, transactionFilters.to, setQueryFilters])
+
+  // Persist active preset to localStorage when dates change
+  const prevPresetRef = useRef<DatePreset | null>(null)
+  useEffect(() => {
+    if (!transactionFilters.from || !transactionFilters.to) return
+
+    const activePreset = getActivePreset(
+      transactionFilters.from,
+      transactionFilters.to,
+    )
+    if (activePreset !== 'custom' && activePreset !== prevPresetRef.current) {
+      setStoredPreset(activePreset)
+      prevPresetRef.current = activePreset
+    }
+  }, [transactionFilters.from, transactionFilters.to])
 
   const setTransactionFilters = useCallback(
     (
       updates: Partial<{
         category: string | null
-        preset: DatePreset
         from: Date | null
         to: Date | null
         query: string | null
@@ -74,10 +88,6 @@ export function useTransactionsFilters() {
         uploadId: string | null
       }>,
     ) => {
-      if (updates.preset !== undefined) {
-        setStoredPreset(updates.preset)
-        storedPresetRef.current = updates.preset
-      }
       return setQueryFilters(updates)
     },
     [setQueryFilters],

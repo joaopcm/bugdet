@@ -7,7 +7,7 @@ import { formatCurrency } from '@/lib/utils'
 import { format, parseISO } from 'date-fns'
 import { CheckCircleIcon } from 'lucide-react'
 import Link from 'next/link'
-import { getDateRangeFromPreset, useDashboardFilters } from './search-params'
+import { useDashboardFilters } from './search-params'
 
 function TransactionSkeleton() {
   return (
@@ -23,17 +23,15 @@ function TransactionSkeleton() {
 
 export function TransactionsToReview() {
   const { filters } = useDashboardFilters()
-  const { from, to } = getDateRangeFromPreset(
-    filters.preset,
-    filters.from,
-    filters.to,
-  )
 
-  const { data, isLoading } = trpc.dashboard.getTransactionsToReview.useQuery({
-    from: format(from, 'yyyy-MM-dd'),
-    to: format(to, 'yyyy-MM-dd'),
-    limit: 5,
-  })
+  const { data, isLoading } = trpc.dashboard.getTransactionsToReview.useQuery(
+    {
+      from: filters.from ? format(filters.from, 'yyyy-MM-dd') : '',
+      to: filters.to ? format(filters.to, 'yyyy-MM-dd') : '',
+      limit: 5,
+    },
+    { enabled: !!filters.from && !!filters.to },
+  )
 
   return (
     <Card>

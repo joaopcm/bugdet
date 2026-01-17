@@ -8,7 +8,7 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
-import { format } from 'date-fns'
+import { format, isSameDay, startOfYear, subDays, subMonths } from 'date-fns'
 import { CalendarIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
@@ -32,24 +32,57 @@ export function getPresetLabel(preset: DatePreset): string {
   }
 }
 
+export function getDateRangeFromPreset(preset: Exclude<DatePreset, 'custom'>): {
+  from: Date
+  to: Date
+} {
+  const now = new Date()
+
+  switch (preset) {
+    case '7d':
+      return { from: subDays(now, 7), to: now }
+    case '30d':
+      return { from: subDays(now, 30), to: now }
+    case '3m':
+      return { from: subMonths(now, 3), to: now }
+    case '6m':
+      return { from: subMonths(now, 6), to: now }
+    case 'ytd':
+      return { from: startOfYear(now), to: now }
+  }
+}
+
+export function getActivePreset(
+  from: Date | null,
+  to: Date | null,
+): DatePreset {
+  if (!from || !to) return '30d'
+
+  const presets = ['7d', '30d', '3m', '6m', 'ytd'] as const
+  for (const preset of presets) {
+    const range = getDateRangeFromPreset(preset)
+    if (isSameDay(from, range.from) && isSameDay(to, range.to)) {
+      return preset
+    }
+  }
+
+  return 'custom'
+}
+
 interface DateRangeFilterProps {
-  preset: DatePreset
   from: Date | null
   to: Date | null
-  onFilterChange: (updates: {
-    preset?: DatePreset
-    from?: Date | null
-    to?: Date | null
-  }) => void
+  onFilterChange: (updates: { from: Date; to: Date }) => void
 }
 
 export function DateRangeFilter({
-  preset,
   from,
   to,
   onFilterChange,
 }: DateRangeFilterProps) {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
+
+  const activePreset = useMemo(() => getActivePreset(from, to), [from, to])
 
   const selectedRange = useMemo(
     () => ({
@@ -59,22 +92,15 @@ export function DateRangeFilter({
     [from, to],
   )
 
-  const handlePresetClick = (selectedPreset: DatePreset) => {
-    if (selectedPreset === 'custom') {
-      setIsCalendarOpen(true)
-      return
-    }
-    onFilterChange({ preset: selectedPreset, from: null, to: null })
+  const handlePresetClick = (preset: Exclude<DatePreset, 'custom'>) => {
+    const range = getDateRangeFromPreset(preset)
+    onFilterChange(range)
   }
 
   const handleDateSelect = (range: { from?: Date; to?: Date } | undefined) => {
-    if (range?.from) {
-      onFilterChange({ from: range.from, preset: 'custom' })
-    }
-    if (range?.to) {
-      onFilterChange({ to: range.to, preset: 'custom' })
-      setIsCalendarOpen(false)
-    }
+    if (!range?.from || !range?.to) return
+    onFilterChange({ from: range.from, to: range.to })
+    setIsCalendarOpen(false)
   }
 
   return (
@@ -82,7 +108,7 @@ export function DateRangeFilter({
       {DATE_PRESETS.filter((p) => p !== 'custom').map((presetOption) => (
         <Button
           key={presetOption}
-          variant={preset === presetOption ? 'default' : 'outline'}
+          variant={activePreset === presetOption ? 'default' : 'outline'}
           size="sm"
           onClick={() => handlePresetClick(presetOption)}
         >
@@ -93,15 +119,15 @@ export function DateRangeFilter({
       <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
         <PopoverTrigger asChild>
           <Button
-            variant={preset === 'custom' ? 'default' : 'outline'}
+            variant={activePreset === 'custom' ? 'default' : 'outline'}
             size="sm"
             className={cn(
               'min-w-[140px] justify-start text-left font-normal',
-              preset !== 'custom' && 'text-muted-foreground',
+              activePreset !== 'custom' && 'text-muted-foreground',
             )}
           >
             <CalendarIcon className="mr-2 size-4" />
-            {preset === 'custom' && from && to ? (
+            {activePreset === 'custom' && from && to ? (
               `${format(from, 'MMM d')} - ${format(to, 'MMM d')}`
             ) : (
               <span>Pick a date range</span>

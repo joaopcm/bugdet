@@ -4,7 +4,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { trpc } from '@/lib/trpc/client'
 import { formatCurrency } from '@/lib/utils'
 import { format } from 'date-fns'
-import { getDateRangeFromPreset, useDashboardFilters } from './search-params'
+import { useDashboardFilters } from './search-params'
 
 function MerchantSkeleton() {
   return (
@@ -20,17 +20,15 @@ function MerchantSkeleton() {
 
 export function TopMerchants() {
   const { filters } = useDashboardFilters()
-  const { from, to } = getDateRangeFromPreset(
-    filters.preset,
-    filters.from,
-    filters.to,
-  )
 
-  const { data, isLoading } = trpc.dashboard.getTopMerchants.useQuery({
-    from: format(from, 'yyyy-MM-dd'),
-    to: format(to, 'yyyy-MM-dd'),
-    limit: 5,
-  })
+  const { data, isLoading } = trpc.dashboard.getTopMerchants.useQuery(
+    {
+      from: filters.from ? format(filters.from, 'yyyy-MM-dd') : '',
+      to: filters.to ? format(filters.to, 'yyyy-MM-dd') : '',
+      limit: 5,
+    },
+    { enabled: !!filters.from && !!filters.to },
+  )
 
   return (
     <Card>
