@@ -81,16 +81,21 @@ export function DateRangeFilter({
   onFilterChange,
 }: DateRangeFilterProps) {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
+  const [localRange, setLocalRange] = useState<{ from?: Date; to?: Date }>({})
+  const [clickCount, setClickCount] = useState(0)
 
   const activePreset = useMemo(() => getActivePreset(from, to), [from, to])
 
-  const selectedRange = useMemo(
-    () => ({
-      from: from ? new Date(from) : undefined,
-      to: to ? new Date(to) : undefined,
-    }),
-    [from, to],
-  )
+  const handleOpenChange = (open: boolean) => {
+    setIsCalendarOpen(open)
+    if (open) {
+      setClickCount(0)
+      setLocalRange({
+        from: from ? new Date(from) : undefined,
+        to: to ? new Date(to) : undefined,
+      })
+    }
+  }
 
   const handlePresetClick = (preset: Exclude<DatePreset, 'custom'>) => {
     const range = getDateRangeFromPreset(preset)
@@ -98,9 +103,14 @@ export function DateRangeFilter({
   }
 
   const handleDateSelect = (range: { from?: Date; to?: Date } | undefined) => {
-    if (!range?.from || !range?.to) return
-    onFilterChange({ from: range.from, to: range.to })
-    setIsCalendarOpen(false)
+    if (!range?.from) return
+    const newClickCount = clickCount + 1
+    setClickCount(newClickCount)
+    setLocalRange(range)
+    if (newClickCount >= 2 && range.to && !isSameDay(range.from, range.to)) {
+      onFilterChange({ from: range.from, to: range.to })
+      setIsCalendarOpen(false)
+    }
   }
 
   return (
@@ -116,7 +126,7 @@ export function DateRangeFilter({
         </Button>
       ))}
 
-      <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+      <Popover open={isCalendarOpen} onOpenChange={handleOpenChange}>
         <PopoverTrigger asChild>
           <Button
             variant={activePreset === 'custom' ? 'default' : 'outline'}
@@ -126,7 +136,7 @@ export function DateRangeFilter({
               activePreset !== 'custom' && 'text-muted-foreground',
             )}
           >
-            <CalendarIcon className="mr-2 size-4" />
+            <CalendarIcon className="size-4" />
             {activePreset === 'custom' && from && to ? (
               `${format(from, 'MMM d')} - ${format(to, 'MMM d')}`
             ) : (
@@ -137,7 +147,7 @@ export function DateRangeFilter({
         <PopoverContent className="w-auto p-0" align="start">
           <Calendar
             mode="range"
-            selected={selectedRange}
+            selected={localRange}
             onSelect={handleDateSelect}
             captionLayout="dropdown"
             numberOfMonths={2}
