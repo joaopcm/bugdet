@@ -7,7 +7,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { cn } from '@/lib/utils'
 import { format, isSameDay, startOfYear, subDays, subMonths } from 'date-fns'
 import { CalendarIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
@@ -133,10 +132,7 @@ export function DateRangeFilter({
           <Button
             variant={activePreset === 'custom' ? 'default' : 'outline'}
             size="sm"
-            className={cn(
-              'min-w-[140px] justify-start text-left font-normal',
-              activePreset !== 'custom' && 'text-muted-foreground',
-            )}
+            className="min-w-[140px] justify-start text-left font-normal"
           >
             <CalendarIcon className="size-4" />
             {activePreset === 'custom' && from && to ? (
