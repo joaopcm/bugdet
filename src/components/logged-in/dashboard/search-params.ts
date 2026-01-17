@@ -1,10 +1,14 @@
+import {
+  DATE_PRESETS,
+  type DatePreset,
+} from '@/components/logged-in/shared/date-range-filter'
 import { parseAsLocalDate } from '@/lib/utils'
 import { startOfYear, subDays, subMonths } from 'date-fns'
 import { parseAsStringLiteral, useQueryStates } from 'nuqs'
 import { useCallback, useEffect, useRef } from 'react'
 
-export const DATE_PRESETS = ['7d', '30d', '3m', '6m', 'ytd', 'custom'] as const
-export type DatePreset = (typeof DATE_PRESETS)[number]
+export { DATE_PRESETS, type DatePreset }
+export { getPresetLabel } from '@/components/logged-in/shared/date-range-filter'
 
 const STORAGE_KEY = 'dashboard-date-preset'
 const DEFAULT_PRESET: DatePreset = '30d'
@@ -94,23 +98,6 @@ export function getDateRangeFromPreset(
         from: customFrom ?? subDays(now, 30),
         to: customTo ?? now,
       }
-  }
-}
-
-export function getPresetLabel(preset: DatePreset): string {
-  switch (preset) {
-    case '7d':
-      return 'Last 7 days'
-    case '30d':
-      return 'Last 30 days'
-    case '3m':
-      return 'Last 3 months'
-    case '6m':
-      return 'Last 6 months'
-    case 'ytd':
-      return 'Year to date'
-    case 'custom':
-      return 'Custom'
   }
 }
 
