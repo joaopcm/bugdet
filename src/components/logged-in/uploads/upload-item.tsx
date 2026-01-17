@@ -20,6 +20,7 @@ import { useInvalidateUploads } from "@/hooks/use-uploads";
 import { trpc } from "@/lib/trpc/client";
 import { formatBytes } from "@/lib/utils";
 import { DoubleConfirmationAlertDialog } from "../double-confirmation-alert-dialog";
+import { CsvConfigDialog } from "./csv-config-dialog";
 import { FileName } from "./file-name";
 import { PasswordDialog } from "./password-dialog";
 import { StatusBadge } from "./status-badge";
@@ -132,6 +133,14 @@ export function UploadItem({
               Enter password
             </Button>
           </PasswordDialog>
+        )}
+
+        {upload.status === "waiting_for_csv_answers" && (
+          <CsvConfigDialog fileName={upload.fileName} uploadId={upload.id}>
+            <Button size="sm" variant="default">
+              Answer
+            </Button>
+          </CsvConfigDialog>
         )}
 
         {CANCELLABLE_STATUSES.includes(upload.status) && (

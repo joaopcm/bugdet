@@ -19,6 +19,11 @@ import { trpc } from "@/lib/trpc/client";
 import { uploadToSignedUrlAction } from "@/server/actions/uploads";
 import type { SignedUploadUrl } from "@/server/routers/uploads";
 import { Kbd } from "../ui/kbd";
+import { CsvConfigDialog } from "./uploads/csv-config-dialog";
+
+function isCsvFile(file: File): boolean {
+  return file.type === "text/csv" || file.name.toLowerCase().endsWith(".csv");
+}
 
 const IMPORT_BANK_STATEMENT_SHORTCUT = "I";
 
@@ -37,6 +42,10 @@ export function NavMain({
 }: NavMainProps) {
   const [files, setFiles] = useState<File[] | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [csvDialogConfig, setCsvDialogConfig] = useState<{
+    uploadId: string;
+    fileName: string;
+  } | null>(null);
   const pathname = usePathname();
   const router = useRouter();
   const internalFileInputRef = useRef<HTMLInputElement>(null);
@@ -44,6 +53,28 @@ export function NavMain({
   const invalidate = useInvalidateUploads();
 
   useHotkeys(IMPORT_BANK_STATEMENT_SHORTCUT, () => handleImportClick());
+
+  const { mutate: createCsvUpload } = trpc.uploads.createCsvUpload.useMutation({
+    onSuccess: (data, variables) => {
+      toast.success("CSV uploaded", {
+        id: "upload-bank-statement",
+        description: "Please provide some additional information.",
+      });
+      setIsUploading(false);
+      setCsvDialogConfig({
+        uploadId: data.uploadId,
+        fileName: variables.fileName,
+      });
+      setFiles(null);
+    },
+    onError: (error) => {
+      setIsUploading(false);
+      toast.error(error.message, {
+        id: "upload-bank-statement",
+        description: null,
+      });
+    },
+  });
 
   const { mutate: createSignedUploadUrls } =
     trpc.uploads.createSignedUploadUrls.useMutation({
@@ -63,13 +94,35 @@ export function NavMain({
       },
       onSuccess: async ({ uploadUrls }) => {
         const successfulUploads = await uploadToSignedUrls(uploadUrls);
-        processUploads({
-          files: successfulUploads.map((upload) => ({
-            fileSize: upload.file.size,
-            fileName: upload.file.name,
-            filePath: upload.signedUrlConfig.path,
-          })),
-        });
+
+        const csvUploads = successfulUploads.filter((u) => isCsvFile(u.file));
+        const pdfUploads = successfulUploads.filter((u) => !isCsvFile(u.file));
+
+        if (pdfUploads.length > 0) {
+          processUploads({
+            files: pdfUploads.map((upload) => ({
+              fileSize: upload.file.size,
+              fileName: upload.file.name,
+              filePath: upload.signedUrlConfig.path,
+            })),
+          });
+        }
+
+        if (csvUploads.length > 0) {
+          const firstCsv = csvUploads[0];
+          createCsvUpload({
+            fileName: firstCsv.file.name,
+            filePath: firstCsv.signedUrlConfig.path,
+            fileSize: firstCsv.file.size,
+          });
+
+          if (csvUploads.length > 1) {
+            toast.info("Only one CSV can be processed at a time", {
+              description: "Additional CSV files were skipped.",
+            });
+          }
+        }
+
         setFiles(null);
       },
     });
@@ -164,7 +217,7 @@ export function NavMain({
         <SidebarMenu>
           <SidebarMenuItem className="flex items-center gap-2">
             <input
-              accept=".pdf"
+              accept=".pdf,.csv"
               className="hidden"
               id="bank-statement-upload"
               max={10}
@@ -174,6 +227,17 @@ export function NavMain({
               ref={fileInputRef}
               type="file"
             />
+            {csvDialogConfig && (
+              <CsvConfigDialog
+                defaultOpen
+                fileName={csvDialogConfig.fileName}
+                onSuccess={() => {
+                  setCsvDialogConfig(null);
+                  router.push("/uploads");
+                }}
+                uploadId={csvDialogConfig.uploadId}
+              />
+            )}
             <Button
               className="flex-1"
               disabled={isUploading}

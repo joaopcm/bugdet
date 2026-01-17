@@ -20,6 +20,7 @@ const statusLabel: Record<Status, string> = {
   failed: "Failed",
   cancelled: "Cancelled",
   waiting_for_password: "Waiting for password",
+  waiting_for_csv_answers: "Awaiting answers",
 };
 
 const statusIcon: Record<Status, React.ReactNode> = {
@@ -29,6 +30,7 @@ const statusIcon: Record<Status, React.ReactNode> = {
   failed: <div className="size-2 rounded-full bg-red-500" />,
   cancelled: <div className="size-2 rounded-full bg-gray-400" />,
   waiting_for_password: <div className="size-2 rounded-full bg-amber-500" />,
+  waiting_for_csv_answers: <div className="size-2 rounded-full bg-blue-500" />,
 };
 
 export function StatusBadge({ status, failedReason }: StatusBadgeProps) {

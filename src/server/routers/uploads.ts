@@ -1,15 +1,120 @@
 import { randomUUID } from "node:crypto";
 import { tasks } from "@trigger.dev/sdk/v3";
 import { TRPCError } from "@trpc/server";
+import { generateObject } from "ai";
 import { and, desc, eq, ilike, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { CANCELLABLE_STATUSES, DELETABLE_STATUSES } from "@/constants/uploads";
 import { db } from "@/db";
-import { transaction, upload } from "@/db/schema";
+import { type CsvQuestion, transaction, upload } from "@/db/schema";
 import { encryptPassword } from "@/lib/crypto";
 import { createClient } from "@/lib/supabase/server";
 import { paginationSchema } from "@/schemas/pagination";
 import { protectedProcedure, router } from "../trpc";
+
+const csvQuestionSchema = z.object({
+  id: z.string(),
+  type: z.enum(["text", "select", "date", "boolean"]),
+  label: z.string(),
+  description: z.string().optional(),
+  options: z.array(z.string()).optional(),
+  required: z.boolean(),
+  defaultValue: z.string().optional(),
+});
+
+const csvAnalysisResultSchema = z.object({
+  questions: z.array(csvQuestionSchema),
+  inferredMapping: z.object({
+    dateColumn: z.string().optional(),
+    merchantColumn: z.string().optional(),
+    amountColumn: z.string().optional(),
+    descriptionColumn: z.string().optional(),
+  }),
+});
+
+function parseCsvLine(line: string): string[] {
+  const result: string[] = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === "," && !inQuotes) {
+      result.push(current.trim());
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+  result.push(current.trim());
+  return result;
+}
+
+const LINE_BREAK_REGEX = /\r?\n/;
+
+function parseCsvContent(
+  content: string,
+  maxRows = 50
+): { headers: string[]; rows: string[][] } {
+  const lines = content
+    .split(LINE_BREAK_REGEX)
+    .filter((line) => line.trim().length > 0);
+  if (lines.length === 0) {
+    return { headers: [], rows: [] };
+  }
+
+  const headers = parseCsvLine(lines[0]);
+  const rows = lines.slice(1, maxRows + 1).map((line) => parseCsvLine(line));
+
+  return { headers, rows };
+}
+
+function buildCsvAnalysisPrompt(headers: string[], sampleRows: string[][]) {
+  const rowsText = sampleRows
+    .slice(0, 20)
+    .map((row, i) => `${i + 1}. ${row.join(" | ")}`)
+    .join("\n");
+
+  return `Analyze this CSV bank statement export.
+
+## CSV Headers
+${headers.join(", ")}
+
+## Sample Rows (first 20)
+${rowsText}
+
+## YOUR TASK
+1. INFER COLUMN MAPPING: Identify which columns contain:
+   - Date (and likely format)
+   - Merchant/Description
+   - Amount (or separate credit/debit columns)
+   - Optional: description/memo column
+
+2. GENERATE QUESTIONS: Create minimal questions for context you cannot infer.
+   Only ask what's truly needed for accurate extraction.
+
+   Consider asking about:
+   - Bank name (helps identify merchant patterns)
+   - Currency (critical if not in CSV)
+   - Account type (checking/savings/credit card)
+   - Date format (only if ambiguous between MM/DD and DD/MM)
+   - Sign convention (only if unclear whether positive = expense or income)
+
+   Rules for questions:
+   - Use "text" type for open-ended answers (bank name, currency)
+   - Use "select" type when there are clear options (account type, date format)
+   - Use "boolean" type for yes/no questions (sign convention)
+   - Keep questions concise but clear
+   - Only ask 2-4 questions maximum
+   - Don't ask about things you can clearly infer from the data`;
+}
 
 async function getExistingUpload(id: string, tenantId: string) {
   const [existingUpload] = await db
@@ -457,4 +562,189 @@ export const uploadsRouter = router({
       latestUploadDate: latestUpload?.createdAt ?? null,
     };
   }),
+  createCsvUpload: protectedProcedure
+    .input(
+      z.object({
+        fileName: z.string(),
+        filePath: z.string(),
+        fileSize: z.number(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const [newUpload] = await ctx.db
+        .insert(upload)
+        .values({
+          tenantId: ctx.tenant.tenantId,
+          fileName: input.fileName,
+          filePath: input.filePath,
+          fileSize: input.fileSize,
+          fileType: "csv",
+          status: "waiting_for_csv_answers",
+        })
+        .returning({ id: upload.id });
+
+      return { uploadId: newUpload.id };
+    }),
+  analyzeCsv: protectedProcedure
+    .input(z.object({ uploadId: z.string().uuid() }))
+    .mutation(async ({ input, ctx }) => {
+      const [existingUpload] = await ctx.db
+        .select({
+          id: upload.id,
+          filePath: upload.filePath,
+          status: upload.status,
+          metadata: upload.metadata,
+          deleted: upload.deleted,
+        })
+        .from(upload)
+        .where(
+          and(
+            eq(upload.id, input.uploadId),
+            eq(upload.tenantId, ctx.tenant.tenantId)
+          )
+        );
+
+      if (!existingUpload || existingUpload.deleted) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Upload not found.",
+        });
+      }
+
+      if (existingUpload.status !== "waiting_for_csv_answers") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Upload is not waiting for CSV answers.",
+        });
+      }
+
+      if (existingUpload.metadata?.csvConfig?.questions) {
+        return {
+          questions: existingUpload.metadata.csvConfig
+            .questions as CsvQuestion[],
+          preview: {
+            headers: [] as string[],
+            sampleRows: [] as string[][],
+          },
+          inferredMapping: existingUpload.metadata.csvConfig.inferredMapping,
+        };
+      }
+
+      const supabase = await createClient({ admin: true });
+      const { data: fileData, error: downloadError } = await supabase.storage
+        .from("bank-statements")
+        .download(existingUpload.filePath);
+
+      if (downloadError || !fileData) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Failed to download CSV: ${downloadError?.message}`,
+        });
+      }
+
+      const csvContent = await fileData.text();
+      const { headers, rows } = parseCsvContent(csvContent, 50);
+
+      if (headers.length === 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "CSV file appears to be empty or invalid.",
+        });
+      }
+
+      const analysisResult = await generateObject({
+        model: "anthropic/claude-haiku-4.5",
+        mode: "json",
+        schemaName: "csv-analysis",
+        schemaDescription:
+          "Analysis result for a CSV bank statement with questions and column mapping.",
+        schema: csvAnalysisResultSchema,
+        messages: [
+          {
+            role: "user",
+            content: buildCsvAnalysisPrompt(headers, rows),
+          },
+        ],
+      });
+
+      const questions = analysisResult.object.questions;
+      const inferredMapping = analysisResult.object.inferredMapping;
+
+      await ctx.db
+        .update(upload)
+        .set({
+          metadata: {
+            ...existingUpload.metadata,
+            csvConfig: {
+              questions,
+              inferredMapping,
+            },
+          },
+        })
+        .where(eq(upload.id, input.uploadId));
+
+      return {
+        questions,
+        preview: {
+          headers,
+          sampleRows: rows.slice(0, 5),
+        },
+        inferredMapping,
+      };
+    }),
+  submitCsvAnswers: protectedProcedure
+    .input(
+      z.object({
+        uploadId: z.string().uuid(),
+        answers: z.record(z.string(), z.string()),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const [existingUpload] = await ctx.db
+        .select({
+          id: upload.id,
+          status: upload.status,
+          metadata: upload.metadata,
+          deleted: upload.deleted,
+        })
+        .from(upload)
+        .where(
+          and(
+            eq(upload.id, input.uploadId),
+            eq(upload.tenantId, ctx.tenant.tenantId)
+          )
+        );
+
+      if (!existingUpload || existingUpload.deleted) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Upload not found.",
+        });
+      }
+
+      if (existingUpload.status !== "waiting_for_csv_answers") {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Upload is not waiting for CSV answers.",
+        });
+      }
+
+      await ctx.db
+        .update(upload)
+        .set({
+          status: "queued",
+          metadata: {
+            ...existingUpload.metadata,
+            csvConfig: {
+              ...existingUpload.metadata?.csvConfig,
+              answers: input.answers,
+            },
+          },
+        })
+        .where(eq(upload.id, input.uploadId));
+
+      await tasks.trigger("csv-breakdown", { uploadId: input.uploadId });
+
+      return { success: true };
+    }),
 });
