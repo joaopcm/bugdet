@@ -1,12 +1,12 @@
-import { BudgetsTable } from '@/components/logged-in/budgets/budgets-table'
-import { CreateBudgetDialog } from '@/components/logged-in/budgets/create-budget-dialog'
-import { RefreshButton } from '@/components/logged-in/budgets/refresh-button'
-import { PageLayout } from '@/components/logged-in/page-layout'
-import type { Metadata } from 'next'
+import type { Metadata } from "next";
+import { BudgetsTable } from "@/components/logged-in/budgets/budgets-table";
+import { CreateBudgetDialog } from "@/components/logged-in/budgets/create-budget-dialog";
+import { RefreshButton } from "@/components/logged-in/budgets/refresh-button";
+import { PageLayout } from "@/components/logged-in/page-layout";
 
 export const metadata: Metadata = {
-  title: 'Budgets',
-}
+  title: "Budgets",
+};
 
 export default function BudgetsPage() {
   return (
@@ -24,5 +24,5 @@ export default function BudgetsPage() {
       </PageLayout.Header>
       <BudgetsTable />
     </PageLayout.Root>
-  )
+  );
 }

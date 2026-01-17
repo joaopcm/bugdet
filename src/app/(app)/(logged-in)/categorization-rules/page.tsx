@@ -1,12 +1,12 @@
-import { CategorizationRulesTable } from '@/components/logged-in/categorization-rules/categorization-rules-table'
-import { CreateRuleDialog } from '@/components/logged-in/categorization-rules/create-rule-dialog'
-import { RefreshButton } from '@/components/logged-in/categorization-rules/refresh-button'
-import { PageLayout } from '@/components/logged-in/page-layout'
-import type { Metadata } from 'next'
+import type { Metadata } from "next";
+import { CategorizationRulesTable } from "@/components/logged-in/categorization-rules/categorization-rules-table";
+import { CreateRuleDialog } from "@/components/logged-in/categorization-rules/create-rule-dialog";
+import { RefreshButton } from "@/components/logged-in/categorization-rules/refresh-button";
+import { PageLayout } from "@/components/logged-in/page-layout";
 
 export const metadata: Metadata = {
-  title: 'Rules',
-}
+  title: "Rules",
+};
 
 export default function CategorizationRulesPage() {
   return (
@@ -24,5 +24,5 @@ export default function CategorizationRulesPage() {
       </PageLayout.Header>
       <CategorizationRulesTable />
     </PageLayout.Root>
-  )
+  );
 }

@@ -1,6 +1,8 @@
-'use client'
+"use client";
 
-import { Button } from '@/components/ui/button'
+import { useState } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,44 +10,42 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog'
-import { useInvalidateBudgets } from '@/hooks/use-budgets'
-import { trpc } from '@/lib/trpc/client'
-import { parseCurrency } from '@/lib/utils'
-import { useState } from 'react'
-import { toast } from 'sonner'
-import { BudgetForm, type BudgetFormValues } from './budget-form'
+} from "@/components/ui/dialog";
+import { useInvalidateBudgets } from "@/hooks/use-budgets";
+import { trpc } from "@/lib/trpc/client";
+import { parseCurrency } from "@/lib/utils";
+import { BudgetForm, type BudgetFormValues } from "./budget-form";
 
 interface EditBudgetDialogProps {
   budget: {
-    id: string
-    name: string
-    targetAmount: number
-    currency: string
-    categories: Array<{ id: string; name: string }>
-  }
+    id: string;
+    name: string;
+    targetAmount: number;
+    currency: string;
+    categories: Array<{ id: string; name: string }>;
+  };
 }
 
 export function EditBudgetDialog({ budget }: EditBudgetDialogProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const invalidate = useInvalidateBudgets()
+  const [isOpen, setIsOpen] = useState(false);
+  const invalidate = useInvalidateBudgets();
 
   const { data: currencies = [] } = trpc.budgets.getCurrencies.useQuery(
     undefined,
-    { enabled: isOpen },
-  )
+    { enabled: isOpen }
+  );
 
   const { mutate: updateBudget, isPending: isUpdating } =
     trpc.budgets.update.useMutation({
       onSuccess: (_, { name }) => {
-        invalidate()
-        toast.success(`You have updated the budget "${name}".`)
-        setIsOpen(false)
+        invalidate();
+        toast.success(`You have updated the budget "${name}".`);
+        setIsOpen(false);
       },
       onError: (error) => {
-        toast.error(error.message)
+        toast.error(error.message);
       },
-    })
+    });
 
   function onSubmit(values: BudgetFormValues) {
     updateBudget({
@@ -54,17 +54,17 @@ export function EditBudgetDialog({ budget }: EditBudgetDialogProps) {
       targetAmount: parseCurrency(values.targetAmount),
       currency: values.currency,
       categoryIds: values.categoryIds,
-    })
+    });
   }
 
   const allCurrencies = currencies.includes(budget.currency)
     ? currencies
-    : [budget.currency, ...currencies]
+    : [budget.currency, ...currencies];
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog onOpenChange={setIsOpen} open={isOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button size="sm" variant="outline">
           Edit
         </Button>
       </DialogTrigger>
@@ -76,8 +76,6 @@ export function EditBudgetDialog({ budget }: EditBudgetDialogProps) {
           </DialogDescription>
         </DialogHeader>
         <BudgetForm
-          isLoading={isUpdating}
-          onSubmit={onSubmit}
           currencies={allCurrencies}
           initialValues={{
             name: budget.name,
@@ -85,8 +83,10 @@ export function EditBudgetDialog({ budget }: EditBudgetDialogProps) {
             currency: budget.currency,
             categoryIds: budget.categories.map((c) => c.id),
           }}
+          isLoading={isUpdating}
+          onSubmit={onSubmit}
         />
       </DialogContent>
     </Dialog>
-  )
+  );
 }

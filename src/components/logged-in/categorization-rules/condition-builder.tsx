@@ -1,47 +1,47 @@
-'use client'
+"use client";
 
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { IconPlus, IconTrash } from "@tabler/icons-react";
+import type { FieldError, FieldErrorsImpl, Merge } from "react-hook-form";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import type { RuleCondition } from '@/db/schema'
-import { IconPlus, IconTrash } from '@tabler/icons-react'
-import type { FieldError, FieldErrorsImpl, Merge } from 'react-hook-form'
+} from "@/components/ui/select";
+import type { RuleCondition } from "@/db/schema";
 
 const FIELD_OPTIONS = [
-  { value: 'merchant_name', label: 'Merchant name' },
-  { value: 'amount', label: 'Amount' },
-] as const
+  { value: "merchant_name", label: "Merchant name" },
+  { value: "amount", label: "Amount" },
+] as const;
 
 const MERCHANT_OPERATORS = [
-  { value: 'contains', label: 'contains' },
-  { value: 'eq', label: 'equals' },
-  { value: 'neq', label: 'not equals' },
-] as const
+  { value: "contains", label: "contains" },
+  { value: "eq", label: "equals" },
+  { value: "neq", label: "not equals" },
+] as const;
 
 const AMOUNT_OPERATORS = [
-  { value: 'gt', label: '>' },
-  { value: 'lt', label: '<' },
-  { value: 'gte', label: '>=' },
-  { value: 'lte', label: '<=' },
-  { value: 'eq', label: '=' },
-  { value: 'neq', label: '!=' },
-] as const
+  { value: "gt", label: ">" },
+  { value: "lt", label: "<" },
+  { value: "gte", label: ">=" },
+  { value: "lte", label: "<=" },
+  { value: "eq", label: "=" },
+  { value: "neq", label: "!=" },
+] as const;
 
 type ArrayFieldError = Merge<
   FieldError,
   FieldErrorsImpl<{ field: string; operator: string; value: string | number }[]>
->
+>;
 
 interface ConditionBuilderProps {
-  conditions: RuleCondition[]
-  onChange: (conditions: RuleCondition[]) => void
-  errors?: ArrayFieldError
+  conditions: RuleCondition[];
+  onChange: (conditions: RuleCondition[]) => void;
+  errors?: ArrayFieldError;
 }
 
 export function ConditionBuilder({
@@ -52,40 +52,42 @@ export function ConditionBuilder({
   const addCondition = () => {
     onChange([
       ...conditions,
-      { field: 'merchant_name', operator: 'contains', value: '' },
-    ])
-  }
+      { field: "merchant_name", operator: "contains", value: "" },
+    ]);
+  };
 
   const removeCondition = (index: number) => {
-    onChange(conditions.filter((_, i) => i !== index))
-  }
+    onChange(conditions.filter((_, i) => i !== index));
+  };
 
   const updateCondition = (index: number, updates: Partial<RuleCondition>) => {
     onChange(
       conditions.map((c, i) => {
-        if (i !== index) return c
-        const updated = { ...c, ...updates }
-        if (updates.field === 'merchant_name' && c.field !== 'merchant_name') {
-          updated.operator = 'contains'
-          updated.value = ''
-        } else if (updates.field === 'amount' && c.field !== 'amount') {
-          updated.operator = 'gt'
-          updated.value = 0
+        if (i !== index) {
+          return c;
         }
-        return updated
-      }),
-    )
-  }
+        const updated = { ...c, ...updates };
+        if (updates.field === "merchant_name" && c.field !== "merchant_name") {
+          updated.operator = "contains";
+          updated.value = "";
+        } else if (updates.field === "amount" && c.field !== "amount") {
+          updated.operator = "gt";
+          updated.value = 0;
+        }
+        return updated;
+      })
+    );
+  };
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">Conditions</span>
+        <span className="font-medium text-sm">Conditions</span>
         <Button
+          onClick={addCondition}
+          size="sm"
           type="button"
           variant="outline"
-          size="sm"
-          onClick={addCondition}
         >
           <IconPlus className="mr-1 h-4 w-4" />
           Add
@@ -99,17 +101,18 @@ export function ConditionBuilder({
       )}
 
       {conditions.map((condition, index) => {
-        const error = errors?.[index]?.message ?? errors?.[index]?.root?.message
+        const error =
+          errors?.[index]?.message ?? errors?.[index]?.root?.message;
         return (
-          <div key={String(index)} className="space-y-1">
+          <div className="space-y-1" key={String(index)}>
             <div className="flex items-center gap-2">
               <Select
-                value={condition.field}
                 onValueChange={(value) =>
                   updateCondition(index, {
-                    field: value as RuleCondition['field'],
+                    field: value as RuleCondition["field"],
                   })
                 }
+                value={condition.field}
               >
                 <SelectTrigger className="w-[140px]">
                   <SelectValue />
@@ -125,18 +128,18 @@ export function ConditionBuilder({
 
               <Select
                 key={`${index}-${condition.field}`}
-                value={condition.operator}
                 onValueChange={(value) =>
                   updateCondition(index, {
-                    operator: value as RuleCondition['operator'],
+                    operator: value as RuleCondition["operator"],
                   })
                 }
+                value={condition.operator}
               >
                 <SelectTrigger className="w-[100px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {(condition.field === 'merchant_name'
+                  {(condition.field === "merchant_name"
                     ? MERCHANT_OPERATORS
                     : AMOUNT_OPERATORS
                   ).map((opt) => (
@@ -147,44 +150,44 @@ export function ConditionBuilder({
                 </SelectContent>
               </Select>
 
-              {condition.field === 'merchant_name' ? (
+              {condition.field === "merchant_name" ? (
                 <Input
-                  type="text"
-                  placeholder="e.g. Amazon"
-                  value={String(condition.value)}
+                  className={`flex-1 ${error ? "border-destructive" : ""}`}
                   onChange={(e) =>
                     updateCondition(index, { value: e.target.value })
                   }
-                  className={`flex-1 ${error ? 'border-destructive' : ''}`}
+                  placeholder="e.g. Amazon"
+                  type="text"
+                  value={String(condition.value)}
                 />
               ) : (
                 <Input
-                  type="number"
-                  placeholder="Amount in cents"
-                  value={condition.value === '' ? '' : Number(condition.value)}
+                  className={`flex-1 ${error ? "border-destructive" : ""}`}
                   onChange={(e) =>
                     updateCondition(index, {
                       value:
-                        e.target.value === '' ? '' : Number(e.target.value),
+                        e.target.value === "" ? "" : Number(e.target.value),
                     })
                   }
-                  className={`flex-1 ${error ? 'border-destructive' : ''}`}
+                  placeholder="Amount in cents"
+                  type="number"
+                  value={condition.value === "" ? "" : Number(condition.value)}
                 />
               )}
 
               <Button
+                onClick={() => removeCondition(index)}
+                size="icon"
                 type="button"
                 variant="ghost"
-                size="icon"
-                onClick={() => removeCondition(index)}
               >
                 <IconTrash className="h-4 w-4" />
               </Button>
             </div>
             {error && <p className="text-destructive text-sm">{error}</p>}
           </div>
-        )
+        );
       })}
     </div>
-  )
+  );
 }

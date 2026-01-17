@@ -1,85 +1,85 @@
-import type { PdfPageImage } from '@/lib/pdf'
-import { type PageImage, getUploadImages } from '@/lib/uploads/get-page-images'
-import { logger, task } from '@trigger.dev/sdk/v3'
-import { generateObject } from 'ai'
-import { z } from 'zod'
+import { logger, task } from "@trigger.dev/sdk/v3";
+import { generateObject } from "ai";
+import { z } from "zod";
+import type { PdfPageImage } from "@/lib/pdf";
+import { getUploadImages, type PageImage } from "@/lib/uploads/get-page-images";
 
 const documentTypeEnum = z.enum([
-  'checking_statement',
-  'savings_statement',
-  'credit_card_statement',
-  'unknown',
-])
+  "checking_statement",
+  "savings_statement",
+  "credit_card_statement",
+  "unknown",
+]);
 
-export type DocumentType = z.infer<typeof documentTypeEnum>
+export type DocumentType = z.infer<typeof documentTypeEnum>;
 
 const schema = z.object({
   isValid: z
     .boolean()
     .describe(
-      'Whether the document is a valid bank statement or credit card statement.',
+      "Whether the document is a valid bank statement or credit card statement."
     ),
   reason: z
     .string()
     .optional()
     .describe(
-      'Required if isValid is false. Explain why this is not a bank statement (e.g., "This appears to be a screenshot of a website", "This is a receipt, not a bank statement", "The document is illegible or corrupted").',
+      'Required if isValid is false. Explain why this is not a bank statement (e.g., "This appears to be a screenshot of a website", "This is a receipt, not a bank statement", "The document is illegible or corrupted").'
     ),
   documentType: documentTypeEnum.describe(
-    'The type of financial document. Use "checking_statement" for checking/current account statements, "savings_statement" for savings account statements, "credit_card_statement" for credit card statements, or "unknown" if unclear.',
+    'The type of financial document. Use "checking_statement" for checking/current account statements, "savings_statement" for savings account statements, "credit_card_statement" for credit card statements, or "unknown" if unclear.'
   ),
   documentLanguage: z
     .string()
     .optional()
     .describe(
-      'The primary language of the document (e.g., "English", "Portuguese", "Spanish").',
+      'The primary language of the document (e.g., "English", "Portuguese", "Spanish").'
     ),
-})
+});
 
 function buildImageContent(images: (PdfPageImage | PageImage)[]) {
-  const pagesToCheck = images.slice(0, 5)
+  const pagesToCheck = images.slice(0, 5);
 
   return pagesToCheck.map((img) => ({
-    type: 'image' as const,
-    image: Buffer.from(img.base64, 'base64'),
+    type: "image" as const,
+    image: Buffer.from(img.base64, "base64"),
     mimeType: img.mimeType,
-  }))
+  }));
 }
 
 export const reviewBankStatementTask = task({
-  id: 'review-bank-statement',
+  id: "review-bank-statement",
   retry: {
     randomize: false,
   },
   run: async (payload: { uploadId: string; pageCount?: number }) => {
-    logger.info(`Reviewing upload ${payload.uploadId}...`)
+    logger.info(`Reviewing upload ${payload.uploadId}...`);
 
     const images = await getUploadImages(
       payload.uploadId,
       { start: 1, end: 5 },
-      payload.pageCount,
-    )
+      payload.pageCount
+    );
 
     if (images.length === 0) {
       return {
         isValid: false,
         reason:
-          'The PDF file could not be processed. It may be corrupted or empty.',
-        documentType: 'unknown' as const,
-      }
+          "The PDF file could not be processed. It may be corrupted or empty.",
+        documentType: "unknown" as const,
+      };
     }
 
-    logger.info('Analyzing bank statement with AI...')
+    logger.info("Analyzing bank statement with AI...");
     const result = await generateObject({
-      model: 'anthropic/claude-haiku-4.5',
-      mode: 'json',
-      schemaName: 'review-bank-statement',
+      model: "anthropic/claude-haiku-4.5",
+      mode: "json",
+      schemaName: "review-bank-statement",
       schemaDescription:
-        'Validation result for whether a document is a legitimate bank statement.',
+        "Validation result for whether a document is a legitimate bank statement.",
       schema,
       messages: [
         {
-          role: 'system',
+          role: "system",
           content: `You are a bank statement validation expert. Analyze the provided document images and determine if this is a legitimate bank statement or credit card statement.
 
 A VALID bank statement typically has:
@@ -107,10 +107,10 @@ DOCUMENT TYPE IDENTIFICATION:
 You will be provided with up to 5 pages of the document.`,
         },
         {
-          role: 'user',
+          role: "user",
           content: [
             {
-              type: 'text',
+              type: "text",
               text: `Please analyze these document pages and determine if this is a valid bank statement.
 
 ## EXAMPLE OUTPUT
@@ -136,9 +136,9 @@ Or if invalid:
           ],
         },
       ],
-    })
-    logger.info('AI analysis complete', result.object)
+    });
+    logger.info("AI analysis complete", result.object);
 
-    return result.object
+    return result.object;
   },
-})
+});

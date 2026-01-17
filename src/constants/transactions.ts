@@ -1,1 +1,1 @@
-export const CONFIDENCE_THRESHOLD = 80
+export const CONFIDENCE_THRESHOLD = 80;

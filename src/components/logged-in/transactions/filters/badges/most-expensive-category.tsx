@@ -1,60 +1,61 @@
-'use client'
+"use client";
 
-import { Badge } from '@/components/ui/badge'
-import { Kbd } from '@/components/ui/kbd'
-import { Skeleton } from '@/components/ui/skeleton'
+import { useHotkeys } from "react-hotkeys-hook";
+import { Badge } from "@/components/ui/badge";
+import { Kbd } from "@/components/ui/kbd";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@/components/ui/tooltip'
-import { useMostExpensiveCategory } from '@/hooks/use-most-expensive-category'
-import { usePagination } from '@/hooks/use-pagination'
-import { formatCurrency } from '@/lib/utils'
-import { useHotkeys } from 'react-hotkeys-hook'
-import { useTransactionsFilters } from '../search-params'
+} from "@/components/ui/tooltip";
+import { useMostExpensiveCategory } from "@/hooks/use-most-expensive-category";
+import { usePagination } from "@/hooks/use-pagination";
+import { formatCurrency } from "@/lib/utils";
+import { useTransactionsFilters } from "../search-params";
 
-const MOST_EXPENSIVE_CATEGORY_SHORTCUT = '3'
+const MOST_EXPENSIVE_CATEGORY_SHORTCUT = "3";
 
 export function MostExpensiveCategory() {
-  const { data: category, isLoading } = useMostExpensiveCategory()
-  const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
-  const { setPagination } = usePagination('transactions')
+  const { data: category, isLoading } = useMostExpensiveCategory();
+  const { transactionFilters, setTransactionFilters } =
+    useTransactionsFilters();
+  const { setPagination } = usePagination("transactions");
 
-  useHotkeys(MOST_EXPENSIVE_CATEGORY_SHORTCUT, () => handleClick())
+  useHotkeys(MOST_EXPENSIVE_CATEGORY_SHORTCUT, () => handleClick());
 
   if (isLoading) {
-    return <Skeleton className="w-[151px] h-[24px]" />
+    return <Skeleton className="h-[24px] w-[151px]" />;
   }
 
   if (!category) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
-          <Badge variant="secondary" className="select-none">
+          <Badge className="select-none" variant="secondary">
             Most expensive category
           </Badge>
         </TooltipTrigger>
-        <TooltipContent side="bottom" className="max-w-64 text-pretty">
+        <TooltipContent className="max-w-64 text-pretty" side="bottom">
           I couldn't find the most expensive category in the last 45 days. Sorry
           about that.
         </TooltipContent>
       </Tooltip>
-    )
+    );
   }
 
   function handleClick() {
     if (!category) {
-      return
+      return;
     }
 
-    setPagination({ page: 1 })
+    setPagination({ page: 1 });
 
     if (transactionFilters.category === category.categoryId) {
       setTransactionFilters({
-        category: 'all',
-      })
-      return
+        category: "all",
+      });
+      return;
     }
 
     setTransactionFilters({
@@ -64,27 +65,27 @@ export function MostExpensiveCategory() {
       from: null,
       to: null,
       query: null,
-    })
+    });
   }
 
-  const isSelected = transactionFilters.category === category.categoryId
+  const isSelected = transactionFilters.category === category.categoryId;
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Badge variant={isSelected ? 'default' : 'outline'} clickable asChild>
+        <Badge asChild clickable variant={isSelected ? "default" : "outline"}>
           <button
-            type="button"
-            onClick={handleClick}
             className="transition-none"
+            onClick={handleClick}
+            type="button"
           >
             Most expensive category
           </button>
         </Badge>
       </TooltipTrigger>
-      <TooltipContent side="bottom" className="max-w-64 text-pretty">
+      <TooltipContent className="max-w-64 text-pretty" side="bottom">
         Filter transactions by "{category.categoryName}", the most expensive
-        category in the last 45 days. You've spent{' '}
+        category in the last 45 days. You've spent{" "}
         {formatCurrency(category.totalAmount, category.currency)} on them.
         <br />
         <br />
@@ -92,5 +93,5 @@ export function MostExpensiveCategory() {
         activate this filter.
       </TooltipContent>
     </Tooltip>
-  )
+  );
 }

@@ -1,6 +1,8 @@
-'use client'
+"use client";
 
-import { Button } from '@/components/ui/button'
+import { useState } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,18 +11,16 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { useInvalidateUploads } from '@/hooks/use-uploads'
-import { trpc } from '@/lib/trpc/client'
-import { useState } from 'react'
-import { toast } from 'sonner'
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useInvalidateUploads } from "@/hooks/use-uploads";
+import { trpc } from "@/lib/trpc/client";
 
 interface PasswordDialogProps {
-  uploadId: string
-  fileName: string
-  children: React.ReactNode
+  uploadId: string;
+  fileName: string;
+  children: React.ReactNode;
 }
 
 export function PasswordDialog({
@@ -28,34 +28,34 @@ export function PasswordDialog({
   fileName,
   children,
 }: PasswordDialogProps) {
-  const [open, setOpen] = useState(false)
-  const [password, setPassword] = useState('')
-  const invalidate = useInvalidateUploads()
+  const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const invalidate = useInvalidateUploads();
 
   const { mutate: setUploadPassword, isPending } =
     trpc.uploads.setPassword.useMutation({
       onSuccess: () => {
-        toast.success('Password submitted. Processing will resume shortly.')
-        setOpen(false)
-        setPassword('')
-        invalidate()
+        toast.success("Password submitted. Processing will resume shortly.");
+        setOpen(false);
+        setPassword("");
+        invalidate();
       },
       onError: (error) => {
-        toast.error(error.message)
+        toast.error(error.message);
       },
-    })
+    });
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (!password.trim()) {
-      toast.error('Please enter a password')
-      return
+      toast.error("Please enter a password");
+      return;
     }
-    setUploadPassword({ uploadId, password })
-  }
+    setUploadPassword({ uploadId, password });
+  };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog onOpenChange={setOpen} open={open}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent>
         <form onSubmit={handleSubmit}>
@@ -70,29 +70,29 @@ export function PasswordDialog({
             <div className="grid gap-2">
               <Label htmlFor="password">Password</Label>
               <Input
+                autoComplete="off"
                 id="password"
-                type="password"
-                value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter the PDF password"
-                autoComplete="off"
+                type="password"
+                value={password}
               />
             </div>
           </div>
           <DialogFooter>
             <Button
+              onClick={() => setOpen(false)}
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending || !password.trim()}>
+            <Button disabled={isPending || !password.trim()} type="submit">
               Submit
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

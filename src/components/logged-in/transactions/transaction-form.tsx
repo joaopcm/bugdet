@@ -1,10 +1,18 @@
-'use client'
+"use client";
 
-import { Button } from '@/components/ui/button'
-import { Calendar } from '@/components/ui/calendar'
-import { Checkbox } from '@/components/ui/checkbox'
-import { CurrencyInput } from '@/components/ui/currency-input'
-import { DialogClose, DialogFooter } from '@/components/ui/dialog'
+import { zodResolver } from "@hookform/resolvers/zod";
+import { IconInfoCircle } from "@tabler/icons-react";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { useRef } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { useHotkeys } from "react-hotkeys-hook";
+import z from "zod";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CurrencyInput } from "@/components/ui/currency-input";
+import { DialogClose, DialogFooter } from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -12,34 +20,26 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Kbd, SHORTCUTS_VALUES } from '@/components/ui/kbd'
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Kbd, SHORTCUTS_VALUES } from "@/components/ui/kbd";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover'
+} from "@/components/ui/popover";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@/components/ui/tooltip'
+} from "@/components/ui/tooltip";
 import {
   cn,
   formatCurrency,
   getCurrencyCode,
   getCurrencySymbol,
-} from '@/lib/utils'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { IconInfoCircle } from '@tabler/icons-react'
-import { format } from 'date-fns'
-import { CalendarIcon } from 'lucide-react'
-import { useRef } from 'react'
-import { useForm, useWatch } from 'react-hook-form'
-import { useHotkeys } from 'react-hotkeys-hook'
-import z from 'zod'
-import { CategorySelect } from './category-select'
+} from "@/lib/utils";
+import { CategorySelect } from "./category-select";
 
 const transactionSchema = z.object({
   categoryId: z.string().uuid().nullable(),
@@ -47,16 +47,16 @@ const transactionSchema = z.object({
   merchantName: z.string().min(1).max(255),
   amount: z.string().min(3),
   createCategorizationRule: z.boolean().optional(),
-})
+});
 
-export type TransactionFormValues = z.infer<typeof transactionSchema>
+export type TransactionFormValues = z.infer<typeof transactionSchema>;
 
 interface TransactionFormProps {
-  isLoading: boolean
-  onSubmit: (values: z.infer<typeof transactionSchema>) => void
-  initialValues?: z.infer<typeof transactionSchema>
-  currencyCode?: string
-  currencySymbol?: string
+  isLoading: boolean;
+  onSubmit: (values: z.infer<typeof transactionSchema>) => void;
+  initialValues?: z.infer<typeof transactionSchema>;
+  currencyCode?: string;
+  currencySymbol?: string;
 }
 
 export function TransactionForm({
@@ -66,43 +66,43 @@ export function TransactionForm({
   currencyCode = getCurrencyCode(),
   currencySymbol = getCurrencySymbol(),
 }: TransactionFormProps) {
-  const closeButtonRef = useRef<HTMLButtonElement>(null)
-  const submitButtonRef = useRef<HTMLButtonElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const submitButtonRef = useRef<HTMLButtonElement>(null);
 
-  useHotkeys(['esc'], () => {
+  useHotkeys(["esc"], () => {
     if (!closeButtonRef.current) {
-      return
+      return;
     }
 
-    closeButtonRef.current.click()
-  })
+    closeButtonRef.current.click();
+  });
 
-  useHotkeys(['mod+enter'], () => {
+  useHotkeys(["mod+enter"], () => {
     if (isLoading || !submitButtonRef.current) {
-      return
+      return;
     }
 
-    submitButtonRef.current.click()
-  })
+    submitButtonRef.current.click();
+  });
 
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(transactionSchema),
     defaultValues: initialValues ?? {
       categoryId: null,
-      date: format(new Date(), 'yyyy-MM-dd'),
-      merchantName: '',
-      amount: '',
+      date: format(new Date(), "yyyy-MM-dd"),
+      merchantName: "",
+      amount: "",
     },
-  })
+  });
 
   const selectedCategoryId = useWatch({
     control: form.control,
-    name: 'categoryId',
-  })
+    name: "categoryId",
+  });
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-6">
+      <form className="grid gap-6" onSubmit={form.handleSubmit(onSubmit)}>
         <FormField
           control={form.control}
           name="date"
@@ -113,14 +113,14 @@ export function TransactionForm({
                 <PopoverTrigger asChild>
                   <FormControl>
                     <Button
-                      variant="outline"
                       className={cn(
-                        'pl-3 text-left font-normal active:scale-100',
-                        !field.value && 'text-muted-foreground',
+                        "pl-3 text-left font-normal active:scale-100",
+                        !field.value && "text-muted-foreground"
                       )}
+                      variant="outline"
                     >
                       {field.value ? (
-                        format(field.value, 'PPP')
+                        format(field.value, "PPP")
                       ) : (
                         <span>Pick a date</span>
                       )}
@@ -128,14 +128,14 @@ export function TransactionForm({
                     </Button>
                   </FormControl>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent align="start" className="w-auto p-0">
                   <Calendar
-                    mode="single"
-                    selected={field.value ? new Date(field.value) : undefined}
-                    onSelect={(value) =>
-                      value && field.onChange(format(value, 'yyyy-MM-dd'))
-                    }
                     captionLayout="dropdown"
+                    mode="single"
+                    onSelect={(value) =>
+                      value && field.onChange(format(value, "yyyy-MM-dd"))
+                    }
+                    selected={field.value ? new Date(field.value) : undefined}
                   />
                 </PopoverContent>
               </Popover>
@@ -151,7 +151,7 @@ export function TransactionForm({
             <FormItem>
               <FormLabel>Category</FormLabel>
               <FormControl>
-                <CategorySelect value={field.value} onChange={field.onChange} />
+                <CategorySelect onChange={field.onChange} value={field.value} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -166,19 +166,19 @@ export function TransactionForm({
               <FormItem className="flex flex-row items-center gap-2">
                 <FormControl>
                   <Checkbox
-                    id="createCategorizationRule"
                     checked={field.value ?? false}
+                    id="createCategorizationRule"
                     onCheckedChange={field.onChange}
                   />
                 </FormControl>
                 <FormLabel
-                  htmlFor="createCategorizationRule"
                   className="flex items-center gap-1"
+                  htmlFor="createCategorizationRule"
                 >
                   Create categorization rule
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <IconInfoCircle className="text-muted-foreground h-4 w-4" />
+                      <IconInfoCircle className="h-4 w-4 text-muted-foreground" />
                     </TooltipTrigger>
                     <TooltipContent>
                       <p className="max-w-[240px]">
@@ -222,8 +222,8 @@ export function TransactionForm({
               <FormControl>
                 <CurrencyInput
                   id="amount"
-                  prefix={currencySymbol}
                   placeholder={formatCurrency(100, currencyCode)}
+                  prefix={currencySymbol}
                   {...field}
                 />
               </FormControl>
@@ -234,11 +234,11 @@ export function TransactionForm({
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline" ref={closeButtonRef}>
+            <Button ref={closeButtonRef} variant="outline">
               Cancel <Kbd variant="outline">{SHORTCUTS_VALUES.ESC}</Kbd>
             </Button>
           </DialogClose>
-          <Button type="submit" disabled={isLoading} ref={submitButtonRef}>
+          <Button disabled={isLoading} ref={submitButtonRef} type="submit">
             Save
             <Kbd>
               {SHORTCUTS_VALUES.CMD} + {SHORTCUTS_VALUES.ENTER}
@@ -247,5 +247,5 @@ export function TransactionForm({
         </DialogFooter>
       </form>
     </Form>
-  )
+  );
 }

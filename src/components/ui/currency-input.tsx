@@ -1,21 +1,21 @@
-import { NumericFormat, type NumericFormatProps } from 'react-number-format'
-import { Input } from './input'
+import { NumericFormat, type NumericFormatProps } from "react-number-format";
+import { Input } from "./input";
 
 export function CurrencyInput({
   thousandSeparator = true,
   decimalScale = 2,
   fixedDecimalScale = true,
-  autoComplete = 'off',
+  autoComplete = "off",
   ...props
 }: NumericFormatProps) {
   return (
     <NumericFormat
-      thousandSeparator={thousandSeparator}
+      autoComplete={autoComplete}
+      customInput={Input}
       decimalScale={decimalScale}
       fixedDecimalScale={fixedDecimalScale}
-      customInput={Input}
-      autoComplete={autoComplete}
+      thousandSeparator={thousandSeparator}
       {...props}
     />
-  )
+  );
 }

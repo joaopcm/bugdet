@@ -1,21 +1,21 @@
-import { db } from '@/db'
-import { categorizationRule } from '@/db/schema'
-import { paginationSchema } from '@/schemas/pagination'
-import { TRPCError } from '@trpc/server'
-import { and, desc, eq, ilike, inArray } from 'drizzle-orm'
-import { z } from 'zod'
-import { protectedProcedure, router } from '../trpc'
+import { TRPCError } from "@trpc/server";
+import { and, desc, eq, ilike, inArray } from "drizzle-orm";
+import { z } from "zod";
+import { db } from "@/db";
+import { categorizationRule } from "@/db/schema";
+import { paginationSchema } from "@/schemas/pagination";
+import { protectedProcedure, router } from "../trpc";
 
 const ruleConditionSchema = z.object({
-  field: z.enum(['merchant_name', 'amount']),
-  operator: z.enum(['contains', 'neq', 'gt', 'lt', 'gte', 'lte', 'eq']),
+  field: z.enum(["merchant_name", "amount"]),
+  operator: z.enum(["contains", "neq", "gt", "lt", "gte", "lte", "eq"]),
   value: z.union([z.string(), z.number()]),
-})
+});
 
 const ruleActionSchema = z.object({
-  type: z.enum(['set_sign', 'set_category', 'ignore']),
+  type: z.enum(["set_sign", "set_category", "ignore"]),
   value: z.string().optional(),
-})
+});
 
 async function getExistingRule(id: string, tenantId: string) {
   const [existingRule] = await db
@@ -27,18 +27,18 @@ async function getExistingRule(id: string, tenantId: string) {
       and(
         eq(categorizationRule.id, id),
         eq(categorizationRule.tenantId, tenantId),
-        eq(categorizationRule.deleted, false),
-      ),
-    )
+        eq(categorizationRule.deleted, false)
+      )
+    );
 
   if (!existingRule) {
     throw new TRPCError({
-      code: 'NOT_FOUND',
-      message: 'Rule not found.',
-    })
+      code: "NOT_FOUND",
+      message: "Rule not found.",
+    });
   }
 
-  return existingRule
+  return existingRule;
 }
 
 export const categorizationRulesRouter = router({
@@ -50,25 +50,27 @@ export const categorizationRulesRouter = router({
           enabled: z.boolean().nullable(),
         }),
         pagination: paginationSchema,
-      }),
+      })
     )
     .query(async ({ ctx, input }) => {
       const whereClauses = [
         eq(categorizationRule.tenantId, ctx.tenant.tenantId),
         eq(categorizationRule.deleted, false),
-      ]
+      ];
 
       if (input.filters.query) {
         whereClauses.push(
-          ilike(categorizationRule.name, `%${input.filters.query}%`),
-        )
+          ilike(categorizationRule.name, `%${input.filters.query}%`)
+        );
       }
 
       if (input.filters.enabled !== null) {
-        whereClauses.push(eq(categorizationRule.enabled, input.filters.enabled))
+        whereClauses.push(
+          eq(categorizationRule.enabled, input.filters.enabled)
+        );
       }
 
-      const offset = (input.pagination.page - 1) * input.pagination.limit
+      const offset = (input.pagination.page - 1) * input.pagination.limit;
 
       const rules = await ctx.db
         .select({
@@ -85,15 +87,15 @@ export const categorizationRulesRouter = router({
         .where(and(...whereClauses))
         .orderBy(
           desc(categorizationRule.priority),
-          categorizationRule.createdAt,
+          categorizationRule.createdAt
         )
         .limit(input.pagination.limit + 1)
-        .offset(offset)
+        .offset(offset);
 
       return {
         data: rules.slice(0, input.pagination.limit),
         hasMore: rules.length > input.pagination.limit,
-      }
+      };
     }),
 
   create: protectedProcedure
@@ -101,11 +103,11 @@ export const categorizationRulesRouter = router({
       z.object({
         name: z.string().min(1).max(255),
         priority: z.number().int().min(0).max(1000).default(0),
-        logicOperator: z.enum(['and', 'or']).default('and'),
+        logicOperator: z.enum(["and", "or"]).default("and"),
         conditions: z.array(ruleConditionSchema).min(1),
         actions: z.array(ruleActionSchema).min(1),
         enabled: z.boolean().default(true),
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       const [rule] = await ctx.db
@@ -114,9 +116,9 @@ export const categorizationRulesRouter = router({
           ...input,
           tenantId: ctx.tenant.tenantId,
         })
-        .returning({ id: categorizationRule.id })
+        .returning({ id: categorizationRule.id });
 
-      return rule
+      return rule;
     }),
 
   update: protectedProcedure
@@ -125,15 +127,15 @@ export const categorizationRulesRouter = router({
         id: z.string().uuid(),
         name: z.string().min(1).max(255).optional(),
         priority: z.number().int().min(0).max(1000).optional(),
-        logicOperator: z.enum(['and', 'or']).optional(),
+        logicOperator: z.enum(["and", "or"]).optional(),
         conditions: z.array(ruleConditionSchema).min(1).optional(),
         actions: z.array(ruleActionSchema).min(1).optional(),
         enabled: z.boolean().optional(),
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
-      const existingRule = await getExistingRule(input.id, ctx.tenant.tenantId)
-      const { id, ...updateData } = input
+      const existingRule = await getExistingRule(input.id, ctx.tenant.tenantId);
+      const { id, ...updateData } = input;
 
       await ctx.db
         .update(categorizationRule)
@@ -141,15 +143,15 @@ export const categorizationRulesRouter = router({
         .where(
           and(
             eq(categorizationRule.id, existingRule.id),
-            eq(categorizationRule.tenantId, ctx.tenant.tenantId),
-          ),
-        )
+            eq(categorizationRule.tenantId, ctx.tenant.tenantId)
+          )
+        );
     }),
 
   delete: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const existingRule = await getExistingRule(input.id, ctx.tenant.tenantId)
+      const existingRule = await getExistingRule(input.id, ctx.tenant.tenantId);
 
       await ctx.db
         .update(categorizationRule)
@@ -157,16 +159,16 @@ export const categorizationRulesRouter = router({
         .where(
           and(
             eq(categorizationRule.id, existingRule.id),
-            eq(categorizationRule.tenantId, ctx.tenant.tenantId),
-          ),
-        )
+            eq(categorizationRule.tenantId, ctx.tenant.tenantId)
+          )
+        );
     }),
 
   deleteMany: protectedProcedure
     .input(
       z.object({
         ids: z.array(z.string().uuid()).min(1).max(100),
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       await ctx.db
@@ -176,9 +178,9 @@ export const categorizationRulesRouter = router({
           and(
             inArray(categorizationRule.id, input.ids),
             eq(categorizationRule.tenantId, ctx.tenant.tenantId),
-            eq(categorizationRule.deleted, false),
-          ),
-        )
+            eq(categorizationRule.deleted, false)
+          )
+        );
     }),
 
   reorder: protectedProcedure
@@ -188,12 +190,12 @@ export const categorizationRulesRouter = router({
           z.object({
             id: z.string().uuid(),
             priority: z.number().int().min(0),
-          }),
+          })
         ),
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
-      const ruleIds = input.rules.map((r) => r.id)
+      const ruleIds = input.rules.map((r) => r.id);
 
       const existingRules = await ctx.db
         .select({ id: categorizationRule.id })
@@ -202,15 +204,15 @@ export const categorizationRulesRouter = router({
           and(
             inArray(categorizationRule.id, ruleIds),
             eq(categorizationRule.tenantId, ctx.tenant.tenantId),
-            eq(categorizationRule.deleted, false),
-          ),
-        )
+            eq(categorizationRule.deleted, false)
+          )
+        );
 
       if (existingRules.length !== ruleIds.length) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'One or more rules not found.',
-        })
+          code: "NOT_FOUND",
+          message: "One or more rules not found.",
+        });
       }
 
       await ctx.db.transaction(async (tx) => {
@@ -222,11 +224,11 @@ export const categorizationRulesRouter = router({
               .where(
                 and(
                   eq(categorizationRule.id, rule.id),
-                  eq(categorizationRule.tenantId, ctx.tenant.tenantId),
-                ),
-              ),
-          ),
-        )
-      })
+                  eq(categorizationRule.tenantId, ctx.tenant.tenantId)
+                )
+              )
+          )
+        );
+      });
     }),
-})
+});

@@ -1,37 +1,37 @@
-'use client'
+"use client";
 
-import { Checkbox } from '@/components/ui/checkbox'
+import { useMemo } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
+import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
   TableCell,
   TableHead,
+  TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { TableHeader } from '@/components/ui/table'
-import { useBulkSelection } from '@/hooks/use-bulk-selection'
-import { useCategories } from '@/hooks/use-categories'
-import { useIsMobile } from '@/hooks/use-is-mobile'
-import { trpc } from '@/lib/trpc/client'
-import { pluralize } from '@/lib/utils'
-import { useMemo } from 'react'
-import { useHotkeys } from 'react-hotkeys-hook'
-import { toast } from 'sonner'
-import { FloatingActionBar } from '../bulk-actions/floating-action-bar'
-import { EmptyState } from '../empty-state'
-import { CategoriesPagination } from './categories-pagination'
-import { CategoryItem } from './category-item'
-import { CategoriesFilters } from './filters'
-import { LoadingState } from './loading-state'
+} from "@/components/ui/table";
+import { useBulkSelection } from "@/hooks/use-bulk-selection";
+import { useCategories } from "@/hooks/use-categories";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { trpc } from "@/lib/trpc/client";
+import { pluralize } from "@/lib/utils";
+import { FloatingActionBar } from "../bulk-actions/floating-action-bar";
+import { EmptyState } from "../empty-state";
+import { CategoriesPagination } from "./categories-pagination";
+import { CategoryItem } from "./category-item";
+import { CategoriesFilters } from "./filters";
+import { LoadingState } from "./loading-state";
 
 export function CategoriesTable() {
-  const isMobile = useIsMobile()
-  const { data: categories, isLoading, refetch } = useCategories()
+  const isMobile = useIsMobile();
+  const { data: categories, isLoading, refetch } = useCategories();
 
   const itemIds = useMemo(
     () => categories?.data?.map((c) => c.id) ?? [],
-    [categories?.data],
-  )
+    [categories?.data]
+  );
 
   const {
     selectedIds,
@@ -41,42 +41,42 @@ export function CategoriesTable() {
     toggleAll,
     selectAll,
     clearSelection,
-  } = useBulkSelection({ itemIds })
+  } = useBulkSelection({ itemIds });
 
-  useHotkeys('mod+a', selectAll, { preventDefault: true, enabled: !isMobile })
+  useHotkeys("mod+a", selectAll, { preventDefault: true, enabled: !isMobile });
 
   const { mutate: deleteMany, isPending: isDeleting } =
     trpc.categories.deleteMany.useMutation({
       onMutate: () => {
-        toast.loading('Deleting categories...', { id: 'delete-categories' })
+        toast.loading("Deleting categories...", { id: "delete-categories" });
       },
       onSuccess: () => {
         toast.success(
-          `Deleted ${selectedIds.size} ${pluralize(selectedIds.size, 'category', 'categories')}`,
-          { id: 'delete-categories' },
-        )
-        clearSelection()
-        refetch()
+          `Deleted ${selectedIds.size} ${pluralize(selectedIds.size, "category", "categories")}`,
+          { id: "delete-categories" }
+        );
+        clearSelection();
+        refetch();
       },
       onError: (error) => {
-        toast.error(error.message, { id: 'delete-categories' })
+        toast.error(error.message, { id: "delete-categories" });
       },
-    })
+    });
 
   const handleBulkDelete = () => {
-    deleteMany({ ids: Array.from(selectedIds) })
-  }
+    deleteMany({ ids: Array.from(selectedIds) });
+  };
 
   return (
     <div className="flex flex-col gap-4">
       <CategoriesFilters />
       <div className="relative overflow-visible">
         <Checkbox
+          aria-label="Select all categories"
           checked={isAllSelected}
+          className="absolute top-2.5 -left-8 hidden opacity-0 hover:opacity-100 data-[state=checked]:opacity-100 data-[state=indeterminate]:opacity-100 md:block"
           indeterminate={isPartiallySelected}
           onCheckedChange={toggleAll}
-          className="absolute -left-8 top-2.5 hidden opacity-0 hover:opacity-100 data-[state=checked]:opacity-100 data-[state=indeterminate]:opacity-100 md:block"
-          aria-label="Select all categories"
         />
         <Table containerClassName="overflow-visible">
           <TableHeader>
@@ -91,19 +91,19 @@ export function CategoriesTable() {
 
             {categories?.data.map((category) => (
               <CategoryItem
-                key={category.id}
                 category={category}
                 isSelected={selectedIds.has(category.id)}
+                key={category.id}
                 onSelect={handleClick}
               />
             ))}
 
             {categories?.data.length === 0 && (
               <TableRow>
-                <TableCell colSpan={3} className="py-10">
+                <TableCell className="py-10" colSpan={3}>
                   <EmptyState
-                    title="No categories found."
                     description="Upload your bank statements or create your first category to get started."
+                    title="No categories found."
                   />
                 </TableCell>
               </TableRow>
@@ -115,11 +115,11 @@ export function CategoriesTable() {
       <CategoriesPagination hasMore={!!categories?.hasMore} />
 
       <FloatingActionBar
-        selectedCount={selectedIds.size}
-        onDelete={handleBulkDelete}
-        isDeleting={isDeleting}
         className="w-[301px]"
+        isDeleting={isDeleting}
+        onDelete={handleBulkDelete}
+        selectedCount={selectedIds.size}
       />
     </div>
-  )
+  );
 }

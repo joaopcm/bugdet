@@ -1,16 +1,16 @@
-'use client'
+"use client";
 
-import { DateRangeFilter } from '@/components/logged-in/shared/date-range-filter'
-import { useDashboardFilters } from './search-params'
+import { DateRangeFilter } from "@/components/logged-in/shared/date-range-filter";
+import { useDashboardFilters } from "./search-params";
 
 export function DashboardFilters() {
-  const { filters, setFilters } = useDashboardFilters()
+  const { filters, setFilters } = useDashboardFilters();
 
   return (
     <DateRangeFilter
       from={filters.from}
-      to={filters.to}
       onFilterChange={setFilters}
+      to={filters.to}
     />
-  )
+  );
 }

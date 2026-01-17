@@ -1,11 +1,11 @@
-import { MAX_TRANSACTIONS_PREVIEW } from '@/constants/categories'
-import { db } from '@/db'
-import { category, transaction } from '@/db/schema'
-import { paginationSchema } from '@/schemas/pagination'
-import { TRPCError } from '@trpc/server'
-import { and, count, desc, eq, ilike, inArray } from 'drizzle-orm'
-import { z } from 'zod'
-import { protectedProcedure, router } from '../trpc'
+import { TRPCError } from "@trpc/server";
+import { and, count, desc, eq, ilike, inArray } from "drizzle-orm";
+import { z } from "zod";
+import { MAX_TRANSACTIONS_PREVIEW } from "@/constants/categories";
+import { db } from "@/db";
+import { category, transaction } from "@/db/schema";
+import { paginationSchema } from "@/schemas/pagination";
+import { protectedProcedure, router } from "../trpc";
 
 async function getExistingCategory(id: string, tenantId: string) {
   const [existingCategory] = await db
@@ -14,16 +14,16 @@ async function getExistingCategory(id: string, tenantId: string) {
       deleted: category.deleted,
     })
     .from(category)
-    .where(and(eq(category.id, id), eq(category.tenantId, tenantId)))
+    .where(and(eq(category.id, id), eq(category.tenantId, tenantId)));
 
   if (!existingCategory || existingCategory.deleted) {
     throw new TRPCError({
-      code: 'NOT_FOUND',
-      message: 'Category not found.',
-    })
+      code: "NOT_FOUND",
+      message: "Category not found.",
+    });
   }
 
-  return existingCategory
+  return existingCategory;
 }
 
 export const categoriesRouter = router({
@@ -34,19 +34,19 @@ export const categoriesRouter = router({
           query: z.string().min(1).max(255).nullable(),
         }),
         pagination: paginationSchema,
-      }),
+      })
     )
     .query(async ({ ctx, input }) => {
       const whereClauses = [
         eq(category.tenantId, ctx.tenant.tenantId),
         eq(category.deleted, false),
-      ]
+      ];
 
       if (input.filters.query) {
-        whereClauses.push(ilike(category.name, `%${input.filters.query}%`))
+        whereClauses.push(ilike(category.name, `%${input.filters.query}%`));
       }
 
-      const offset = (input.pagination.page - 1) * input.pagination.limit
+      const offset = (input.pagination.page - 1) * input.pagination.limit;
 
       const categories = await db
         .select({
@@ -60,27 +60,27 @@ export const categoriesRouter = router({
           transaction,
           and(
             eq(category.id, transaction.categoryId),
-            eq(transaction.deleted, false),
-          ),
+            eq(transaction.deleted, false)
+          )
         )
         .where(and(...whereClauses))
         .groupBy(category.id, category.name, category.createdAt)
         .orderBy(desc(category.createdAt))
         .limit(input.pagination.limit + 1)
-        .offset(offset)
+        .offset(offset);
 
       return {
         data: categories.slice(0, input.pagination.limit),
         hasMore: categories.length > input.pagination.limit,
-      }
+      };
     }),
   preview: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const existingCategory = await getExistingCategory(
         input.id,
-        ctx.tenant.tenantId,
-      )
+        ctx.tenant.tenantId
+      );
 
       const lastTransactions = await db
         .select({
@@ -95,21 +95,21 @@ export const categoriesRouter = router({
           and(
             eq(transaction.categoryId, existingCategory.id),
             eq(transaction.tenantId, ctx.tenant.tenantId),
-            eq(transaction.deleted, false),
-          ),
+            eq(transaction.deleted, false)
+          )
         )
         .orderBy(desc(transaction.date))
-        .limit(MAX_TRANSACTIONS_PREVIEW)
+        .limit(MAX_TRANSACTIONS_PREVIEW);
 
-      return lastTransactions
+      return lastTransactions;
     }),
   delete: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const existingCategory = await getExistingCategory(
         input.id,
-        ctx.tenant.tenantId,
-      )
+        ctx.tenant.tenantId
+      );
 
       await db
         .update(category)
@@ -117,15 +117,15 @@ export const categoriesRouter = router({
         .where(
           and(
             eq(category.id, existingCategory.id),
-            eq(category.tenantId, ctx.tenant.tenantId),
-          ),
-        )
+            eq(category.tenantId, ctx.tenant.tenantId)
+          )
+        );
     }),
   deleteMany: protectedProcedure
     .input(
       z.object({
         ids: z.array(z.string().uuid()).min(1).max(100),
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       await ctx.db
@@ -135,9 +135,9 @@ export const categoriesRouter = router({
           and(
             inArray(category.id, input.ids),
             eq(category.tenantId, ctx.tenant.tenantId),
-            eq(category.deleted, false),
-          ),
-        )
+            eq(category.deleted, false)
+          )
+        );
     }),
   create: protectedProcedure
     .input(z.object({ name: z.string().min(1).max(255) }))
@@ -148,19 +148,19 @@ export const categoriesRouter = router({
           ...input,
           tenantId: ctx.tenant.tenantId,
         })
-        .returning({ id: category.id, name: category.name })
+        .returning({ id: category.id, name: category.name });
 
-      return newCategory
+      return newCategory;
     }),
   update: protectedProcedure
     .input(
-      z.object({ id: z.string().uuid(), name: z.string().min(1).max(255) }),
+      z.object({ id: z.string().uuid(), name: z.string().min(1).max(255) })
     )
     .mutation(async ({ ctx, input }) => {
       const existingCategory = await getExistingCategory(
         input.id,
-        ctx.tenant.tenantId,
-      )
+        ctx.tenant.tenantId
+      );
 
       await db
         .update(category)
@@ -168,8 +168,8 @@ export const categoriesRouter = router({
         .where(
           and(
             eq(category.id, existingCategory.id),
-            eq(category.tenantId, ctx.tenant.tenantId),
-          ),
-        )
+            eq(category.tenantId, ctx.tenant.tenantId)
+          )
+        );
     }),
-})
+});

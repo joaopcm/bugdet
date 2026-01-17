@@ -1,12 +1,12 @@
-import { CategoriesTable } from '@/components/logged-in/categories/categories-table'
-import { CreateCategoryDialog } from '@/components/logged-in/categories/create-category-dialog'
-import { RefreshButton } from '@/components/logged-in/categories/refresh-button'
-import { PageLayout } from '@/components/logged-in/page-layout'
-import type { Metadata } from 'next'
+import type { Metadata } from "next";
+import { CategoriesTable } from "@/components/logged-in/categories/categories-table";
+import { CreateCategoryDialog } from "@/components/logged-in/categories/create-category-dialog";
+import { RefreshButton } from "@/components/logged-in/categories/refresh-button";
+import { PageLayout } from "@/components/logged-in/page-layout";
 
 export const metadata: Metadata = {
-  title: 'Categories',
-}
+  title: "Categories",
+};
 
 export default function CategoriesPage() {
   return (
@@ -24,5 +24,5 @@ export default function CategoriesPage() {
       </PageLayout.Header>
       <CategoriesTable />
     </PageLayout.Root>
-  )
+  );
 }

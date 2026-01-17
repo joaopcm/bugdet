@@ -1,6 +1,8 @@
-'use client'
+"use client";
 
-import { Button } from '@/components/ui/button'
+import { useState } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,21 +10,19 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog'
-import type { RuleAction, RuleCondition } from '@/db/schema'
-import { useRefetchCategorizationRules } from '@/hooks/use-categorization-rules'
-import { trpc } from '@/lib/trpc/client'
-import { useState } from 'react'
-import { toast } from 'sonner'
-import { RuleForm, type RuleFormValues } from './rule-form'
+} from "@/components/ui/dialog";
+import type { RuleAction, RuleCondition } from "@/db/schema";
+import { useRefetchCategorizationRules } from "@/hooks/use-categorization-rules";
+import { trpc } from "@/lib/trpc/client";
+import { RuleForm, type RuleFormValues } from "./rule-form";
 
 interface EditRuleDialogProps {
-  ruleId: string
-  name: string
-  logicOperator: 'and' | 'or'
-  conditions: RuleCondition[]
-  actions: RuleAction[]
-  enabled: boolean
+  ruleId: string;
+  name: string;
+  logicOperator: "and" | "or";
+  conditions: RuleCondition[];
+  actions: RuleAction[];
+  enabled: boolean;
 }
 
 export function EditRuleDialog({
@@ -33,29 +33,29 @@ export function EditRuleDialog({
   actions,
   enabled,
 }: EditRuleDialogProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const refetchRules = useRefetchCategorizationRules()
+  const [isOpen, setIsOpen] = useState(false);
+  const refetchRules = useRefetchCategorizationRules();
 
   const { mutate: updateRule, isPending: isUpdating } =
     trpc.categorizationRules.update.useMutation({
       onSuccess: (_, { name }) => {
-        refetchRules()
-        toast.success(`Updated rule "${name}".`)
-        setIsOpen(false)
+        refetchRules();
+        toast.success(`Updated rule "${name}".`);
+        setIsOpen(false);
       },
       onError: (error) => {
-        toast.error(error.message)
+        toast.error(error.message);
       },
-    })
+    });
 
   function onSubmit(values: RuleFormValues) {
-    updateRule({ id: ruleId, ...values })
+    updateRule({ id: ruleId, ...values });
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog onOpenChange={setIsOpen} open={isOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button size="sm" variant="outline">
           Edit
         </Button>
       </DialogTrigger>
@@ -67,8 +67,6 @@ export function EditRuleDialog({
           </DialogDescription>
         </DialogHeader>
         <RuleForm
-          isLoading={isUpdating}
-          onSubmit={onSubmit}
           initialValues={{
             name,
             logicOperator,
@@ -76,8 +74,10 @@ export function EditRuleDialog({
             actions,
             enabled,
           }}
+          isLoading={isUpdating}
+          onSubmit={onSubmit}
         />
       </DialogContent>
     </Dialog>
-  )
+  );
 }

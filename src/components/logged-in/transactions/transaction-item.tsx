@@ -1,39 +1,39 @@
-'use client'
+"use client";
 
-import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
-import { TableCell, TableRow } from '@/components/ui/table'
-import { CONFIDENCE_THRESHOLD } from '@/constants/transactions'
-import type { transaction } from '@/db/schema'
-import { useInvalidateTransactions } from '@/hooks/use-transactions'
-import { trpc } from '@/lib/trpc/client'
-import { formatCurrency } from '@/lib/utils'
-import { format, parseISO } from 'date-fns'
-import { memo } from 'react'
-import { toast } from 'sonner'
-import { DoubleConfirmationAlertDialog } from '../double-confirmation-alert-dialog'
-import { Amount } from './amount'
-import { Category } from './category'
-import { EditTransactionDialog } from './edit-transaction-dialog'
+import { format, parseISO } from "date-fns";
+import { memo } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { TableCell, TableRow } from "@/components/ui/table";
+import { CONFIDENCE_THRESHOLD } from "@/constants/transactions";
+import type { transaction } from "@/db/schema";
+import { useInvalidateTransactions } from "@/hooks/use-transactions";
+import { trpc } from "@/lib/trpc/client";
+import { formatCurrency } from "@/lib/utils";
+import { DoubleConfirmationAlertDialog } from "../double-confirmation-alert-dialog";
+import { Amount } from "./amount";
+import { Category } from "./category";
+import { EditTransactionDialog } from "./edit-transaction-dialog";
 
 interface TransactionItemProps {
   transaction: Pick<
     typeof transaction.$inferSelect,
-    | 'id'
-    | 'uploadId'
-    | 'categoryId'
-    | 'date'
-    | 'merchantName'
-    | 'amount'
-    | 'currency'
-    | 'confidence'
-    | 'metadata'
-    | 'createdAt'
+    | "id"
+    | "uploadId"
+    | "categoryId"
+    | "date"
+    | "merchantName"
+    | "amount"
+    | "currency"
+    | "confidence"
+    | "metadata"
+    | "createdAt"
   > & {
-    categoryName: string | null
-  }
-  isSelected?: boolean
-  onSelect?: (id: string, event: React.MouseEvent) => void
+    categoryName: string | null;
+  };
+  isSelected?: boolean;
+  onSelect?: (id: string, event: React.MouseEvent) => void;
 }
 
 export const TransactionItem = memo(function TransactionItem({
@@ -41,39 +41,39 @@ export const TransactionItem = memo(function TransactionItem({
   isSelected = false,
   onSelect,
 }: TransactionItemProps) {
-  const invalidate = useInvalidateTransactions()
+  const invalidate = useInvalidateTransactions();
 
   const { mutate: deleteTransaction, isPending: isDeleting } =
     trpc.transactions.delete.useMutation({
       onMutate: () => {
-        toast.loading('Deleting transaction...', {
+        toast.loading("Deleting transaction...", {
           id: `delete-transaction-${transaction.id}`,
-        })
+        });
       },
       onSuccess: () => {
-        invalidate()
+        invalidate();
         toast.success(
           `You have deleted the transaction "${formatCurrency(transaction.amount, transaction.currency)} - ${transaction.merchantName}".`,
-          { id: `delete-transaction-${transaction.id}` },
-        )
+          { id: `delete-transaction-${transaction.id}` }
+        );
       },
       onError: (error) => {
         toast.error(error.message, {
           id: `delete-transaction-${transaction.id}`,
-        })
+        });
       },
-    })
+    });
 
   return (
     <TableRow className="group">
       <TableCell className="relative">
         <Checkbox
-          checked={isSelected}
-          onClick={(e) => onSelect?.(transaction.id, e)}
-          className="absolute -left-8 top-3 hidden opacity-0 group-hover:opacity-100 data-[state=checked]:opacity-100 md:block"
           aria-label={`Select transaction ${transaction.merchantName}`}
+          checked={isSelected}
+          className="absolute top-3 -left-8 hidden opacity-0 group-hover:opacity-100 data-[state=checked]:opacity-100 md:block"
+          onClick={(e) => onSelect?.(transaction.id, e)}
         />
-        {format(parseISO(transaction.date), 'MMM d, yyyy')}
+        {format(parseISO(transaction.date), "MMM d, yyyy")}
       </TableCell>
       <TableCell>
         <Category
@@ -91,27 +91,27 @@ export const TransactionItem = memo(function TransactionItem({
       </TableCell>
       <TableCell className="flex items-center gap-2">
         <DoubleConfirmationAlertDialog
-          title={`Delete transaction "${formatCurrency(transaction.amount, transaction.currency)} - ${transaction.merchantName}"?`}
           description="Are you sure you want to delete this transaction? This action cannot be undone."
           onConfirm={() => deleteTransaction({ id: transaction.id })}
+          title={`Delete transaction "${formatCurrency(transaction.amount, transaction.currency)} - ${transaction.merchantName}"?`}
         >
-          <Button variant="destructive" size="sm" disabled={isDeleting}>
+          <Button disabled={isDeleting} size="sm" variant="destructive">
             Delete
           </Button>
         </DoubleConfirmationAlertDialog>
 
         <EditTransactionDialog transaction={transaction}>
           {transaction.confidence < CONFIDENCE_THRESHOLD ? (
-            <Button variant="default" size="sm">
+            <Button size="sm" variant="default">
               Review
             </Button>
           ) : (
-            <Button variant="outline" size="sm">
+            <Button size="sm" variant="outline">
               Edit
             </Button>
           )}
         </EditTransactionDialog>
       </TableCell>
     </TableRow>
-  )
-})
+  );
+});

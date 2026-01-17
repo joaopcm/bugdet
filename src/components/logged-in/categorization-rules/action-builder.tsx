@@ -1,38 +1,38 @@
-'use client'
+"use client";
 
-import { CategorySelect } from '@/components/logged-in/transactions/category-select'
-import { Button } from '@/components/ui/button'
+import { IconPlus, IconTrash } from "@tabler/icons-react";
+import type { FieldError, FieldErrorsImpl, Merge } from "react-hook-form";
+import { CategorySelect } from "@/components/logged-in/transactions/category-select";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import type { RuleAction } from '@/db/schema'
-import { IconPlus, IconTrash } from '@tabler/icons-react'
-import type { FieldError, FieldErrorsImpl, Merge } from 'react-hook-form'
+} from "@/components/ui/select";
+import type { RuleAction } from "@/db/schema";
 
 const ACTION_TYPES = [
-  { value: 'set_category', label: 'Set category' },
-  { value: 'set_sign', label: 'Set sign' },
-  { value: 'ignore', label: 'Ignore transaction' },
-] as const
+  { value: "set_category", label: "Set category" },
+  { value: "set_sign", label: "Set sign" },
+  { value: "ignore", label: "Ignore transaction" },
+] as const;
 
 const SIGN_OPTIONS = [
-  { value: 'positive', label: 'Positive (expense)' },
-  { value: 'negative', label: 'Negative (income)' },
-] as const
+  { value: "positive", label: "Positive (expense)" },
+  { value: "negative", label: "Negative (income)" },
+] as const;
 
 type ArrayFieldError = Merge<
   FieldError,
   FieldErrorsImpl<{ type: string; value?: string }[]>
->
+>;
 
 interface ActionBuilderProps {
-  actions: RuleAction[]
-  onChange: (actions: RuleAction[]) => void
-  errors?: ArrayFieldError
+  actions: RuleAction[];
+  onChange: (actions: RuleAction[]) => void;
+  errors?: ArrayFieldError;
 }
 
 export function ActionBuilder({
@@ -41,37 +41,39 @@ export function ActionBuilder({
   errors,
 }: ActionBuilderProps) {
   const addAction = () => {
-    onChange([...actions, { type: 'set_category', value: '' }])
-  }
+    onChange([...actions, { type: "set_category", value: "" }]);
+  };
 
   const removeAction = (index: number) => {
-    onChange(actions.filter((_, i) => i !== index))
-  }
+    onChange(actions.filter((_, i) => i !== index));
+  };
 
   const updateAction = (index: number, updates: Partial<RuleAction>) => {
     onChange(
       actions.map((a, i) => {
-        if (i !== index) return a
-        const updated = { ...a, ...updates }
+        if (i !== index) {
+          return a;
+        }
+        const updated = { ...a, ...updates };
         if (updates.type && updates.type !== a.type) {
-          if (updates.type === 'ignore') {
-            updated.value = undefined
-          } else if (updates.type === 'set_sign') {
-            updated.value = 'positive'
+          if (updates.type === "ignore") {
+            updated.value = undefined;
+          } else if (updates.type === "set_sign") {
+            updated.value = "positive";
           } else {
-            updated.value = ''
+            updated.value = "";
           }
         }
-        return updated
-      }),
-    )
-  }
+        return updated;
+      })
+    );
+  };
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">Actions</span>
-        <Button type="button" variant="outline" size="sm" onClick={addAction}>
+        <span className="font-medium text-sm">Actions</span>
+        <Button onClick={addAction} size="sm" type="button" variant="outline">
           <IconPlus className="mr-1 h-4 w-4" />
           Add
         </Button>
@@ -84,15 +86,16 @@ export function ActionBuilder({
       )}
 
       {actions.map((action, index) => {
-        const error = errors?.[index]?.message ?? errors?.[index]?.root?.message
+        const error =
+          errors?.[index]?.message ?? errors?.[index]?.root?.message;
         return (
-          <div key={String(index)} className="space-y-1">
+          <div className="space-y-1" key={String(index)}>
             <div className="flex items-center gap-2">
               <Select
-                value={action.type}
                 onValueChange={(value) =>
-                  updateAction(index, { type: value as RuleAction['type'] })
+                  updateAction(index, { type: value as RuleAction["type"] })
                 }
+                value={action.type}
               >
                 <SelectTrigger className="w-[160px]">
                   <SelectValue />
@@ -106,21 +109,21 @@ export function ActionBuilder({
                 </SelectContent>
               </Select>
 
-              {action.type === 'set_category' && (
+              {action.type === "set_category" && (
                 <CategorySelect
-                  value={action.value ?? null}
+                  className={`flex-1 ${error ? "border-destructive" : ""}`}
                   onChange={(value) =>
-                    updateAction(index, { value: value ?? '' })
+                    updateAction(index, { value: value ?? "" })
                   }
                   placeholder="Select category"
-                  className={`flex-1 ${error ? 'border-destructive' : ''}`}
+                  value={action.value ?? null}
                 />
               )}
 
-              {action.type === 'set_sign' && (
+              {action.type === "set_sign" && (
                 <Select
-                  value={action.value ?? 'positive'}
                   onValueChange={(value) => updateAction(index, { value })}
+                  value={action.value ?? "positive"}
                 >
                   <SelectTrigger className="flex-1">
                     <SelectValue />
@@ -135,25 +138,25 @@ export function ActionBuilder({
                 </Select>
               )}
 
-              {action.type === 'ignore' && (
-                <span className="text-muted-foreground flex-1 text-sm">
+              {action.type === "ignore" && (
+                <span className="flex-1 text-muted-foreground text-sm">
                   Transaction will be skipped during import
                 </span>
               )}
 
               <Button
+                onClick={() => removeAction(index)}
+                size="icon"
                 type="button"
                 variant="ghost"
-                size="icon"
-                onClick={() => removeAction(index)}
               >
                 <IconTrash className="h-4 w-4" />
               </Button>
             </div>
             {error && <p className="text-destructive text-sm">{error}</p>}
           </div>
-        )
+        );
       })}
     </div>
-  )
+  );
 }

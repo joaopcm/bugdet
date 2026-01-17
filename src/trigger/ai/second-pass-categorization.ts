@@ -1,31 +1,31 @@
-import { CONFIDENCE_THRESHOLD } from '@/constants/transactions'
-import { db } from '@/db'
-import { category, transaction } from '@/db/schema'
-import { logger, task } from '@trigger.dev/sdk/v3'
-import { generateObject } from 'ai'
-import { and, eq, lt } from 'drizzle-orm'
-import { z } from 'zod'
+import { logger, task } from "@trigger.dev/sdk/v3";
+import { generateObject } from "ai";
+import { and, eq, lt } from "drizzle-orm";
+import { z } from "zod";
+import { CONFIDENCE_THRESHOLD } from "@/constants/transactions";
+import { db } from "@/db";
+import { category, transaction } from "@/db/schema";
 
 const recategorizationSchema = z.object({
   recategorizedTransactions: z.array(
     z.object({
       transactionId: z
         .string()
-        .describe('The UUID of the transaction being recategorized.'),
+        .describe("The UUID of the transaction being recategorized."),
       category: z
         .string()
         .nullable()
         .describe(
-          'Suggested category from provided list. Use null if still uncertain.',
+          "Suggested category from provided list. Use null if still uncertain."
         ),
       confidence: z
         .number()
         .describe(
-          'Confidence score 0-100. BE CONSERVATIVE. 80-100: Category is very obvious. 50-79: Reasonable guess. Below 50: Still uncertain.',
+          "Confidence score 0-100. BE CONSERVATIVE. 80-100: Category is very obvious. 50-79: Reasonable guess. Below 50: Still uncertain."
         ),
-    }),
+    })
   ),
-})
+});
 
 function buildSystemPrompt() {
   return `You are an expert financial analyst specializing in categorizing transactions from bank statements.
@@ -53,38 +53,38 @@ The confidence score should reflect how certain you are about the CATEGORY assig
 - Consider the merchant name, description, and amount when categorizing
 - Negative amounts (income) often have different categories than expenses
 - Be consistent with categorization across similar merchants
-- It's OK to keep the same confidence or category if you're not more certain`
+- It's OK to keep the same confidence or category if you're not more certain`;
 }
 
 function buildUserPrompt(
   transactions: {
-    id: string
-    merchantName: string
-    amount: number
-    currency: string
-    date: string
-    currentCategory: string | null
-    currentConfidence: number
+    id: string;
+    merchantName: string;
+    amount: number;
+    currency: string;
+    date: string;
+    currentCategory: string | null;
+    currentConfidence: number;
   }[],
-  categories: { name: string }[],
+  categories: { name: string }[]
 ) {
   const categoryList =
     categories.length > 0
-      ? categories.map((c) => `- ${c.name}`).join('\n')
-      : '(No categories defined yet)'
+      ? categories.map((c) => `- ${c.name}`).join("\n")
+      : "(No categories defined yet)";
 
   const transactionsList = transactions
     .map(
       (tx) =>
         `- ID: ${tx.id}
   Merchant: ${tx.merchantName}
-  Type: ${tx.amount > 0 ? 'Expense' : 'Income'}
+  Type: ${tx.amount > 0 ? "Expense" : "Income"}
   Amount: ${Math.abs(tx.amount)} cents (${tx.currency})
   Date: ${tx.date}
-  Current Category: ${tx.currentCategory ?? 'None'}
-  Current Confidence: ${tx.currentConfidence}%`,
+  Current Category: ${tx.currentCategory ?? "None"}
+  Current Confidence: ${tx.currentConfidence}%`
     )
-    .join('\n\n')
+    .join("\n\n");
 
   return `## AVAILABLE CATEGORIES
 Use ONLY these existing categories (do NOT suggest new ones):
@@ -112,21 +112,21 @@ Return categorizations for ALL transactions.
     { "transactionId": "b2c3d4e5-f6a7-8901-bcde-f12345678901", "category": null, "confidence": 30 }
   ]
 }
-\`\`\``
+\`\`\``;
 }
 
 export interface SecondPassCategorizationPayload {
-  uploadId: string
-  tenantId: string
+  uploadId: string;
+  tenantId: string;
 }
 
 export const secondPassCategorizationTask = task({
-  id: 'second-pass-categorization',
+  id: "second-pass-categorization",
   run: async (payload: SecondPassCategorizationPayload, { ctx }) => {
     logger.info(
       `Starting second-pass categorization for upload ${payload.uploadId}...`,
-      { payload, ctx },
-    )
+      { payload, ctx }
+    );
 
     const lowConfidenceTransactions = await db
       .select({
@@ -144,18 +144,18 @@ export const secondPassCategorizationTask = task({
           eq(transaction.uploadId, payload.uploadId),
           eq(transaction.tenantId, payload.tenantId),
           eq(transaction.deleted, false),
-          lt(transaction.confidence, CONFIDENCE_THRESHOLD),
-        ),
-      )
+          lt(transaction.confidence, CONFIDENCE_THRESHOLD)
+        )
+      );
 
     if (lowConfidenceTransactions.length === 0) {
-      logger.info('No low-confidence transactions to recategorize')
-      return { success: true, recategorized: 0 }
+      logger.info("No low-confidence transactions to recategorize");
+      return { success: true, recategorized: 0 };
     }
 
     logger.info(
-      `Found ${lowConfidenceTransactions.length} low-confidence transactions to recategorize`,
-    )
+      `Found ${lowConfidenceTransactions.length} low-confidence transactions to recategorize`
+    );
 
     const categories = await db
       .select({ id: category.id, name: category.name })
@@ -163,16 +163,16 @@ export const secondPassCategorizationTask = task({
       .where(
         and(
           eq(category.tenantId, payload.tenantId),
-          eq(category.deleted, false),
-        ),
-      )
+          eq(category.deleted, false)
+        )
+      );
 
     const categoryIdToName = new Map(
-      categories.map((cat) => [cat.id, cat.name]),
-    )
+      categories.map((cat) => [cat.id, cat.name])
+    );
     const categoryNameToId = new Map(
-      categories.map((cat) => [cat.name, cat.id]),
-    )
+      categories.map((cat) => [cat.name, cat.id])
+    );
 
     const transactionsForAI = lowConfidenceTransactions.map((tx) => ({
       id: tx.id,
@@ -184,58 +184,61 @@ export const secondPassCategorizationTask = task({
         ? (categoryIdToName.get(tx.categoryId) ?? null)
         : null,
       currentConfidence: tx.confidence,
-    }))
+    }));
 
-    logger.info('Re-categorizing transactions with AI...')
+    logger.info("Re-categorizing transactions with AI...");
     const recategorizationResult = await generateObject({
-      model: 'anthropic/claude-sonnet-4.5',
-      mode: 'json',
-      schemaName: 'recategorize-transactions',
+      model: "anthropic/claude-sonnet-4.5",
+      mode: "json",
+      schemaName: "recategorize-transactions",
       schemaDescription:
-        'Second-pass category assignments for low-confidence transactions.',
+        "Second-pass category assignments for low-confidence transactions.",
       schema: recategorizationSchema,
       messages: [
         {
-          role: 'system',
+          role: "system",
           content: buildSystemPrompt(),
         },
         {
-          role: 'user',
+          role: "user",
           content: buildUserPrompt(transactionsForAI, categories),
         },
       ],
-    })
+    });
 
-    logger.info('Second-pass categorization complete', {
+    logger.info("Second-pass categorization complete", {
       recategorizedCount:
         recategorizationResult.object.recategorizedTransactions.length,
-    })
+    });
 
-    let updatedCount = 0
-    let improvedCount = 0
+    let updatedCount = 0;
+    let improvedCount = 0;
 
     for (const recategorized of recategorizationResult.object
       .recategorizedTransactions) {
       const originalTx = lowConfidenceTransactions.find(
-        (tx) => tx.id === recategorized.transactionId,
-      )
+        (tx) => tx.id === recategorized.transactionId
+      );
 
       if (!originalTx) {
         logger.warn(
-          `Transaction ${recategorized.transactionId} not found in original list`,
-        )
-        continue
+          `Transaction ${recategorized.transactionId} not found in original list`
+        );
+        continue;
       }
 
       const newCategoryId = recategorized.category
         ? (categoryNameToId.get(recategorized.category) ?? null)
-        : null
+        : null;
 
-      const newConfidence = Math.min(100, Math.max(0, recategorized.confidence))
+      const newConfidence = Math.min(
+        100,
+        Math.max(0, recategorized.confidence)
+      );
 
       const hasNewCategory =
-        newCategoryId !== null && newCategoryId !== originalTx.categoryId
-      const hasHigherConfidence = newConfidence > originalTx.confidence
+        newCategoryId !== null && newCategoryId !== originalTx.categoryId;
+      const hasHigherConfidence = newConfidence > originalTx.confidence;
 
       if (hasNewCategory || hasHigherConfidence) {
         await db
@@ -244,28 +247,28 @@ export const secondPassCategorizationTask = task({
             categoryId: newCategoryId ?? originalTx.categoryId,
             confidence: newConfidence,
           })
-          .where(eq(transaction.id, recategorized.transactionId))
+          .where(eq(transaction.id, recategorized.transactionId));
 
-        updatedCount++
+        updatedCount++;
         if (newConfidence >= CONFIDENCE_THRESHOLD) {
-          improvedCount++
+          improvedCount++;
         }
 
         logger.info(
-          `Updated transaction ${recategorized.transactionId}: confidence ${originalTx.confidence} → ${newConfidence}`,
-        )
+          `Updated transaction ${recategorized.transactionId}: confidence ${originalTx.confidence} → ${newConfidence}`
+        );
       }
     }
 
     logger.info(
-      `Second-pass complete: ${updatedCount} transactions updated, ${improvedCount} now above confidence threshold`,
-    )
+      `Second-pass complete: ${updatedCount} transactions updated, ${improvedCount} now above confidence threshold`
+    );
 
     return {
       success: true,
       totalReviewed: lowConfidenceTransactions.length,
       updated: updatedCount,
       improvedAboveThreshold: improvedCount,
-    }
+    };
   },
-})
+});

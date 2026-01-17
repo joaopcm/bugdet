@@ -1,6 +1,6 @@
-import { createEnv } from '@t3-oss/env-nextjs'
-import { vercel } from '@t3-oss/env-nextjs/presets-zod'
-import { z } from 'zod'
+import { createEnv } from "@t3-oss/env-nextjs";
+import { vercel } from "@t3-oss/env-nextjs/presets-zod";
+import { z } from "zod";
 
 export const env = createEnv({
   server: {
@@ -23,7 +23,7 @@ export const env = createEnv({
   client: {},
   shared: {
     NEXT_PUBLIC_APP_URL: z.string().url(),
-    NODE_ENV: z.enum(['development', 'production']),
+    NODE_ENV: z.enum(["development", "production"]),
   },
   runtimeEnv: {
     AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY,
@@ -46,4 +46,4 @@ export const env = createEnv({
   },
   extends: [vercel()],
   emptyStringAsUndefined: true,
-})
+});

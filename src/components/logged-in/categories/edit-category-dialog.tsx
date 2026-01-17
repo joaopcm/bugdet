@@ -1,6 +1,8 @@
-'use client'
+"use client";
 
-import { Button } from '@/components/ui/button'
+import { useState } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,45 +10,43 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog'
-import { useInvalidateCategories } from '@/hooks/use-categories'
-import { trpc } from '@/lib/trpc/client'
-import { useState } from 'react'
-import { toast } from 'sonner'
-import { CategoryForm, type CategoryFormValues } from './category-form'
+} from "@/components/ui/dialog";
+import { useInvalidateCategories } from "@/hooks/use-categories";
+import { trpc } from "@/lib/trpc/client";
+import { CategoryForm, type CategoryFormValues } from "./category-form";
 
 interface EditCategoryDialogProps {
-  categoryId: string
-  name: string
+  categoryId: string;
+  name: string;
 }
 
 export function EditCategoryDialog({
   categoryId,
   name,
 }: EditCategoryDialogProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const invalidate = useInvalidateCategories()
+  const [isOpen, setIsOpen] = useState(false);
+  const invalidate = useInvalidateCategories();
 
   const { mutate: updateCategory, isPending: isUpdating } =
     trpc.categories.update.useMutation({
       onSuccess: (_, { name }) => {
-        invalidate()
-        toast.success(`You have updated the category "${name}".`)
-        setIsOpen(false)
+        invalidate();
+        toast.success(`You have updated the category "${name}".`);
+        setIsOpen(false);
       },
       onError: (error) => {
-        toast.error(error.message)
+        toast.error(error.message);
       },
-    })
+    });
 
   function onSubmit(values: CategoryFormValues) {
-    updateCategory({ id: categoryId, name: values.name })
+    updateCategory({ id: categoryId, name: values.name });
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog onOpenChange={setIsOpen} open={isOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
+        <Button size="sm" variant="outline">
           Edit
         </Button>
       </DialogTrigger>
@@ -58,11 +58,11 @@ export function EditCategoryDialog({
           </DialogDescription>
         </DialogHeader>
         <CategoryForm
+          initialValues={{ name }}
           isLoading={isUpdating}
           onSubmit={onSubmit}
-          initialValues={{ name }}
         />
       </DialogContent>
     </Dialog>
-  )
+  );
 }
