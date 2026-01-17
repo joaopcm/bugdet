@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import {
   Dialog,
@@ -6,11 +6,11 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { OnboardingForm } from './onboarding-form'
+} from "@/components/ui/dialog";
+import { OnboardingForm } from "./onboarding-form";
 
 interface OnboardingModalProps {
-  open: boolean
+  open: boolean;
 }
 
 export function OnboardingModal({ open }: OnboardingModalProps) {
@@ -18,8 +18,8 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
     <Dialog open={open}>
       <DialogContent
         className="sm:max-w-xl [&>button]:hidden"
-        onPointerDownOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.preventDefault()}
+        onPointerDownOutside={(e) => e.preventDefault()}
       >
         <DialogHeader>
           <DialogTitle>Let's personalize your experience</DialogTitle>
@@ -30,5 +30,5 @@ export function OnboardingModal({ open }: OnboardingModalProps) {
         <OnboardingForm />
       </DialogContent>
     </Dialog>
-  )
+  );
 }

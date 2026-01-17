@@ -1,124 +1,124 @@
-'use client'
+"use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 interface UseBulkSelectionOptions {
-  itemIds: string[]
+  itemIds: string[];
 }
 
 export function useBulkSelection({ itemIds }: UseBulkSelectionOptions) {
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const lastSelectedIdRef = useRef<string | null>(null)
-  const prevItemIdsRef = useRef<string[]>([])
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const lastSelectedIdRef = useRef<string | null>(null);
+  const prevItemIdsRef = useRef<string[]>([]);
 
   // Only clear selections for IDs that no longer exist (handles page change)
   // Preserves selections on refetch when IDs remain the same
   useEffect(() => {
-    const prevIds = prevItemIdsRef.current
-    const currentIdsSet = new Set(itemIds)
-    const prevIdsSet = new Set(prevIds)
+    const prevIds = prevItemIdsRef.current;
+    const currentIdsSet = new Set(itemIds);
+    const prevIdsSet = new Set(prevIds);
 
     // Check if IDs actually changed (not just array reference)
     const idsChanged =
       itemIds.length !== prevIds.length ||
-      itemIds.some((id) => !prevIdsSet.has(id))
+      itemIds.some((id) => !prevIdsSet.has(id));
 
     if (idsChanged) {
       // Filter out selections that no longer exist
       setSelectedIds((prev) => {
-        const next = new Set<string>()
+        const next = new Set<string>();
         for (const id of prev) {
           if (currentIdsSet.has(id)) {
-            next.add(id)
+            next.add(id);
           }
         }
-        return next
-      })
+        return next;
+      });
 
       // Clear lastSelectedId if it no longer exists
       if (
         lastSelectedIdRef.current &&
         !currentIdsSet.has(lastSelectedIdRef.current)
       ) {
-        lastSelectedIdRef.current = null
+        lastSelectedIdRef.current = null;
       }
     }
 
-    prevItemIdsRef.current = itemIds
-  }, [itemIds])
+    prevItemIdsRef.current = itemIds;
+  }, [itemIds]);
 
   const isAllSelected = useMemo(
     () => itemIds.length > 0 && itemIds.every((id) => selectedIds.has(id)),
-    [itemIds, selectedIds],
-  )
+    [itemIds, selectedIds]
+  );
 
   const isPartiallySelected = useMemo(
     () => !isAllSelected && itemIds.some((id) => selectedIds.has(id)),
-    [itemIds, selectedIds, isAllSelected],
-  )
+    [itemIds, selectedIds, isAllSelected]
+  );
 
   const handleClick = useCallback(
     (id: string, event: React.MouseEvent) => {
-      event.stopPropagation()
+      event.stopPropagation();
 
       if (event.shiftKey && lastSelectedIdRef.current) {
         // Shift+click: select range
-        const lastIndex = itemIds.indexOf(lastSelectedIdRef.current)
-        const currentIndex = itemIds.indexOf(id)
+        const lastIndex = itemIds.indexOf(lastSelectedIdRef.current);
+        const currentIndex = itemIds.indexOf(id);
 
         if (lastIndex !== -1 && currentIndex !== -1) {
-          const start = Math.min(lastIndex, currentIndex)
-          const end = Math.max(lastIndex, currentIndex)
-          const rangeIds = itemIds.slice(start, end + 1)
+          const start = Math.min(lastIndex, currentIndex);
+          const end = Math.max(lastIndex, currentIndex);
+          const rangeIds = itemIds.slice(start, end + 1);
 
           setSelectedIds((prev) => {
-            const next = new Set(prev)
+            const next = new Set(prev);
             for (const rangeId of rangeIds) {
-              next.add(rangeId)
+              next.add(rangeId);
             }
-            return next
-          })
+            return next;
+          });
         }
       } else {
         // Regular click: toggle item
         setSelectedIds((prev) => {
-          const next = new Set(prev)
+          const next = new Set(prev);
           if (next.has(id)) {
-            next.delete(id)
+            next.delete(id);
           } else {
-            next.add(id)
+            next.add(id);
           }
-          return next
-        })
-        lastSelectedIdRef.current = id
+          return next;
+        });
+        lastSelectedIdRef.current = id;
       }
     },
-    [itemIds],
-  )
+    [itemIds]
+  );
 
   const toggleAll = useCallback(() => {
     if (isAllSelected) {
-      setSelectedIds(new Set())
+      setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(itemIds))
+      setSelectedIds(new Set(itemIds));
     }
-    lastSelectedIdRef.current = null
-  }, [itemIds, isAllSelected])
+    lastSelectedIdRef.current = null;
+  }, [itemIds, isAllSelected]);
 
   const clearSelection = useCallback(() => {
-    setSelectedIds(new Set())
-    lastSelectedIdRef.current = null
-  }, [])
+    setSelectedIds(new Set());
+    lastSelectedIdRef.current = null;
+  }, []);
 
   const selectAll = useCallback(() => {
     if (isAllSelected) {
-      setSelectedIds(new Set())
-      return
+      setSelectedIds(new Set());
+      return;
     }
 
-    setSelectedIds(new Set(itemIds))
-    lastSelectedIdRef.current = null
-  }, [itemIds, isAllSelected])
+    setSelectedIds(new Set(itemIds));
+    lastSelectedIdRef.current = null;
+  }, [itemIds, isAllSelected]);
 
   return {
     selectedIds,
@@ -128,5 +128,5 @@ export function useBulkSelection({ itemIds }: UseBulkSelectionOptions) {
     toggleAll,
     selectAll,
     clearSelection,
-  }
+  };
 }

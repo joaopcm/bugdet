@@ -1,6 +1,14 @@
-'use client'
+"use client";
 
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import {
+  IconDotsVertical,
+  IconLogout,
+  IconSettings,
+} from "@tabler/icons-react";
+import type { User } from "better-auth";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,41 +16,37 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from "@/components/ui/dropdown-menu";
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from '@/components/ui/sidebar'
-import { authClient } from '@/lib/auth/client'
-import { IconDotsVertical, IconLogout, IconSettings } from '@tabler/icons-react'
-import type { User } from 'better-auth'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+} from "@/components/ui/sidebar";
+import { authClient } from "@/lib/auth/client";
 
 interface NavUserProps {
-  user: User
+  user: User;
 }
 
 function UserAvatar({ user, className }: { user: User; className?: string }) {
   return (
-    <Avatar className={className ?? 'h-8 w-8 rounded-lg'}>
-      <AvatarImage src={user.image ?? undefined} alt={user.name} />
+    <Avatar className={className ?? "h-8 w-8 rounded-lg"}>
+      <AvatarImage alt={user.name} src={user.image ?? undefined} />
       <AvatarFallback className="rounded-lg bg-primary">
         {user.name.charAt(0)}
       </AvatarFallback>
     </Avatar>
-  )
+  );
 }
 
 export function NavUser({ user }: NavUserProps) {
-  const { isMobile } = useSidebar()
-  const router = useRouter()
+  const { isMobile } = useSidebar();
+  const router = useRouter();
 
   async function handleLogout() {
-    await authClient.signOut()
-    router.push('/sign-in')
+    await authClient.signOut();
+    router.push("/sign-in");
   }
 
   return (
@@ -51,13 +55,13 @@ export function NavUser({ user }: NavUserProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
+              className="hover:cursor-pointer data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:cursor-pointer"
             >
               <UserAvatar user={user} />
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
-                <span className="text-muted-foreground truncate text-xs">
+                <span className="truncate text-muted-foreground text-xs">
                   {user.email}
                 </span>
               </div>
@@ -65,9 +69,9 @@ export function NavUser({ user }: NavUserProps) {
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-            side={isMobile ? 'bottom' : 'right'}
             align="end"
+            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+            side={isMobile ? "bottom" : "right"}
             sideOffset={4}
           >
             <DropdownMenuLabel className="p-0 font-normal">
@@ -75,7 +79,7 @@ export function NavUser({ user }: NavUserProps) {
                 <UserAvatar user={user} />
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.name}</span>
-                  <span className="text-muted-foreground truncate text-xs">
+                  <span className="truncate text-muted-foreground text-xs">
                     {user.email}
                   </span>
                 </div>
@@ -97,5 +101,5 @@ export function NavUser({ user }: NavUserProps) {
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
-  )
+  );
 }

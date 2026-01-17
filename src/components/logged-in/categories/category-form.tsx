@@ -1,7 +1,12 @@
-'use client'
+"use client";
 
-import { Button } from '@/components/ui/button'
-import { DialogClose, DialogFooter } from '@/components/ui/dialog'
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useRef } from "react";
+import { useForm } from "react-hook-form";
+import { useHotkeys } from "react-hotkeys-hook";
+import z from "zod";
+import { Button } from "@/components/ui/button";
+import { DialogClose, DialogFooter } from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -9,25 +14,20 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Kbd, SHORTCUTS_VALUES } from '@/components/ui/kbd'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useRef } from 'react'
-import { useForm } from 'react-hook-form'
-import { useHotkeys } from 'react-hotkeys-hook'
-import z from 'zod'
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Kbd, SHORTCUTS_VALUES } from "@/components/ui/kbd";
 
 const categorySchema = z.object({
   name: z.string().min(1).max(255),
-})
+});
 
-export type CategoryFormValues = z.infer<typeof categorySchema>
+export type CategoryFormValues = z.infer<typeof categorySchema>;
 
 interface CategoryFormProps {
-  isLoading: boolean
-  onSubmit: (values: CategoryFormValues) => void
-  initialValues?: CategoryFormValues
+  isLoading: boolean;
+  onSubmit: (values: CategoryFormValues) => void;
+  initialValues?: CategoryFormValues;
 }
 
 export function CategoryForm({
@@ -35,35 +35,35 @@ export function CategoryForm({
   onSubmit,
   initialValues,
 }: CategoryFormProps) {
-  const closeButtonRef = useRef<HTMLButtonElement>(null)
-  const submitButtonRef = useRef<HTMLButtonElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const submitButtonRef = useRef<HTMLButtonElement>(null);
 
-  useHotkeys(['esc'], () => {
+  useHotkeys(["esc"], () => {
     if (!closeButtonRef.current) {
-      return
+      return;
     }
 
-    closeButtonRef.current.click()
-  })
+    closeButtonRef.current.click();
+  });
 
-  useHotkeys(['mod+enter'], () => {
+  useHotkeys(["mod+enter"], () => {
     if (isLoading || !submitButtonRef.current) {
-      return
+      return;
     }
 
-    submitButtonRef.current.click()
-  })
+    submitButtonRef.current.click();
+  });
 
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categorySchema),
     defaultValues: initialValues ?? {
-      name: '',
+      name: "",
     },
-  })
+  });
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-6">
+      <form className="grid gap-6" onSubmit={form.handleSubmit(onSubmit)}>
         <FormField
           control={form.control}
           name="name"
@@ -85,12 +85,12 @@ export function CategoryForm({
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline" ref={closeButtonRef}>
+            <Button ref={closeButtonRef} variant="outline">
               Cancel <Kbd variant="outline">{SHORTCUTS_VALUES.ESC}</Kbd>
             </Button>
           </DialogClose>
-          <Button type="submit" disabled={isLoading} ref={submitButtonRef}>
-            Save{' '}
+          <Button disabled={isLoading} ref={submitButtonRef} type="submit">
+            Save{" "}
             <Kbd>
               {SHORTCUTS_VALUES.CMD} + {SHORTCUTS_VALUES.ENTER}
             </Kbd>
@@ -98,5 +98,5 @@ export function CategoryForm({
         </DialogFooter>
       </form>
     </Form>
-  )
+  );
 }

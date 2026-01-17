@@ -1,160 +1,165 @@
-import { PLATFORM_MODIFIERS } from '@/constants/platforms'
-import { type ClassValue, clsx } from 'clsx'
-import { format } from 'date-fns'
-import { createParser } from 'nuqs/server'
-import { twMerge } from 'tailwind-merge'
+import { type ClassValue, clsx } from "clsx";
+import { format } from "date-fns";
+import { createParser } from "nuqs/server";
+import { twMerge } from "tailwind-merge";
+import { PLATFORM_MODIFIERS } from "@/constants/platforms";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 export function formatBytes(bytes: number, decimals = 2): string {
-  if (bytes === 0) return '0 Bytes'
+  if (bytes === 0) {
+    return "0 Bytes";
+  }
 
-  const k = 1024
-  const dm = decimals < 0 ? 0 : decimals
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"];
 
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-  return `${Number.parseFloat((bytes / k ** i).toFixed(dm))} ${sizes[i]}`
+  return `${Number.parseFloat((bytes / k ** i).toFixed(dm))} ${sizes[i]}`;
 }
 
 export function formatCurrency(cents: number, currency: string): string {
-  const price = cents / 100
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
+  const price = cents / 100;
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
     currency,
-  }).format(price)
+  }).format(price);
 }
 
 export function getCurrencyCode(currency?: string): string {
   if (currency) {
-    return currency
+    return currency;
   }
 
-  return Intl.NumberFormat().resolvedOptions().currency || 'USD'
+  return Intl.NumberFormat().resolvedOptions().currency || "USD";
 }
 
 export function getCurrencySymbol(currency?: string): string {
-  const currencyCode = currency || getCurrencyCode()
+  const currencyCode = currency || getCurrencyCode();
   return (
-    new Intl.NumberFormat('en-US', {
-      style: 'currency',
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
       currency: currencyCode,
     })
       .formatToParts(1)
-      .find((part) => part.type === 'currency')?.value || ''
-  )
+      .find((part) => part.type === "currency")?.value || ""
+  );
 }
 
 export function parseCurrency(value: string) {
-  const parsedValue = value.replace(/\D/g, '')
-  return Number(parsedValue)
+  const parsedValue = value.replace(/\D/g, "");
+  return Number(parsedValue);
 }
 
 function isValidDate(year: number, month: number, day: number) {
   if (month < 1 || month > 12) {
-    return false
+    return false;
   }
 
   if (day < 1) {
-    return false
+    return false;
   }
 
-  const daysInMonth = new Date(year, month, 0).getDate()
-  return day <= daysInMonth
+  const daysInMonth = new Date(year, month, 0).getDate();
+  return day <= daysInMonth;
 }
+
+const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
 export const parseAsLocalDate = createParser({
   parse(value: string) {
-    if (!value) return null
-
-    // Handle ISO date strings (YYYY-MM-DD) by treating them as local dates
-    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-      const [year, month, day] = value.split('-').map(Number)
-
-      if (!isValidDate(year, month, day)) {
-        return null
-      }
-
-      return new Date(year, month - 1, day)
+    if (!value) {
+      return null;
     }
 
-    const date = new Date(value)
-    return Number.isNaN(date.getTime()) ? null : date
+    if (ISO_DATE_REGEX.test(value)) {
+      const [year, month, day] = value.split("-").map(Number);
+
+      if (!isValidDate(year, month, day)) {
+        return null;
+      }
+
+      return new Date(year, month - 1, day);
+    }
+
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
   },
   serialize(value: Date) {
-    return format(value, 'yyyy-MM-dd')
+    return format(value, "yyyy-MM-dd");
   },
-})
+});
 
-type Platform = 'mac' | 'windows' | 'linux' | 'unknown'
+type Platform = "mac" | "windows" | "linux" | "unknown";
 
 export function detectPlatform(): Platform {
-  if (typeof window === 'undefined' || typeof navigator === 'undefined') {
-    return 'unknown'
+  if (typeof window === "undefined" || typeof navigator === "undefined") {
+    return "unknown";
   }
 
-  const userAgent = navigator.userAgent.toLowerCase()
-  const platform = navigator.platform?.toLowerCase() || ''
+  const userAgent = navigator.userAgent.toLowerCase();
+  const platform = navigator.platform?.toLowerCase() || "";
 
   if (
-    platform.includes('mac') ||
-    userAgent.includes('mac os') ||
-    userAgent.includes('macos') ||
-    platform.includes('darwin')
+    platform.includes("mac") ||
+    userAgent.includes("mac os") ||
+    userAgent.includes("macos") ||
+    platform.includes("darwin")
   ) {
-    return 'mac'
-  }
-
-  if (
-    platform.includes('win') ||
-    userAgent.includes('windows') ||
-    userAgent.includes('win32') ||
-    userAgent.includes('win64')
-  ) {
-    return 'windows'
+    return "mac";
   }
 
   if (
-    platform.includes('linux') ||
-    userAgent.includes('linux') ||
-    userAgent.includes('x11')
+    platform.includes("win") ||
+    userAgent.includes("windows") ||
+    userAgent.includes("win32") ||
+    userAgent.includes("win64")
   ) {
-    return 'linux'
+    return "windows";
   }
 
-  return 'unknown'
+  if (
+    platform.includes("linux") ||
+    userAgent.includes("linux") ||
+    userAgent.includes("x11")
+  ) {
+    return "linux";
+  }
+
+  return "unknown";
 }
 
 export function getPlatformModifiers() {
-  const platform = detectPlatform()
+  const platform = detectPlatform();
 
-  if (platform === 'unknown') {
-    return PLATFORM_MODIFIERS.mac
+  if (platform === "unknown") {
+    return PLATFORM_MODIFIERS.mac;
   }
 
-  return PLATFORM_MODIFIERS[platform]
+  return PLATFORM_MODIFIERS[platform];
 }
 
 export function pluralize(
   count: number,
   singular: string,
-  plural?: string,
+  plural?: string
 ): string {
-  const pluralForm = plural ?? `${singular}s`
-  return count === 1 ? singular : pluralForm
+  const pluralForm = plural ?? `${singular}s`;
+  return count === 1 ? singular : pluralForm;
 }
 
 export function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export function getMonthDateRange(month: string) {
-  const [year, monthNum] = month.split('-').map(Number)
-  const startDate = `${year}-${String(monthNum).padStart(2, '0')}-01`
-  const lastDay = new Date(year, monthNum, 0).getDate()
-  const endDate = `${year}-${String(monthNum).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
-  return { startDate, endDate }
+  const [year, monthNum] = month.split("-").map(Number);
+  const startDate = `${year}-${String(monthNum).padStart(2, "0")}-01`;
+  const lastDay = new Date(year, monthNum, 0).getDate();
+  const endDate = `${year}-${String(monthNum).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+  return { startDate, endDate };
 }

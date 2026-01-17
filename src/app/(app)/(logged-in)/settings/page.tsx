@@ -1,11 +1,11 @@
-import { PageLayout } from '@/components/logged-in/page-layout'
-import { ProfilePictureSettings } from '@/components/settings/profile-picture-settings'
-import { TwoFactorSettings } from '@/components/settings/two-factor-settings'
-import type { Metadata } from 'next'
+import type { Metadata } from "next";
+import { PageLayout } from "@/components/logged-in/page-layout";
+import { ProfilePictureSettings } from "@/components/settings/profile-picture-settings";
+import { TwoFactorSettings } from "@/components/settings/two-factor-settings";
 
 export const metadata: Metadata = {
-  title: 'Settings',
-}
+  title: "Settings",
+};
 
 export default function SettingsPage() {
   return (
@@ -21,5 +21,5 @@ export default function SettingsPage() {
         <TwoFactorSettings />
       </div>
     </PageLayout.Root>
-  )
+  );
 }

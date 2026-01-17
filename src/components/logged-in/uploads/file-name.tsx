@@ -1,27 +1,27 @@
+import Link from "next/link";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@/components/ui/tooltip'
-import type { UploadMetadata } from '@/db/schema'
-import Link from 'next/link'
+} from "@/components/ui/tooltip";
+import type { UploadMetadata } from "@/db/schema";
 
 interface FileNameProps {
-  uploadId: string
-  fileName: string
-  metadata: UploadMetadata | null
+  uploadId: string;
+  fileName: string;
+  metadata: UploadMetadata | null;
 }
 
 export function FileName({ uploadId, fileName, metadata }: FileNameProps) {
-  const transactionsUrl = `/transactions?uploadId=${uploadId}`
+  const transactionsUrl = `/transactions?uploadId=${uploadId}`;
 
   if (metadata) {
     return (
       <Tooltip>
         <TooltipTrigger asChild>
           <Link
-            href={transactionsUrl}
             className="underline decoration-dashed underline-offset-2"
+            href={transactionsUrl}
           >
             {fileName}
           </Link>
@@ -65,15 +65,15 @@ export function FileName({ uploadId, fileName, metadata }: FileNameProps) {
           </ul>
         </TooltipContent>
       </Tooltip>
-    )
+    );
   }
 
-  return <Link href={transactionsUrl}>{fileName}</Link>
+  return <Link href={transactionsUrl}>{fileName}</Link>;
 }
 
 interface MetadataFieldProps {
-  label: string
-  value: string
+  label: string;
+  value: string;
 }
 
 function MetadataField({ label, value }: MetadataFieldProps) {
@@ -82,5 +82,5 @@ function MetadataField({ label, value }: MetadataFieldProps) {
       <span className="text-muted">{label}</span>
       <span className="font-medium">{value}</span>
     </li>
-  )
+  );
 }

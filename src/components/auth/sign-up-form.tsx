@@ -1,6 +1,12 @@
-'use client'
+"use client";
 
-import { Button } from '@/components/ui/button'
+import { zodResolver } from "@hookform/resolvers/zod";
+import Link from "next/link";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -8,83 +14,77 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { authClient } from '@/lib/auth/client'
-import { zodResolver } from '@hookform/resolvers/zod'
-import Link from 'next/link'
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { toast } from 'sonner'
-import { z } from 'zod'
-import { AuthContainer, AuthContainerHeader } from './container'
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { authClient } from "@/lib/auth/client";
+import { AuthContainer, AuthContainerHeader } from "./container";
 
 const signUpSchema = z
   .object({
-    name: z.string().min(1, { message: 'Name is required' }).max(255),
-    email: z.string().email({ message: 'Please enter a valid email address' }),
+    name: z.string().min(1, { message: "Name is required" }).max(255),
+    email: z.string().email({ message: "Please enter a valid email address" }),
     password: z
       .string()
-      .min(6, { message: 'Password must be at least 6 characters' }),
+      .min(6, { message: "Password must be at least 6 characters" }),
     confirmPassword: z
       .string()
-      .min(6, { message: 'Password must be at least 6 characters' }),
+      .min(6, { message: "Password must be at least 6 characters" }),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    path: ['confirmPassword'],
-    message: 'Passwords do not match',
-  })
+    path: ["confirmPassword"],
+    message: "Passwords do not match",
+  });
 
-type SignUpFormValues = z.infer<typeof signUpSchema>
+type SignUpFormValues = z.infer<typeof signUpSchema>;
 
 export function SignUpForm() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSubmitted, setIsSubmitted] = useState(false)
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
-      name: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
     },
-  })
+  });
 
   async function onSubmit(values: SignUpFormValues) {
-    setIsLoading(true)
+    setIsLoading(true);
 
     const { error } = await authClient.signUp.email({
       name: values.name,
       email: values.email,
       password: values.password,
-      callbackURL: '/dashboard',
-    })
+      callbackURL: "/dashboard",
+    });
     if (error) {
-      toast.error(error.message)
-      setIsLoading(false)
-      return
+      toast.error(error.message);
+      setIsLoading(false);
+      return;
     }
 
-    setIsLoading(false)
-    setIsSubmitted(true)
+    setIsLoading(false);
+    setIsSubmitted(true);
   }
 
   async function reSendVerificationEmail() {
-    setIsLoading(true)
+    setIsLoading(true);
 
     const { error } = await authClient.sendVerificationEmail({
-      email: form.getValues('email'),
-      callbackURL: '/dashboard',
-    })
+      email: form.getValues("email"),
+      callbackURL: "/dashboard",
+    });
     if (error) {
-      toast.error(error.message)
-      setIsLoading(false)
-      return
+      toast.error(error.message);
+      setIsLoading(false);
+      return;
     }
 
-    setIsLoading(false)
-    toast.success('Verification email sent')
+    setIsLoading(false);
+    toast.success("Verification email sent");
   }
 
   if (isSubmitted) {
@@ -93,8 +93,8 @@ export function SignUpForm() {
         <div className="p-6 md:p-8">
           <div className="flex flex-col gap-6">
             <AuthContainerHeader
-              title="Check your inbox"
               description="We just sent you a verification email"
+              title="Check your inbox"
             />
 
             <p className="text-center">
@@ -103,25 +103,25 @@ export function SignUpForm() {
 
             <Button
               className="w-full"
-              onClick={reSendVerificationEmail}
               disabled={isLoading}
+              onClick={reSendVerificationEmail}
             >
               Re-send verification email
             </Button>
           </div>
         </div>
       </AuthContainer>
-    )
+    );
   }
 
   return (
     <AuthContainer>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="p-6 md:p-8">
+        <form className="p-6 md:p-8" onSubmit={form.handleSubmit(onSubmit)}>
           <div className="flex flex-col gap-6">
             <AuthContainerHeader
-              title="Create an account"
               description="Create your Bugdet account to get started"
+              title="Create an account"
             />
 
             <FormField
@@ -186,13 +186,13 @@ export function SignUpForm() {
               )}
             />
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button className="w-full" disabled={isLoading} type="submit">
               Sign up
             </Button>
 
             <div className="text-center text-sm">
-              Already have an account?{' '}
-              <Link href="/sign-in" className="underline underline-offset-4">
+              Already have an account?{" "}
+              <Link className="underline underline-offset-4" href="/sign-in">
                 Sign in
               </Link>
             </div>
@@ -200,5 +200,5 @@ export function SignUpForm() {
         </form>
       </Form>
     </AuthContainer>
-  )
+  );
 }

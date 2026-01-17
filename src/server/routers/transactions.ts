@@ -1,10 +1,5 @@
-import { SUGGESTED_TRANSACTION_FILTERS_DAYS } from '@/constants/suggested-transaction-filters'
-import { CONFIDENCE_THRESHOLD } from '@/constants/transactions'
-import { db } from '@/db'
-import { categorizationRule, category, transaction } from '@/db/schema'
-import { paginationSchema } from '@/schemas/pagination'
-import { TRPCError } from '@trpc/server'
-import { format, subDays } from 'date-fns'
+import { TRPCError } from "@trpc/server";
+import { format, subDays } from "date-fns";
 import {
   and,
   between,
@@ -16,9 +11,14 @@ import {
   isNotNull,
   lt,
   sql,
-} from 'drizzle-orm'
-import { z } from 'zod'
-import { protectedProcedure, router } from '../trpc'
+} from "drizzle-orm";
+import { z } from "zod";
+import { SUGGESTED_TRANSACTION_FILTERS_DAYS } from "@/constants/suggested-transaction-filters";
+import { CONFIDENCE_THRESHOLD } from "@/constants/transactions";
+import { db } from "@/db";
+import { categorizationRule, category, transaction } from "@/db/schema";
+import { paginationSchema } from "@/schemas/pagination";
+import { protectedProcedure, router } from "../trpc";
 
 async function getExistingTransaction(id: string, tenantId: string) {
   const [existingTransaction] = await db
@@ -27,16 +27,16 @@ async function getExistingTransaction(id: string, tenantId: string) {
       deleted: transaction.deleted,
     })
     .from(transaction)
-    .where(and(eq(transaction.id, id), eq(transaction.tenantId, tenantId)))
+    .where(and(eq(transaction.id, id), eq(transaction.tenantId, tenantId)));
 
   if (!existingTransaction || existingTransaction.deleted) {
     throw new TRPCError({
-      code: 'NOT_FOUND',
-      message: 'Transaction not found.',
-    })
+      code: "NOT_FOUND",
+      message: "Transaction not found.",
+    });
   }
 
-  return existingTransaction
+  return existingTransaction;
 }
 
 export const transactionsRouter = router({
@@ -52,39 +52,39 @@ export const transactionsRouter = router({
           query: z.string().min(1).max(255).nullable(),
         }),
         pagination: paginationSchema,
-      }),
+      })
     )
     .query(async ({ ctx, input }) => {
       const whereClauses = [
         eq(transaction.tenantId, ctx.tenant.tenantId),
         eq(transaction.deleted, false),
-      ]
+      ];
 
       if (input.filters.ids && input.filters.ids.length > 0) {
-        whereClauses.push(inArray(transaction.id, input.filters.ids))
+        whereClauses.push(inArray(transaction.id, input.filters.ids));
       }
 
       if (input.filters.categoryId) {
-        whereClauses.push(eq(transaction.categoryId, input.filters.categoryId))
+        whereClauses.push(eq(transaction.categoryId, input.filters.categoryId));
       }
 
       if (input.filters.uploadId) {
-        whereClauses.push(eq(transaction.uploadId, input.filters.uploadId))
+        whereClauses.push(eq(transaction.uploadId, input.filters.uploadId));
       }
 
       if (input.filters.from && input.filters.to) {
         whereClauses.push(
-          between(transaction.date, input.filters.from, input.filters.to),
-        )
+          between(transaction.date, input.filters.from, input.filters.to)
+        );
       }
 
       if (input.filters.query) {
         whereClauses.push(
-          ilike(transaction.merchantName, `%${input.filters.query}%`),
-        )
+          ilike(transaction.merchantName, `%${input.filters.query}%`)
+        );
       }
 
-      const offset = (input.pagination.page - 1) * input.pagination.limit
+      const offset = (input.pagination.page - 1) * input.pagination.limit;
 
       const transactions = await ctx.db
         .select({
@@ -105,31 +105,31 @@ export const transactionsRouter = router({
           category,
           and(
             eq(transaction.categoryId, category.id),
-            eq(category.deleted, false),
-          ),
+            eq(category.deleted, false)
+          )
         )
         .where(and(...whereClauses))
         .orderBy(desc(transaction.date), desc(transaction.id))
         .limit(input.pagination.limit + 1)
-        .offset(offset)
+        .offset(offset);
 
       return {
         data: transactions.slice(0, input.pagination.limit),
         hasMore: transactions.length > input.pagination.limit,
-      }
+      };
     }),
   delete: protectedProcedure
     .input(
       z.object({
         id: z.string().uuid(),
         deleteRelatedTransactions: z.boolean().optional(),
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       const existingTransaction = await getExistingTransaction(
         input.id,
-        ctx.tenant.tenantId,
-      )
+        ctx.tenant.tenantId
+      );
 
       await ctx.db
         .update(transaction)
@@ -137,15 +137,15 @@ export const transactionsRouter = router({
         .where(
           and(
             eq(transaction.id, existingTransaction.id),
-            eq(transaction.tenantId, ctx.tenant.tenantId),
-          ),
-        )
+            eq(transaction.tenantId, ctx.tenant.tenantId)
+          )
+        );
     }),
   deleteMany: protectedProcedure
     .input(
       z.object({
         ids: z.array(z.string().uuid()).min(1).max(100),
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       await ctx.db
@@ -155,9 +155,9 @@ export const transactionsRouter = router({
           and(
             inArray(transaction.id, input.ids),
             eq(transaction.tenantId, ctx.tenant.tenantId),
-            eq(transaction.deleted, false),
-          ),
-        )
+            eq(transaction.deleted, false)
+          )
+        );
     }),
   create: protectedProcedure
     .input(
@@ -167,7 +167,7 @@ export const transactionsRouter = router({
         merchantName: z.string().min(1).max(255),
         amount: z.number().max(Number.MAX_SAFE_INTEGER / 100),
         currency: z.string().min(3).max(3),
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       await ctx.db.insert(transaction).values({
@@ -178,7 +178,7 @@ export const transactionsRouter = router({
         currency: input.currency,
         confidence: 100,
         tenantId: ctx.tenant.tenantId,
-      })
+      });
     }),
   update: protectedProcedure
     .input(
@@ -189,13 +189,13 @@ export const transactionsRouter = router({
         merchantName: z.string().min(1).max(255),
         amount: z.number().max(Number.MAX_SAFE_INTEGER / 100),
         createCategorizationRule: z.boolean().optional(),
-      }),
+      })
     )
     .mutation(async ({ ctx, input }) => {
       const existingTransaction = await getExistingTransaction(
         input.id,
-        ctx.tenant.tenantId,
-      )
+        ctx.tenant.tenantId
+      );
 
       await ctx.db.transaction(async (tx) => {
         await tx
@@ -207,9 +207,9 @@ export const transactionsRouter = router({
           .where(
             and(
               eq(transaction.id, existingTransaction.id),
-              eq(transaction.tenantId, ctx.tenant.tenantId),
-            ),
-          )
+              eq(transaction.tenantId, ctx.tenant.tenantId)
+            )
+          );
 
         if (input.createCategorizationRule && input.categoryId) {
           await tx.insert(categorizationRule).values({
@@ -217,18 +217,18 @@ export const transactionsRouter = router({
             name: `Categorize ${input.merchantName}`,
             conditions: [
               {
-                field: 'merchant_name',
-                operator: 'eq',
+                field: "merchant_name",
+                operator: "eq",
                 value: input.merchantName,
               },
             ],
             actions: [
               {
-                type: 'set_category',
+                type: "set_category",
                 value: input.categoryId,
               },
             ],
-          })
+          });
 
           await tx
             .update(transaction)
@@ -240,11 +240,11 @@ export const transactionsRouter = router({
               and(
                 eq(transaction.merchantName, input.merchantName),
                 eq(transaction.tenantId, ctx.tenant.tenantId),
-                eq(transaction.deleted, false),
-              ),
-            )
+                eq(transaction.deleted, false)
+              )
+            );
         }
-      })
+      });
     }),
   countToReview: protectedProcedure.query(async ({ ctx }) => {
     const transactions = await ctx.db
@@ -254,14 +254,14 @@ export const transactionsRouter = router({
         and(
           eq(transaction.tenantId, ctx.tenant.tenantId),
           eq(transaction.deleted, false),
-          lt(transaction.confidence, CONFIDENCE_THRESHOLD),
-        ),
-      )
+          lt(transaction.confidence, CONFIDENCE_THRESHOLD)
+        )
+      );
 
-    return transactions
+    return transactions;
   }),
   getMostFrequentMerchant: protectedProcedure.query(async ({ ctx }) => {
-    const dateRange = subDays(new Date(), SUGGESTED_TRANSACTION_FILTERS_DAYS)
+    const dateRange = subDays(new Date(), SUGGESTED_TRANSACTION_FILTERS_DAYS);
 
     const result = await ctx.db
       .select({
@@ -272,17 +272,17 @@ export const transactionsRouter = router({
         and(
           eq(transaction.tenantId, ctx.tenant.tenantId),
           eq(transaction.deleted, false),
-          gte(transaction.date, format(dateRange, 'yyyy-MM-dd')),
-        ),
+          gte(transaction.date, format(dateRange, "yyyy-MM-dd"))
+        )
       )
       .groupBy(transaction.merchantName)
       .orderBy(desc(sql<number>`count(*)`))
-      .limit(1)
+      .limit(1);
 
-    return result[0] || null
+    return result[0] || null;
   }),
   getMostFrequentCategory: protectedProcedure.query(async ({ ctx }) => {
-    const dateRange = subDays(new Date(), SUGGESTED_TRANSACTION_FILTERS_DAYS)
+    const dateRange = subDays(new Date(), SUGGESTED_TRANSACTION_FILTERS_DAYS);
 
     const result = await ctx.db
       .select({
@@ -294,25 +294,25 @@ export const transactionsRouter = router({
         category,
         and(
           eq(transaction.categoryId, category.id),
-          eq(category.deleted, false),
-        ),
+          eq(category.deleted, false)
+        )
       )
       .where(
         and(
           eq(transaction.tenantId, ctx.tenant.tenantId),
           eq(transaction.deleted, false),
-          gte(transaction.date, format(dateRange, 'yyyy-MM-dd')),
-          isNotNull(transaction.categoryId),
-        ),
+          gte(transaction.date, format(dateRange, "yyyy-MM-dd")),
+          isNotNull(transaction.categoryId)
+        )
       )
       .groupBy(transaction.categoryId, category.name)
       .orderBy(desc(sql<number>`count(*)`))
-      .limit(1)
+      .limit(1);
 
-    return result[0] || null
+    return result[0] || null;
   }),
   getMostExpensiveMerchant: protectedProcedure.query(async ({ ctx }) => {
-    const dateRange = subDays(new Date(), SUGGESTED_TRANSACTION_FILTERS_DAYS)
+    const dateRange = subDays(new Date(), SUGGESTED_TRANSACTION_FILTERS_DAYS);
 
     const result = await ctx.db
       .select({
@@ -325,17 +325,17 @@ export const transactionsRouter = router({
         and(
           eq(transaction.tenantId, ctx.tenant.tenantId),
           eq(transaction.deleted, false),
-          gte(transaction.date, format(dateRange, 'yyyy-MM-dd')),
-        ),
+          gte(transaction.date, format(dateRange, "yyyy-MM-dd"))
+        )
       )
       .groupBy(transaction.merchantName, transaction.currency)
       .orderBy(desc(sql<number>`sum(${transaction.amount})`))
-      .limit(1)
+      .limit(1);
 
-    return result[0] || null
+    return result[0] || null;
   }),
   getMostExpensiveCategory: protectedProcedure.query(async ({ ctx }) => {
-    const dateRange = subDays(new Date(), SUGGESTED_TRANSACTION_FILTERS_DAYS)
+    const dateRange = subDays(new Date(), SUGGESTED_TRANSACTION_FILTERS_DAYS);
 
     const result = await ctx.db
       .select({
@@ -349,20 +349,20 @@ export const transactionsRouter = router({
         category,
         and(
           eq(transaction.categoryId, category.id),
-          eq(category.deleted, false),
-        ),
+          eq(category.deleted, false)
+        )
       )
       .where(
         and(
           eq(transaction.tenantId, ctx.tenant.tenantId),
           eq(transaction.deleted, false),
-          gte(transaction.date, format(dateRange, 'yyyy-MM-dd')),
-        ),
+          gte(transaction.date, format(dateRange, "yyyy-MM-dd"))
+        )
       )
       .groupBy(transaction.categoryId, category.name, transaction.currency)
       .orderBy(desc(sql<number>`sum(${transaction.amount})`))
-      .limit(1)
+      .limit(1);
 
-    return result[0] || null
+    return result[0] || null;
   }),
-})
+});

@@ -1,22 +1,25 @@
-import type { NextConfig } from 'next'
+import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   async headers() {
-    const headers = []
-    if (process.env.NEXT_PUBLIC_VERCEL_ENV === 'preview') {
+    const headers: {
+      headers: { key: string; value: string }[];
+      source: string;
+    }[] = [];
+    if (process.env.NEXT_PUBLIC_VERCEL_ENV === "preview") {
       headers.push({
         headers: [
           {
-            key: 'X-Robots-Tag',
-            value: 'noindex',
+            key: "X-Robots-Tag",
+            value: "noindex",
           },
         ],
-        source: '/:path*',
-      })
+        source: "/:path*",
+      });
     }
-    return headers
+    return headers;
   },
-  serverExternalPackages: ['@supabase/supabase-js'],
-}
+  serverExternalPackages: ["@supabase/supabase-js"],
+};
 
-export default nextConfig
+export default nextConfig;

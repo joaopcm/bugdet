@@ -1,5 +1,5 @@
-import { trpc } from '@/lib/trpc/client'
+import { trpc } from "@/lib/trpc/client";
 
 export function useMostExpensiveCategory() {
-  return trpc.transactions.getMostExpensiveCategory.useQuery()
+  return trpc.transactions.getMostExpensiveCategory.useQuery();
 }

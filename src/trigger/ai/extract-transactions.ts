@@ -1,68 +1,75 @@
-import { db } from '@/db'
-import { upload } from '@/db/schema'
-import type { PdfPageImage } from '@/lib/pdf'
-import { type PageImage, getUploadImages } from '@/lib/uploads/get-page-images'
-import { AbortTaskRunError, logger, task } from '@trigger.dev/sdk/v3'
-import { generateObject } from 'ai'
-import { eq } from 'drizzle-orm'
-import { z } from 'zod'
-import type { DocumentType } from './review-bank-statement'
+import { AbortTaskRunError, logger, task } from "@trigger.dev/sdk/v3";
+import { generateObject } from "ai";
+import { eq } from "drizzle-orm";
+import { z } from "zod";
+import { db } from "@/db";
+import { upload } from "@/db/schema";
+import type { PdfPageImage } from "@/lib/pdf";
+import { getUploadImages, type PageImage } from "@/lib/uploads/get-page-images";
+import type { DocumentType } from "./review-bank-statement";
 
 const extractedTransactionSchema = z.object({
   date: z
     .string()
     .describe(
-      'Transaction date in ISO format YYYY-MM-DD (e.g., "2025-01-15"). Parse dates carefully from the statement.',
+      'Transaction date in ISO format YYYY-MM-DD (e.g., "2025-01-15"). Parse dates carefully from the statement.'
     ),
   merchantName: z
     .string()
     .describe(
-      'Merchant name EXACTLY as shown on statement. Keep prefixes like "Ifd*", "Pag*", "MP*". Only remove: installment suffixes (1/3, PARC 01/12) and payment method indicators at the end. Example: "Ifd*Japakitos 2/3" → "Ifd*Japakitos".',
+      'Merchant name EXACTLY as shown on statement. Keep prefixes like "Ifd*", "Pag*", "MP*". Only remove: installment suffixes (1/3, PARC 01/12) and payment method indicators at the end. Example: "Ifd*Japakitos 2/3" → "Ifd*Japakitos".'
     ),
   description: z
     .string()
     .optional()
     .describe(
-      'Additional transaction details if present (e.g., "Online purchase", "ATM withdrawal", installment info "2/6").',
+      'Additional transaction details if present (e.g., "Online purchase", "ATM withdrawal", installment info "2/6").'
     ),
   amount: z
     .number()
     .describe(
-      'Amount in CENTS as integer. POSITIVE for money OUT (purchases, payments, withdrawals, fees). NEGATIVE for money IN (deposits, refunds, cashback, interest received). Example: $10.50 expense = 1050, $25.00 refund = -2500.',
+      "Amount in CENTS as integer. POSITIVE for money OUT (purchases, payments, withdrawals, fees). NEGATIVE for money IN (deposits, refunds, cashback, interest received). Example: $10.50 expense = 1050, $25.00 refund = -2500."
     ),
   currency: z
     .string()
     .describe(
-      'ISO 4217 currency code (e.g., "USD", "BRL", "EUR"). Use the statement\'s primary currency.',
+      'ISO 4217 currency code (e.g., "USD", "BRL", "EUR"). Use the statement\'s primary currency.'
     ),
-})
+});
 
 const extractionResultSchema = z.object({
   transactions: z.array(extractedTransactionSchema),
   statementCurrency: z
     .string()
-    .describe('Primary currency of the statement (ISO 4217 code).'),
+    .describe("Primary currency of the statement (ISO 4217 code)."),
   openingBalance: z
     .number()
     .optional()
-    .describe('Opening/previous balance in cents if clearly visible.'),
+    .describe("Opening/previous balance in cents if clearly visible."),
   closingBalance: z
     .number()
     .optional()
-    .describe('Closing/ending balance in cents if clearly visible.'),
-})
+    .describe("Closing/ending balance in cents if clearly visible."),
+});
 
-export type ExtractedTransaction = z.infer<typeof extractedTransactionSchema>
+export type ExtractedTransaction = z.infer<typeof extractedTransactionSchema>;
 
-export type ExtractionResult = z.infer<typeof extractionResultSchema>
+export type ExtractionResult = z.infer<typeof extractionResultSchema>;
 
 function buildImageContent(images: (PdfPageImage | PageImage)[]) {
   return images.map((img) => ({
-    type: 'image' as const,
-    image: Buffer.from(img.base64, 'base64'),
+    type: "image" as const,
+    image: Buffer.from(img.base64, "base64"),
     mimeType: img.mimeType,
-  }))
+  }));
 }
+
+const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
+  credit_card_statement: "CREDIT CARD STATEMENT",
+  checking_statement: "CHECKING ACCOUNT STATEMENT",
+  savings_statement: "SAVINGS ACCOUNT STATEMENT",
+  unknown: "BANK STATEMENT",
+};
 
 function buildSystemPrompt(documentType: DocumentType) {
   const signConventionForCheckingSavings = `### Amount Sign Convention (IMPORTANT!)
@@ -81,7 +88,7 @@ ALWAYS OUTPUT:
 - Expenses/debits/withdrawals → POSITIVE
 - Income/deposits/credits → NEGATIVE
 
-Look for context clues like "debit", "credit", "withdrawal", "deposit", D, C, DR, CR, +, - symbols.`
+Look for context clues like "debit", "credit", "withdrawal", "deposit", D, C, DR, CR, +, - symbols.`;
 
   const signConventionForCreditCard = `### Amount Sign Convention (IMPORTANT!)
 Credit card statements may display amounts differently. YOUR OUTPUT MUST FOLLOW THIS CONVENTION:
@@ -97,17 +104,17 @@ IMPORTANT: On credit card statements:
 
 ALWAYS OUTPUT:
 - Purchases/charges/fees → POSITIVE (money you spent/owe)
-- Payments/refunds/credits → NEGATIVE (money reducing your balance)`
+- Payments/refunds/credits → NEGATIVE (money reducing your balance)`;
 
   const signConvention =
-    documentType === 'credit_card_statement'
+    documentType === "credit_card_statement"
       ? signConventionForCreditCard
-      : signConventionForCheckingSavings
+      : signConventionForCheckingSavings;
 
   return `You are an expert financial document analyst specializing in extracting transactions from bank statements and credit card statements.
 
 ## DOCUMENT TYPE
-This is a ${documentType === 'credit_card_statement' ? 'CREDIT CARD STATEMENT' : documentType === 'checking_statement' ? 'CHECKING ACCOUNT STATEMENT' : documentType === 'savings_statement' ? 'SAVINGS ACCOUNT STATEMENT' : 'BANK STATEMENT'}.
+This is a ${DOCUMENT_TYPE_LABELS[documentType]}.
 
 ## YOUR TASK
 Analyze the provided statement images and extract ALL transactions into a structured format with perfect accuracy.
@@ -154,7 +161,7 @@ ${signConvention}
 ### Accuracy Focus
 - If text is hard to read, do your best to interpret it accurately
 - Preserve exact spelling and formatting of merchant names
-- Do not guess or infer missing data - only extract what is clearly visible`
+- Do not guess or infer missing data - only extract what is clearly visible`;
 }
 
 function buildUserPrompt() {
@@ -196,89 +203,89 @@ function buildUserPrompt() {
 }
 \`\`\`
 
-Now analyze the statement images and extract all transactions with perfect accuracy.`
+Now analyze the statement images and extract all transactions with perfect accuracy.`;
 }
 
 export const extractTransactionsTask = task({
-  id: 'extract-transactions',
+  id: "extract-transactions",
   retry: {
     randomize: false,
   },
   run: async (
     payload: {
-      uploadId: string
-      pageCount?: number
-      documentType: DocumentType
+      uploadId: string;
+      pageCount?: number;
+      documentType: DocumentType;
     },
-    { ctx },
+    { ctx }
   ) => {
     logger.info(
       `Extracting transactions for upload ${payload.uploadId} (document type: ${payload.documentType})...`,
       {
         payload,
         ctx,
-      },
-    )
+      }
+    );
 
     const images = await getUploadImages(
       payload.uploadId,
-      'all',
-      payload.pageCount,
-    )
+      "all",
+      payload.pageCount
+    );
 
     if (images.length === 0) {
-      throw new AbortTaskRunError('No pages could be extracted from the PDF')
+      throw new AbortTaskRunError("No pages could be extracted from the PDF");
     }
 
     const [uploadRecord] = await db
       .select({ tenantId: upload.tenantId })
       .from(upload)
-      .where(eq(upload.id, payload.uploadId))
+      .where(eq(upload.id, payload.uploadId));
 
     if (!uploadRecord) {
       throw new AbortTaskRunError(
-        `Upload ${payload.uploadId} not found in database`,
-      )
+        `Upload ${payload.uploadId} not found in database`
+      );
     }
 
-    logger.info('Extracting transactions with AI...')
+    logger.info("Extracting transactions with AI...");
     const result = await generateObject({
-      model: 'anthropic/claude-sonnet-4.5',
-      mode: 'json',
-      schemaName: 'extract-transactions',
+      model: "anthropic/claude-sonnet-4.5",
+      mode: "json",
+      schemaName: "extract-transactions",
       schemaDescription:
-        'Transactions extracted from a bank statement with high accuracy.',
+        "Transactions extracted from a bank statement with high accuracy.",
       schema: extractionResultSchema,
       messages: [
         {
-          role: 'system',
+          role: "system",
           content: buildSystemPrompt(payload.documentType),
         },
         {
-          role: 'user',
+          role: "user",
           content: [
             {
-              type: 'text',
+              type: "text",
               text: buildUserPrompt(),
             },
             ...buildImageContent(images),
           ],
         },
       ],
-    })
+    });
 
-    logger.info('Transaction extraction complete', {
+    logger.info("Transaction extraction complete", {
       transactionCount: result.object.transactions.length,
       statementCurrency: result.object.statementCurrency,
       openingBalance: result.object.openingBalance,
       closingBalance: result.object.closingBalance,
-    })
+    });
 
     return {
       success: true,
       uploadId: payload.uploadId,
       tenantId: uploadRecord.tenantId,
       ...result.object,
-    }
+    };
   },
-})
+});

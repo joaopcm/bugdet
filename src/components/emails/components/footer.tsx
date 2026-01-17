@@ -1,14 +1,14 @@
-import { Section, Text } from '@react-email/components'
+import { Section, Text } from "@react-email/components";
 
 export function Footer() {
   return (
     <Section className="bg-[#999A5E] px-[24px] py-[24px]">
-      <Text className="text-[14px] text-white text-center m-0">
+      <Text className="m-0 text-center text-[14px] text-white">
         © {new Date().getFullYear()} Budget
       </Text>
-      <Text className="text-[14px] text-white text-center m-0">
+      <Text className="m-0 text-center text-[14px] text-white">
         São Paulo, SP, Brazil
       </Text>
     </Section>
-  )
+  );
 }

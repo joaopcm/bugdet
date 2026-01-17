@@ -1,11 +1,11 @@
-import { db } from '@/db'
-import { upload } from '@/db/schema'
-import type { PdfPageImage } from '@/lib/pdf'
-import { type PageImage, getUploadImages } from '@/lib/uploads/get-page-images'
-import { AbortTaskRunError, logger, task } from '@trigger.dev/sdk/v3'
-import { generateObject } from 'ai'
-import { eq } from 'drizzle-orm'
-import { z } from 'zod'
+import { AbortTaskRunError, logger, task } from "@trigger.dev/sdk/v3";
+import { generateObject } from "ai";
+import { eq } from "drizzle-orm";
+import { z } from "zod";
+import { db } from "@/db";
+import { upload } from "@/db/schema";
+import type { PdfPageImage } from "@/lib/pdf";
+import { getUploadImages, type PageImage } from "@/lib/uploads/get-page-images";
 
 const schema = z
   .object({
@@ -13,13 +13,13 @@ const schema = z
       .string()
       .optional()
       .describe(
-        'The type of financial document (e.g., "Credit Card Statement", "Checking Account Statement", "Savings Account Statement", "Investment Account Statement").',
+        'The type of financial document (e.g., "Credit Card Statement", "Checking Account Statement", "Savings Account Statement", "Investment Account Statement").'
       ),
     bankName: z
       .string()
       .optional()
       .describe(
-        'The name of the financial institution exactly as it appears on the document (e.g., "Bank of America", "Nubank", "Chase", "Itaú").',
+        'The name of the financial institution exactly as it appears on the document (e.g., "Bank of America", "Nubank", "Chase", "Itaú").'
       ),
     statementPeriod: z
       .object({
@@ -27,22 +27,22 @@ const schema = z
           .string()
           .optional()
           .describe(
-            'The start date of the statement period in the format "DD MMM YYYY" (e.g., "01 JAN 2025", "14 ABR 2025").',
+            'The start date of the statement period in the format "DD MMM YYYY" (e.g., "01 JAN 2025", "14 ABR 2025").'
           ),
         endDate: z
           .string()
           .optional()
           .describe(
-            'The end date of the statement period in the format "DD MMM YYYY" (e.g., "31 JAN 2025", "14 MAI 2025").',
+            'The end date of the statement period in the format "DD MMM YYYY" (e.g., "31 JAN 2025", "14 MAI 2025").'
           ),
       })
       .optional()
-      .describe('The billing or statement period covered by this document.'),
+      .describe("The billing or statement period covered by this document."),
     accountNumber: z
       .string()
       .optional()
       .describe(
-        'The last 4 digits of the account number if visible (e.g., "****1234").',
+        'The last 4 digits of the account number if visible (e.g., "****1234").'
       ),
     extraInformation: z
       .array(
@@ -50,64 +50,66 @@ const schema = z
           key: z
             .string()
             .describe(
-              'The key in English (e.g., "Credit Limit", "Interest Rate", "Minimum Payment", "Due Date", "Account Holder Name", "Previous Balance", "Total Due").',
+              'The key in English (e.g., "Credit Limit", "Interest Rate", "Minimum Payment", "Due Date", "Account Holder Name", "Previous Balance", "Total Due").'
             ),
           value: z
             .string()
             .describe(
-              'The value in the original language/format from the statement (e.g., "R$ 1.000,00", "10.5%", "USD 500.00").',
+              'The value in the original language/format from the statement (e.g., "R$ 1.000,00", "10.5%", "USD 500.00").'
             ),
-        }),
+        })
       )
       .max(5)
       .optional()
       .describe(
-        'Up to 5 key financial details from the statement header/summary. Focus on: credit limit, due date, minimum payment, previous balance, total due.',
+        "Up to 5 key financial details from the statement header/summary. Focus on: credit limit, due date, minimum payment, previous balance, total due."
       ),
   })
-  .describe('Metadata extracted from a bank statement for indexing and search.')
+  .describe(
+    "Metadata extracted from a bank statement for indexing and search."
+  );
 
 function buildImageContent(images: (PdfPageImage | PageImage)[]) {
-  const pagesToCheck = images.slice(0, 2)
+  const pagesToCheck = images.slice(0, 2);
 
   return pagesToCheck.map((img) => ({
-    type: 'image' as const,
-    image: Buffer.from(img.base64, 'base64'),
+    type: "image" as const,
+    image: Buffer.from(img.base64, "base64"),
     mimeType: img.mimeType,
-  }))
+  }));
 }
 
 export const extractUploadMetadataTask = task({
-  id: 'extract-upload-metadata',
+  id: "extract-upload-metadata",
   retry: {
     randomize: false,
   },
   run: async (payload: { uploadId: string; pageCount?: number }) => {
-    logger.info(`Extracting metadata from upload ${payload.uploadId}...`)
+    logger.info(`Extracting metadata from upload ${payload.uploadId}...`);
 
     const images = await getUploadImages(
       payload.uploadId,
       { start: 1, end: 2 },
-      payload.pageCount,
-    )
+      payload.pageCount
+    );
 
     if (images.length === 0) {
       throw new AbortTaskRunError(
-        `No images extracted from PDF for upload ${payload.uploadId}`,
-      )
+        `No images extracted from PDF for upload ${payload.uploadId}`
+      );
     }
 
-    logger.info('Extracting metadata with AI...')
+    logger.info("Extracting metadata with AI...");
     const result = await generateObject({
-      model: 'anthropic/claude-haiku-4.5',
-      mode: 'json',
-      schemaName: 'extract-upload-metadata',
+      model: "anthropic/claude-haiku-4.5",
+      mode: "json",
+      schemaName: "extract-upload-metadata",
       schemaDescription:
-        'Metadata extracted from a bank statement for indexing and search.',
+        "Metadata extracted from a bank statement for indexing and search.",
       schema,
       messages: [
         {
-          role: 'system',
+          role: "system",
           content: `You are a financial document analyst. Extract key metadata from bank statements and credit card statements.
 
 Focus on extracting:
@@ -120,10 +122,10 @@ Focus on extracting:
 Be precise with dates and numbers. Preserve the original formatting of monetary values.`,
         },
         {
-          role: 'user',
+          role: "user",
           content: [
             {
-              type: 'text',
+              type: "text",
               text: `Extract the metadata from this bank statement. Focus on the header and summary sections.
 
 ## EXAMPLE OUTPUT
@@ -148,26 +150,26 @@ Be precise with dates and numbers. Preserve the original formatting of monetary 
           ],
         },
       ],
-    })
-    logger.info('AI analysis complete', result.object)
+    });
+    logger.info("AI analysis complete", result.object);
 
     await db
       .update(upload)
       .set({
         metadata: result.object,
       })
-      .where(eq(upload.id, payload.uploadId))
+      .where(eq(upload.id, payload.uploadId));
 
-    return { success: true }
+    return { success: true };
   },
-  catchError: async ({ ctx, error, payload }) => {
+  catchError: ({ ctx, error, payload }) => {
     logger.error(`Run ${ctx.run.id} failed`, {
       payload,
       error,
-    })
+    });
 
     return {
       skipRetrying: true,
-    }
+    };
   },
-})
+});

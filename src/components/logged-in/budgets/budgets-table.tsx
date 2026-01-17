@@ -1,6 +1,9 @@
-'use client'
+"use client";
 
-import { Checkbox } from '@/components/ui/checkbox'
+import { useMemo } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
+import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -8,30 +11,27 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { useBudgets } from '@/hooks/use-budgets'
-import { useBulkSelection } from '@/hooks/use-bulk-selection'
-import { useIsMobile } from '@/hooks/use-is-mobile'
-import { trpc } from '@/lib/trpc/client'
-import { pluralize } from '@/lib/utils'
-import { useMemo } from 'react'
-import { useHotkeys } from 'react-hotkeys-hook'
-import { toast } from 'sonner'
-import { FloatingActionBar } from '../bulk-actions/floating-action-bar'
-import { EmptyState } from '../empty-state'
-import { BudgetItem } from './budget-item'
-import { BudgetsPagination } from './budgets-pagination'
-import { BudgetsFilters } from './filters'
-import { LoadingState } from './loading-state'
+} from "@/components/ui/table";
+import { useBudgets } from "@/hooks/use-budgets";
+import { useBulkSelection } from "@/hooks/use-bulk-selection";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { trpc } from "@/lib/trpc/client";
+import { pluralize } from "@/lib/utils";
+import { FloatingActionBar } from "../bulk-actions/floating-action-bar";
+import { EmptyState } from "../empty-state";
+import { BudgetItem } from "./budget-item";
+import { BudgetsPagination } from "./budgets-pagination";
+import { BudgetsFilters } from "./filters";
+import { LoadingState } from "./loading-state";
 
 export function BudgetsTable() {
-  const isMobile = useIsMobile()
-  const { data: budgets, isLoading, refetch } = useBudgets()
+  const isMobile = useIsMobile();
+  const { data: budgets, isLoading, refetch } = useBudgets();
 
   const itemIds = useMemo(
     () => budgets?.data?.map((b) => b.id) ?? [],
-    [budgets?.data],
-  )
+    [budgets?.data]
+  );
 
   const {
     selectedIds,
@@ -41,42 +41,42 @@ export function BudgetsTable() {
     toggleAll,
     selectAll,
     clearSelection,
-  } = useBulkSelection({ itemIds })
+  } = useBulkSelection({ itemIds });
 
-  useHotkeys('mod+a', selectAll, { preventDefault: true, enabled: !isMobile })
+  useHotkeys("mod+a", selectAll, { preventDefault: true, enabled: !isMobile });
 
   const { mutate: deleteMany, isPending: isDeleting } =
     trpc.budgets.deleteMany.useMutation({
       onMutate: () => {
-        toast.loading('Deleting budgets...', { id: 'delete-budgets' })
+        toast.loading("Deleting budgets...", { id: "delete-budgets" });
       },
       onSuccess: () => {
         toast.success(
-          `Deleted ${selectedIds.size} ${pluralize(selectedIds.size, 'budget', 'budgets')}`,
-          { id: 'delete-budgets' },
-        )
-        clearSelection()
-        refetch()
+          `Deleted ${selectedIds.size} ${pluralize(selectedIds.size, "budget", "budgets")}`,
+          { id: "delete-budgets" }
+        );
+        clearSelection();
+        refetch();
       },
       onError: (error) => {
-        toast.error(error.message, { id: 'delete-budgets' })
+        toast.error(error.message, { id: "delete-budgets" });
       },
-    })
+    });
 
   const handleBulkDelete = () => {
-    deleteMany({ ids: Array.from(selectedIds) })
-  }
+    deleteMany({ ids: Array.from(selectedIds) });
+  };
 
   return (
     <div className="flex flex-col gap-4">
       <BudgetsFilters />
       <div className="relative overflow-visible">
         <Checkbox
+          aria-label="Select all budgets"
           checked={isAllSelected}
+          className="absolute top-2.5 -left-8 hidden opacity-0 hover:opacity-100 data-[state=checked]:opacity-100 data-[state=indeterminate]:opacity-100 md:block"
           indeterminate={isPartiallySelected}
           onCheckedChange={toggleAll}
-          className="absolute -left-8 top-2.5 hidden opacity-0 hover:opacity-100 data-[state=checked]:opacity-100 data-[state=indeterminate]:opacity-100 md:block"
-          aria-label="Select all budgets"
         />
         <Table containerClassName="overflow-visible">
           <TableHeader>
@@ -92,19 +92,19 @@ export function BudgetsTable() {
 
             {budgets?.data.map((budget) => (
               <BudgetItem
-                key={budget.id}
                 budget={budget}
                 isSelected={selectedIds.has(budget.id)}
+                key={budget.id}
                 onSelect={handleClick}
               />
             ))}
 
             {budgets?.data.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="py-10">
+                <TableCell className="py-10" colSpan={4}>
                   <EmptyState
-                    title="No budgets found."
                     description="Create your first budget to start tracking your spending goals."
+                    title="No budgets found."
                   />
                 </TableCell>
               </TableRow>
@@ -116,11 +116,11 @@ export function BudgetsTable() {
       <BudgetsPagination hasMore={!!budgets?.hasMore} />
 
       <FloatingActionBar
-        selectedCount={selectedIds.size}
-        onDelete={handleBulkDelete}
-        isDeleting={isDeleting}
         className="w-[301px]"
+        isDeleting={isDeleting}
+        onDelete={handleBulkDelete}
+        selectedCount={selectedIds.size}
       />
     </div>
-  )
+  );
 }

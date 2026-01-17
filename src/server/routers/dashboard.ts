@@ -1,13 +1,22 @@
-import { CONFIDENCE_THRESHOLD } from '@/constants/transactions'
-import { category, transaction } from '@/db/schema'
-import { and, between, countDistinct, desc, eq, gt, lt, sql } from 'drizzle-orm'
-import { z } from 'zod'
-import { protectedProcedure, router } from '../trpc'
+import {
+  and,
+  between,
+  countDistinct,
+  desc,
+  eq,
+  gt,
+  lt,
+  sql,
+} from "drizzle-orm";
+import { z } from "zod";
+import { CONFIDENCE_THRESHOLD } from "@/constants/transactions";
+import { category, transaction } from "@/db/schema";
+import { protectedProcedure, router } from "../trpc";
 
 const dateRangeInput = z.object({
   from: z.string().date(),
   to: z.string().date(),
-})
+});
 
 export const dashboardRouter = router({
   getSpendingSummary: protectedProcedure
@@ -24,14 +33,14 @@ export const dashboardRouter = router({
           and(
             eq(transaction.tenantId, ctx.tenant.tenantId),
             eq(transaction.deleted, false),
-            between(transaction.date, input.from, input.to),
-          ),
+            between(transaction.date, input.from, input.to)
+          )
         )
         .groupBy(transaction.currency)
-        .orderBy(desc(sql`count(*)`))
+        .orderBy(desc(sql`count(*)`));
 
-      const primaryCurrency = currencyResult[0]?.currency ?? 'USD'
-      const hasOtherCurrencies = currencyResult.length > 1
+      const primaryCurrency = currencyResult[0]?.currency ?? "USD";
+      const hasOtherCurrencies = currencyResult.length > 1;
 
       // Get aggregates for primary currency
       const [summary] = await ctx.db
@@ -48,9 +57,9 @@ export const dashboardRouter = router({
             eq(transaction.deleted, false),
             eq(transaction.currency, primaryCurrency),
             gt(transaction.amount, 0),
-            between(transaction.date, input.from, input.to),
-          ),
-        )
+            between(transaction.date, input.from, input.to)
+          )
+        );
 
       return {
         totalSpent: Number(summary?.totalSpent ?? 0),
@@ -59,12 +68,12 @@ export const dashboardRouter = router({
         categoryCount: Number(summary?.categoryCount ?? 0),
         currency: primaryCurrency,
         hasOtherCurrencies,
-      }
+      };
     }),
 
   getSpendingByCategory: protectedProcedure
     .input(
-      dateRangeInput.extend({ limit: z.number().min(1).max(20).default(10) }),
+      dateRangeInput.extend({ limit: z.number().min(1).max(20).default(10) })
     )
     .query(async ({ ctx, input }) => {
       // Get primary currency
@@ -75,14 +84,14 @@ export const dashboardRouter = router({
           and(
             eq(transaction.tenantId, ctx.tenant.tenantId),
             eq(transaction.deleted, false),
-            between(transaction.date, input.from, input.to),
-          ),
+            between(transaction.date, input.from, input.to)
+          )
         )
         .groupBy(transaction.currency)
         .orderBy(desc(sql`count(*)`))
-        .limit(1)
+        .limit(1);
 
-      const primaryCurrency = currencyResult?.currency ?? 'USD'
+      const primaryCurrency = currencyResult?.currency ?? "USD";
 
       const result = await ctx.db
         .select({
@@ -96,8 +105,8 @@ export const dashboardRouter = router({
           category,
           and(
             eq(transaction.categoryId, category.id),
-            eq(category.deleted, false),
-          ),
+            eq(category.deleted, false)
+          )
         )
         .where(
           and(
@@ -105,29 +114,29 @@ export const dashboardRouter = router({
             eq(transaction.deleted, false),
             eq(transaction.currency, primaryCurrency),
             gt(transaction.amount, 0),
-            between(transaction.date, input.from, input.to),
-          ),
+            between(transaction.date, input.from, input.to)
+          )
         )
         .groupBy(transaction.categoryId, category.name)
         .orderBy(desc(sql`sum(${transaction.amount})`))
-        .limit(input.limit)
+        .limit(input.limit);
 
       return {
         data: result.map((r) => ({
           categoryId: r.categoryId,
-          categoryName: r.categoryName ?? 'Uncategorized',
+          categoryName: r.categoryName ?? "Uncategorized",
           totalAmount: Number(r.totalAmount),
           transactionCount: Number(r.transactionCount),
         })),
         currency: primaryCurrency,
-      }
+      };
     }),
 
   getSpendingOverTime: protectedProcedure
     .input(
       dateRangeInput.extend({
-        groupBy: z.enum(['day', 'week', 'month']),
-      }),
+        groupBy: z.enum(["day", "week", "month"]),
+      })
     )
     .query(async ({ ctx, input }) => {
       // Get primary currency
@@ -138,20 +147,20 @@ export const dashboardRouter = router({
           and(
             eq(transaction.tenantId, ctx.tenant.tenantId),
             eq(transaction.deleted, false),
-            between(transaction.date, input.from, input.to),
-          ),
+            between(transaction.date, input.from, input.to)
+          )
         )
         .groupBy(transaction.currency)
         .orderBy(desc(sql`count(*)`))
-        .limit(1)
+        .limit(1);
 
-      const primaryCurrency = currencyResult?.currency ?? 'USD'
+      const primaryCurrency = currencyResult?.currency ?? "USD";
 
       const dateTrunc = {
         day: sql`date_trunc('day', ${transaction.date}::timestamp)`,
         week: sql`date_trunc('week', ${transaction.date}::timestamp)`,
         month: sql`date_trunc('month', ${transaction.date}::timestamp)`,
-      }[input.groupBy]
+      }[input.groupBy];
 
       const result = await ctx.db
         .select({
@@ -165,11 +174,11 @@ export const dashboardRouter = router({
             eq(transaction.deleted, false),
             eq(transaction.currency, primaryCurrency),
             gt(transaction.amount, 0),
-            between(transaction.date, input.from, input.to),
-          ),
+            between(transaction.date, input.from, input.to)
+          )
         )
         .groupBy(dateTrunc)
-        .orderBy(sql`${dateTrunc}`)
+        .orderBy(sql`${dateTrunc}`);
 
       return {
         data: result.map((r) => ({
@@ -177,12 +186,12 @@ export const dashboardRouter = router({
           amount: Number(r.amount),
         })),
         currency: primaryCurrency,
-      }
+      };
     }),
 
   getTopMerchants: protectedProcedure
     .input(
-      dateRangeInput.extend({ limit: z.number().min(1).max(10).default(5) }),
+      dateRangeInput.extend({ limit: z.number().min(1).max(10).default(5) })
     )
     .query(async ({ ctx, input }) => {
       // Get primary currency
@@ -193,14 +202,14 @@ export const dashboardRouter = router({
           and(
             eq(transaction.tenantId, ctx.tenant.tenantId),
             eq(transaction.deleted, false),
-            between(transaction.date, input.from, input.to),
-          ),
+            between(transaction.date, input.from, input.to)
+          )
         )
         .groupBy(transaction.currency)
         .orderBy(desc(sql`count(*)`))
-        .limit(1)
+        .limit(1);
 
-      const primaryCurrency = currencyResult?.currency ?? 'USD'
+      const primaryCurrency = currencyResult?.currency ?? "USD";
 
       const result = await ctx.db
         .select({
@@ -215,12 +224,12 @@ export const dashboardRouter = router({
             eq(transaction.deleted, false),
             eq(transaction.currency, primaryCurrency),
             gt(transaction.amount, 0),
-            between(transaction.date, input.from, input.to),
-          ),
+            between(transaction.date, input.from, input.to)
+          )
         )
         .groupBy(transaction.merchantName)
         .orderBy(desc(sql`sum(${transaction.amount})`))
-        .limit(input.limit)
+        .limit(input.limit);
 
       return {
         data: result.map((r) => ({
@@ -229,12 +238,12 @@ export const dashboardRouter = router({
           transactionCount: Number(r.transactionCount),
         })),
         currency: primaryCurrency,
-      }
+      };
     }),
 
   getTransactionsToReview: protectedProcedure
     .input(
-      dateRangeInput.extend({ limit: z.number().min(1).max(20).default(5) }),
+      dateRangeInput.extend({ limit: z.number().min(1).max(20).default(5) })
     )
     .query(async ({ ctx, input }) => {
       const result = await ctx.db
@@ -252,12 +261,12 @@ export const dashboardRouter = router({
             eq(transaction.tenantId, ctx.tenant.tenantId),
             eq(transaction.deleted, false),
             lt(transaction.confidence, CONFIDENCE_THRESHOLD),
-            between(transaction.date, input.from, input.to),
-          ),
+            between(transaction.date, input.from, input.to)
+          )
         )
         .orderBy(transaction.confidence, desc(transaction.date))
-        .limit(input.limit)
+        .limit(input.limit);
 
-      return result
+      return result;
     }),
-})
+});

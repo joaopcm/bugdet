@@ -1,8 +1,13 @@
-'use client'
+"use client";
 
-import { Button } from '@/components/ui/button'
-import { CurrencyInput } from '@/components/ui/currency-input'
-import { DialogClose, DialogFooter } from '@/components/ui/dialog'
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect, useRef } from "react";
+import { useForm, useWatch } from "react-hook-form";
+import { useHotkeys } from "react-hotkeys-hook";
+import z from "zod";
+import { Button } from "@/components/ui/button";
+import { CurrencyInput } from "@/components/ui/currency-input";
+import { DialogClose, DialogFooter } from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -10,23 +15,18 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { Kbd, SHORTCUTS_VALUES } from '@/components/ui/kbd'
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Kbd, SHORTCUTS_VALUES } from "@/components/ui/kbd";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { getCurrencySymbol } from '@/lib/utils'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect, useRef } from 'react'
-import { useForm, useWatch } from 'react-hook-form'
-import { useHotkeys } from 'react-hotkeys-hook'
-import z from 'zod'
-import { CategoryMultiSelect } from './category-multi-select'
+} from "@/components/ui/select";
+import { getCurrencySymbol } from "@/lib/utils";
+import { CategoryMultiSelect } from "./category-multi-select";
 
 const budgetSchema = z.object({
   name: z.string().min(1).max(255),
@@ -34,16 +34,16 @@ const budgetSchema = z.object({
   currency: z.string().min(3).max(3),
   categoryIds: z
     .array(z.string().uuid())
-    .min(1, 'Select at least one category'),
-})
+    .min(1, "Select at least one category"),
+});
 
-export type BudgetFormValues = z.infer<typeof budgetSchema>
+export type BudgetFormValues = z.infer<typeof budgetSchema>;
 
 interface BudgetFormProps {
-  isLoading: boolean
-  onSubmit: (values: BudgetFormValues) => void
-  initialValues?: BudgetFormValues
-  currencies: string[]
+  isLoading: boolean;
+  onSubmit: (values: BudgetFormValues) => void;
+  initialValues?: BudgetFormValues;
+  currencies: string[];
 }
 
 export function BudgetForm({
@@ -52,50 +52,53 @@ export function BudgetForm({
   initialValues,
   currencies,
 }: BudgetFormProps) {
-  const closeButtonRef = useRef<HTMLButtonElement>(null)
-  const submitButtonRef = useRef<HTMLButtonElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const submitButtonRef = useRef<HTMLButtonElement>(null);
 
-  useHotkeys(['esc'], () => {
+  useHotkeys(["esc"], () => {
     if (!closeButtonRef.current) {
-      return
+      return;
     }
-    closeButtonRef.current.click()
-  })
+    closeButtonRef.current.click();
+  });
 
-  useHotkeys(['mod+enter'], () => {
+  useHotkeys(["mod+enter"], () => {
     if (isLoading || !submitButtonRef.current) {
-      return
+      return;
     }
-    submitButtonRef.current.click()
-  })
+    submitButtonRef.current.click();
+  });
 
-  const defaultCurrency = initialValues?.currency ?? currencies[0] ?? 'USD'
+  const defaultCurrency = initialValues?.currency ?? currencies[0] ?? "USD";
 
   const form = useForm<BudgetFormValues>({
     resolver: zodResolver(budgetSchema),
     defaultValues: initialValues ?? {
-      name: '',
-      targetAmount: '',
+      name: "",
+      targetAmount: "",
       currency: defaultCurrency,
       categoryIds: [],
     },
-  })
+  });
 
   useEffect(() => {
     if (!initialValues && currencies.length > 0) {
-      const current = form.getValues('currency')
-      if (!current || !currencies.includes(current)) {
-        form.setValue('currency', currencies[0])
+      const current = form.getValues("currency");
+      if (!(current && currencies.includes(current))) {
+        form.setValue("currency", currencies[0]);
       }
     }
-  }, [currencies, form, initialValues])
+  }, [currencies, form, initialValues]);
 
-  const selectedCurrency = useWatch({ control: form.control, name: 'currency' })
-  const currencySymbol = getCurrencySymbol(selectedCurrency)
+  const selectedCurrency = useWatch({
+    control: form.control,
+    name: "currency",
+  });
+  const currencySymbol = getCurrencySymbol(selectedCurrency);
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-6">
+      <form className="grid gap-6" onSubmit={form.handleSubmit(onSubmit)}>
         <FormField
           control={form.control}
           name="name"
@@ -125,10 +128,10 @@ export function BudgetForm({
                 <FormControl>
                   <CurrencyInput
                     id="targetAmount"
+                    onValueChange={(values) => field.onChange(values.value)}
                     placeholder="0.00"
                     prefix={`${currencySymbol} `}
                     value={field.value}
-                    onValueChange={(values) => field.onChange(values.value)}
                   />
                 </FormControl>
                 <FormMessage />
@@ -144,7 +147,7 @@ export function BudgetForm({
                 <FormLabel htmlFor="currency">Currency</FormLabel>
                 <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
-                    <SelectTrigger id="currency" className="w-full">
+                    <SelectTrigger className="w-full" id="currency">
                       <SelectValue placeholder="Select currency" />
                     </SelectTrigger>
                   </FormControl>
@@ -170,9 +173,9 @@ export function BudgetForm({
               <FormLabel>Categories</FormLabel>
               <FormControl>
                 <CategoryMultiSelect
-                  value={field.value}
                   onChange={field.onChange}
                   placeholder="Select categories to track"
+                  value={field.value}
                 />
               </FormControl>
               <FormMessage />
@@ -182,12 +185,12 @@ export function BudgetForm({
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline" ref={closeButtonRef}>
+            <Button ref={closeButtonRef} variant="outline">
               Cancel <Kbd variant="outline">{SHORTCUTS_VALUES.ESC}</Kbd>
             </Button>
           </DialogClose>
-          <Button type="submit" disabled={isLoading} ref={submitButtonRef}>
-            Save{' '}
+          <Button disabled={isLoading} ref={submitButtonRef} type="submit">
+            Save{" "}
             <Kbd>
               {SHORTCUTS_VALUES.CMD} + {SHORTCUTS_VALUES.ENTER}
             </Kbd>
@@ -195,5 +198,5 @@ export function BudgetForm({
         </DialogFooter>
       </form>
     </Form>
-  )
+  );
 }

@@ -1,26 +1,26 @@
-'use client'
+"use client";
 
-import { Button } from '@/components/ui/button'
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
-import { authClient } from '@/lib/auth/client'
-import { useState } from 'react'
-import { BackupCodesDialog } from './backup-codes-dialog'
-import { DisableTwoFactorDialog } from './disable-two-factor-dialog'
-import { EnableTwoFactorDialog } from './enable-two-factor-dialog'
+} from "@/components/ui/card";
+import { authClient } from "@/lib/auth/client";
+import { BackupCodesDialog } from "./backup-codes-dialog";
+import { DisableTwoFactorDialog } from "./disable-two-factor-dialog";
+import { EnableTwoFactorDialog } from "./enable-two-factor-dialog";
 
 export function TwoFactorSettings() {
-  const { data: session, isPending } = authClient.useSession()
-  const [showEnableDialog, setShowEnableDialog] = useState(false)
-  const [showDisableDialog, setShowDisableDialog] = useState(false)
-  const [showBackupCodesDialog, setShowBackupCodesDialog] = useState(false)
+  const { data: session, isPending } = authClient.useSession();
+  const [showEnableDialog, setShowEnableDialog] = useState(false);
+  const [showDisableDialog, setShowDisableDialog] = useState(false);
+  const [showBackupCodesDialog, setShowBackupCodesDialog] = useState(false);
 
-  const isTwoFactorEnabled = session?.user?.twoFactorEnabled
+  const isTwoFactorEnabled = session?.user?.twoFactorEnabled;
 
   if (isPending) {
     return (
@@ -30,7 +30,7 @@ export function TwoFactorSettings() {
           <CardDescription>Loading...</CardDescription>
         </CardHeader>
       </Card>
-    )
+    );
   }
 
   return (
@@ -48,14 +48,14 @@ export function TwoFactorSettings() {
             {isTwoFactorEnabled ? (
               <div className="flex flex-wrap gap-2">
                 <Button
-                  variant="outline"
                   onClick={() => setShowBackupCodesDialog(true)}
+                  variant="outline"
                 >
                   Regenerate backup codes
                 </Button>
                 <Button
-                  variant="destructive"
                   onClick={() => setShowDisableDialog(true)}
+                  variant="destructive"
                 >
                   Disable 2FA
                 </Button>
@@ -72,19 +72,19 @@ export function TwoFactorSettings() {
       </Card>
 
       <EnableTwoFactorDialog
-        open={showEnableDialog}
         onOpenChange={setShowEnableDialog}
+        open={showEnableDialog}
       />
 
       <DisableTwoFactorDialog
-        open={showDisableDialog}
         onOpenChange={setShowDisableDialog}
+        open={showDisableDialog}
       />
 
       <BackupCodesDialog
-        open={showBackupCodesDialog}
         onOpenChange={setShowBackupCodesDialog}
+        open={showBackupCodesDialog}
       />
     </>
-  )
+  );
 }

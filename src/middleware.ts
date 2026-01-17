@@ -1,30 +1,30 @@
-import { getSessionCookie } from 'better-auth/cookies'
-import { type NextRequest, NextResponse } from 'next/server'
+import { getSessionCookie } from "better-auth/cookies";
+import { type NextRequest, NextResponse } from "next/server";
 
 const PUBLIC_PATHS = [
-  '/',
-  '/sign-in',
-  '/sign-up',
-  '/forgot-password',
-  '/reset-password',
-]
+  "/",
+  "/sign-in",
+  "/sign-up",
+  "/forgot-password",
+  "/reset-password",
+];
 
-const AUTH_REDIRECT_PATHS = ['/', '/sign-in', '/sign-up']
+const AUTH_REDIRECT_PATHS = ["/", "/sign-in", "/sign-up"];
 
-export async function middleware(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const sessionCookie = getSessionCookie(request, {
-    cookiePrefix: 'bugdet',
-  })
+    cookiePrefix: "bugdet",
+  });
 
   if (sessionCookie && AUTH_REDIRECT_PATHS.includes(request.nextUrl.pathname)) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  if (!sessionCookie && !PUBLIC_PATHS.includes(request.nextUrl.pathname)) {
-    return NextResponse.redirect(new URL('/sign-in', request.url))
+  if (!(sessionCookie || PUBLIC_PATHS.includes(request.nextUrl.pathname))) {
+    return NextResponse.redirect(new URL("/sign-in", request.url));
   }
 
-  return NextResponse.next()
+  return NextResponse.next();
 }
 
 export const config = {
@@ -38,6 +38,6 @@ export const config = {
      * - api/* (all API routes handle their own auth)
      * Feel free to modify this pattern to include more paths.
      */
-    '/((?!_next/static|_next/image|api/|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    "/((?!_next/static|_next/image|api/|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
-}
+};

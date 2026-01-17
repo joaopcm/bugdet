@@ -1,14 +1,14 @@
-'use client'
+"use client";
 
-import { Skeleton } from '@/components/ui/skeleton'
-import { TableCell, TableRow } from '@/components/ui/table'
-import { usePagination } from '@/hooks/use-pagination'
-import { cn } from '@/lib/utils'
+import { Skeleton } from "@/components/ui/skeleton";
+import { TableCell, TableRow } from "@/components/ui/table";
+import { usePagination } from "@/hooks/use-pagination";
+import { cn } from "@/lib/utils";
 
-const RANDOM_NAME_SIZES = ['h-3.5 w-32', 'h-3.5 w-40', 'h-3.5 w-28']
+const RANDOM_NAME_SIZES = ["h-3.5 w-32", "h-3.5 w-40", "h-3.5 w-28"];
 
 export function LoadingState() {
-  const { pagination } = usePagination('categorization-rules')
+  const { pagination } = usePagination("categorization-rules");
 
   return (
     <>
@@ -20,7 +20,7 @@ export function LoadingState() {
           <TableCell>
             <Skeleton
               className={cn(
-                RANDOM_NAME_SIZES[index % RANDOM_NAME_SIZES.length],
+                RANDOM_NAME_SIZES[index % RANDOM_NAME_SIZES.length]
               )}
             />
           </TableCell>
@@ -42,5 +42,5 @@ export function LoadingState() {
         </TableRow>
       ))}
     </>
-  )
+  );
 }

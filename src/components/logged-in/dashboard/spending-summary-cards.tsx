@@ -1,17 +1,17 @@
-'use client'
+"use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
-import { trpc } from '@/lib/trpc/client'
-import { formatCurrency } from '@/lib/utils'
-import { format } from 'date-fns'
+import { format } from "date-fns";
 import {
   CreditCardIcon,
   DollarSignIcon,
   TagIcon,
   TrendingUpIcon,
-} from 'lucide-react'
-import { useDashboardFilters } from './search-params'
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { trpc } from "@/lib/trpc/client";
+import { formatCurrency } from "@/lib/utils";
+import { useDashboardFilters } from "./search-params";
 
 function SummaryCardSkeleton() {
   return (
@@ -25,20 +25,20 @@ function SummaryCardSkeleton() {
         <Skeleton className="mt-1 h-3 w-20" />
       </CardContent>
     </Card>
-  )
+  );
 }
 
 export function SpendingSummaryCards() {
-  const { filters } = useDashboardFilters()
+  const { filters } = useDashboardFilters();
 
   const { data: summary, isLoading } =
     trpc.dashboard.getSpendingSummary.useQuery(
       {
-        from: filters.from ? format(filters.from, 'yyyy-MM-dd') : '',
-        to: filters.to ? format(filters.to, 'yyyy-MM-dd') : '',
+        from: filters.from ? format(filters.from, "yyyy-MM-dd") : "",
+        to: filters.to ? format(filters.to, "yyyy-MM-dd") : "",
       },
-      { enabled: !!filters.from && !!filters.to },
-    )
+      { enabled: !!filters.from && !!filters.to }
+    );
 
   if (isLoading) {
     return (
@@ -48,50 +48,52 @@ export function SpendingSummaryCards() {
         <SummaryCardSkeleton />
         <SummaryCardSkeleton />
       </>
-    )
+    );
   }
 
-  if (!summary) return null
+  if (!summary) {
+    return null;
+  }
 
   const cards = [
     {
-      title: 'Total spent',
+      title: "Total spent",
       value: formatCurrency(summary.totalSpent, summary.currency),
       icon: DollarSignIcon,
       description: summary.hasOtherCurrencies
-        ? 'Primary currency only'
+        ? "Primary currency only"
         : undefined,
     },
     {
-      title: 'Transactions',
+      title: "Transactions",
       value: summary.transactionCount.toLocaleString(),
       icon: CreditCardIcon,
-      description: 'Total transactions',
+      description: "Total transactions",
     },
     {
-      title: 'Average',
+      title: "Average",
       value: formatCurrency(summary.avgAmount, summary.currency),
       icon: TrendingUpIcon,
-      description: 'Per transaction',
+      description: "Per transaction",
     },
     {
-      title: 'Categories',
+      title: "Categories",
       value: summary.categoryCount.toLocaleString(),
       icon: TagIcon,
-      description: summary.categoryCount === 0 ? 'No categories yet' : 'Used',
+      description: summary.categoryCount === 0 ? "No categories yet" : "Used",
     },
-  ]
+  ];
 
   return (
     <>
       {cards.map((card) => (
         <Card key={card.title}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{card.title}</CardTitle>
-            <card.icon className="text-muted-foreground size-4" />
+            <CardTitle className="font-medium text-sm">{card.title}</CardTitle>
+            <card.icon className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{card.value}</div>
+            <div className="font-bold text-2xl">{card.value}</div>
             {card.description && (
               <p className="text-muted-foreground text-xs">
                 {card.description}
@@ -101,5 +103,5 @@ export function SpendingSummaryCards() {
         </Card>
       ))}
     </>
-  )
+  );
 }

@@ -2,22 +2,22 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@/components/ui/tooltip'
-import type { TransactionMetadata } from '@/db/schema'
-import { formatCurrency } from '@/lib/utils'
+} from "@/components/ui/tooltip";
+import type { TransactionMetadata } from "@/db/schema";
+import { formatCurrency } from "@/lib/utils";
 
 interface AmountProps {
-  amount: number
-  currency: string
-  metadata: TransactionMetadata | null
+  amount: number;
+  currency: string;
+  metadata: TransactionMetadata | null;
 }
 
 export function Amount({ amount, currency, metadata }: AmountProps) {
-  const formattedAmount = formatCurrency(amount, currency)
-  const hasMetadata = metadata && Object.keys(metadata).length > 0
+  const formattedAmount = formatCurrency(amount, currency);
+  const hasMetadata = metadata && Object.keys(metadata).length > 0;
 
   if (!hasMetadata) {
-    return formattedAmount
+    return formattedAmount;
   }
 
   return (
@@ -40,7 +40,7 @@ export function Amount({ amount, currency, metadata }: AmountProps) {
                 label="Original Amount"
                 value={formatCurrency(
                   metadata.originalAmount,
-                  metadata.originalCurrency,
+                  metadata.originalCurrency
                 )}
               />
 
@@ -53,12 +53,12 @@ export function Amount({ amount, currency, metadata }: AmountProps) {
         </ul>
       </TooltipContent>
     </Tooltip>
-  )
+  );
 }
 
 interface MetadataFieldProps {
-  label: string
-  value: string
+  label: string;
+  value: string;
 }
 
 function MetadataField({ label, value }: MetadataFieldProps) {
@@ -67,5 +67,5 @@ function MetadataField({ label, value }: MetadataFieldProps) {
       <span className="text-muted">{label}</span>
       <span className="font-medium">{value}</span>
     </li>
-  )
+  );
 }
