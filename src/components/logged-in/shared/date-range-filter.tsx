@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'
 import { format, isSameDay, startOfYear, subDays, subMonths } from 'date-fns'
 import { CalendarIcon } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import type { DateRange } from 'react-day-picker'
 
 export const DATE_PRESETS = ['7d', '30d', '3m', '6m', 'ytd', 'custom'] as const
 export type DatePreset = (typeof DATE_PRESETS)[number]
@@ -81,7 +82,7 @@ export function DateRangeFilter({
   onFilterChange,
 }: DateRangeFilterProps) {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
-  const [localRange, setLocalRange] = useState<{ from?: Date; to?: Date }>({})
+  const [localRange, setLocalRange] = useState<DateRange | undefined>()
   const [clickCount, setClickCount] = useState(0)
 
   const activePreset = useMemo(() => getActivePreset(from, to), [from, to])
@@ -90,10 +91,11 @@ export function DateRangeFilter({
     setIsCalendarOpen(open)
     if (open) {
       setClickCount(0)
-      setLocalRange({
-        from: from ? new Date(from) : undefined,
-        to: to ? new Date(to) : undefined,
-      })
+      setLocalRange(
+        from
+          ? { from: new Date(from), to: to ? new Date(to) : undefined }
+          : undefined,
+      )
     }
   }
 
@@ -102,7 +104,7 @@ export function DateRangeFilter({
     onFilterChange(range)
   }
 
-  const handleDateSelect = (range: { from?: Date; to?: Date } | undefined) => {
+  const handleDateSelect = (range: DateRange | undefined) => {
     if (!range?.from) return
     const newClickCount = clickCount + 1
     setClickCount(newClickCount)
