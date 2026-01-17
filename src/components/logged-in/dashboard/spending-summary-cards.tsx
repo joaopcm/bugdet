@@ -11,7 +11,7 @@ import {
   TagIcon,
   TrendingUpIcon,
 } from 'lucide-react'
-import { getDateRangeFromPreset, useDashboardFilters } from './search-params'
+import { useDashboardFilters } from './search-params'
 
 function SummaryCardSkeleton() {
   return (
@@ -30,17 +30,15 @@ function SummaryCardSkeleton() {
 
 export function SpendingSummaryCards() {
   const { filters } = useDashboardFilters()
-  const { from, to } = getDateRangeFromPreset(
-    filters.preset,
-    filters.from,
-    filters.to,
-  )
 
   const { data: summary, isLoading } =
-    trpc.dashboard.getSpendingSummary.useQuery({
-      from: format(from, 'yyyy-MM-dd'),
-      to: format(to, 'yyyy-MM-dd'),
-    })
+    trpc.dashboard.getSpendingSummary.useQuery(
+      {
+        from: filters.from ? format(filters.from, 'yyyy-MM-dd') : '',
+        to: filters.to ? format(filters.to, 'yyyy-MM-dd') : '',
+      },
+      { enabled: !!filters.from && !!filters.to },
+    )
 
   if (isLoading) {
     return (

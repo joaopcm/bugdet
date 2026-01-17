@@ -12,7 +12,7 @@ import { trpc } from '@/lib/trpc/client'
 import { formatCurrency } from '@/lib/utils'
 import { format } from 'date-fns'
 import { Bar, BarChart, Cell, XAxis, YAxis } from 'recharts'
-import { getDateRangeFromPreset, useDashboardFilters } from './search-params'
+import { useDashboardFilters } from './search-params'
 
 const CHART_COLORS = [
   'var(--chart-1)',
@@ -31,17 +31,15 @@ const CHART_COLORS = [
 
 export function SpendingByCategory() {
   const { filters } = useDashboardFilters()
-  const { from, to } = getDateRangeFromPreset(
-    filters.preset,
-    filters.from,
-    filters.to,
-  )
 
-  const { data, isLoading } = trpc.dashboard.getSpendingByCategory.useQuery({
-    from: format(from, 'yyyy-MM-dd'),
-    to: format(to, 'yyyy-MM-dd'),
-    limit: 8,
-  })
+  const { data, isLoading } = trpc.dashboard.getSpendingByCategory.useQuery(
+    {
+      from: filters.from ? format(filters.from, 'yyyy-MM-dd') : '',
+      to: filters.to ? format(filters.to, 'yyyy-MM-dd') : '',
+      limit: 8,
+    },
+    { enabled: !!filters.from && !!filters.to },
+  )
 
   if (isLoading) {
     return (
