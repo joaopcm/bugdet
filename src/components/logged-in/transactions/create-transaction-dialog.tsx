@@ -1,6 +1,9 @@
-'use client'
+"use client";
 
-import { Button } from '@/components/ui/button'
+import { useState } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,50 +11,50 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog'
-import { Kbd } from '@/components/ui/kbd'
-import { useInvalidateTransactions } from '@/hooks/use-transactions'
-import { trpc } from '@/lib/trpc/client'
-import { getCurrencyCode, parseCurrency } from '@/lib/utils'
-import { useState } from 'react'
-import { useHotkeys } from 'react-hotkeys-hook'
-import { toast } from 'sonner'
-import { TransactionForm, type TransactionFormValues } from './transaction-form'
+} from "@/components/ui/dialog";
+import { Kbd } from "@/components/ui/kbd";
+import { useInvalidateTransactions } from "@/hooks/use-transactions";
+import { trpc } from "@/lib/trpc/client";
+import { getCurrencyCode, parseCurrency } from "@/lib/utils";
+import {
+  TransactionForm,
+  type TransactionFormValues,
+} from "./transaction-form";
 
-const NEW_TRANSACTION_SHORTCUT = 'N'
+const NEW_TRANSACTION_SHORTCUT = "N";
 
 export function CreateTransactionDialog() {
-  const [isOpen, setIsOpen] = useState(false)
-  const invalidate = useInvalidateTransactions()
+  const [isOpen, setIsOpen] = useState(false);
+  const invalidate = useInvalidateTransactions();
 
   const { mutate: createTransaction, isPending: isCreating } =
     trpc.transactions.create.useMutation({
       onSuccess: () => {
-        invalidate()
-        toast.success('You have created the transaction.')
-        setIsOpen(false)
+        invalidate();
+        toast.success("You have created the transaction.");
+        setIsOpen(false);
       },
       onError: (error) => {
-        toast.error(error.message)
+        toast.error(error.message);
       },
-    })
+    });
 
-  useHotkeys(NEW_TRANSACTION_SHORTCUT, () => setIsOpen(true))
+  useHotkeys(NEW_TRANSACTION_SHORTCUT, () => setIsOpen(true));
 
   function onSubmit(values: TransactionFormValues) {
     createTransaction({
       ...values,
       currency: getCurrencyCode(),
       amount: parseCurrency(values.amount),
-    })
+    });
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog onOpenChange={setIsOpen} open={isOpen}>
       <DialogTrigger asChild>
         <Button>
           New transaction
-          <Kbd variant="default" className="-mr-2">
+          <Kbd className="-mr-2" variant="default">
             {NEW_TRANSACTION_SHORTCUT}
           </Kbd>
         </Button>
@@ -66,5 +69,5 @@ export function CreateTransactionDialog() {
         <TransactionForm isLoading={isCreating} onSubmit={onSubmit} />
       </DialogContent>
     </Dialog>
-  )
+  );
 }

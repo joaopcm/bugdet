@@ -1,6 +1,11 @@
-'use client'
+"use client";
 
-import { Button } from '@/components/ui/button'
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -8,62 +13,57 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
-import { authClient } from '@/lib/auth/client'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { toast } from 'sonner'
-import { z } from 'zod'
-import { AuthContainer, AuthContainerHeader } from './container'
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { authClient } from "@/lib/auth/client";
+import { AuthContainer, AuthContainerHeader } from "./container";
 
 const forgotPasswordSchema = z.object({
-  email: z.string().email({ message: 'Please enter a valid email address' }),
-})
+  email: z.string().email({ message: "Please enter a valid email address" }),
+});
 
-type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>
+type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 
 export function ForgotPasswordForm() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSubmitted, setIsSubmitted] = useState(false)
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const form = useForm<ForgotPasswordFormValues>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
-      email: '',
+      email: "",
     },
-  })
+  });
 
   async function onSubmit(values: ForgotPasswordFormValues) {
-    setIsLoading(true)
+    setIsLoading(true);
 
     const { error } = await authClient.requestPasswordReset({
       email: values.email,
-      redirectTo: '/reset-password',
-    })
+      redirectTo: "/reset-password",
+    });
     if (error) {
-      toast.error(error.message)
-      setIsLoading(false)
-      return
+      toast.error(error.message);
+      setIsLoading(false);
+      return;
     }
 
-    setIsLoading(false)
-    setIsSubmitted(true)
+    setIsLoading(false);
+    setIsSubmitted(true);
   }
 
   async function reSendEmail() {
-    setIsLoading(true)
+    setIsLoading(true);
 
     const { error } = await authClient.requestPasswordReset({
-      email: form.getValues('email'),
-      redirectTo: '/reset-password',
-    })
+      email: form.getValues("email"),
+      redirectTo: "/reset-password",
+    });
     if (error) {
-      toast.error(error.message)
+      toast.error(error.message);
     }
 
-    setIsLoading(false)
+    setIsLoading(false);
   }
 
   if (isSubmitted) {
@@ -72,8 +72,8 @@ export function ForgotPasswordForm() {
         <div className="p-6 md:p-8">
           <div className="flex flex-col gap-6">
             <AuthContainerHeader
-              title="Check your inbox"
               description="We just sent you a password reset email"
+              title="Check your inbox"
             />
 
             <p className="text-center">
@@ -82,25 +82,25 @@ export function ForgotPasswordForm() {
 
             <Button
               className="w-full"
-              onClick={reSendEmail}
               disabled={isLoading}
+              onClick={reSendEmail}
             >
               Re-send password reset email
             </Button>
           </div>
         </div>
       </AuthContainer>
-    )
+    );
   }
 
   return (
     <AuthContainer>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="p-6 md:p-8">
+        <form className="p-6 md:p-8" onSubmit={form.handleSubmit(onSubmit)}>
           <div className="flex flex-col gap-6">
             <AuthContainerHeader
-              title="Reset your password"
               description="Enter your email to reset your password"
+              title="Reset your password"
             />
 
             <FormField
@@ -122,12 +122,12 @@ export function ForgotPasswordForm() {
               )}
             />
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button className="w-full" disabled={isLoading} type="submit">
               Reset password
             </Button>
           </div>
         </form>
       </Form>
     </AuthContainer>
-  )
+  );
 }

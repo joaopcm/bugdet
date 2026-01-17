@@ -1,10 +1,10 @@
-'use client'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Skeleton } from '@/components/ui/skeleton'
-import { trpc } from '@/lib/trpc/client'
-import { formatCurrency } from '@/lib/utils'
-import { format } from 'date-fns'
-import { useDashboardFilters } from './search-params'
+"use client";
+import { format } from "date-fns";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { trpc } from "@/lib/trpc/client";
+import { formatCurrency } from "@/lib/utils";
+import { useDashboardFilters } from "./search-params";
 
 function MerchantSkeleton() {
   return (
@@ -15,61 +15,71 @@ function MerchantSkeleton() {
       </div>
       <Skeleton className="h-4 w-20" />
     </div>
-  )
+  );
 }
 
 export function TopMerchants() {
-  const { filters } = useDashboardFilters()
+  const { filters } = useDashboardFilters();
 
   const { data, isLoading } = trpc.dashboard.getTopMerchants.useQuery(
     {
-      from: filters.from ? format(filters.from, 'yyyy-MM-dd') : '',
-      to: filters.to ? format(filters.to, 'yyyy-MM-dd') : '',
+      from: filters.from ? format(filters.from, "yyyy-MM-dd") : "",
+      to: filters.to ? format(filters.to, "yyyy-MM-dd") : "",
       limit: 5,
     },
-    { enabled: !!filters.from && !!filters.to },
-  )
+    { enabled: !!filters.from && !!filters.to }
+  );
+
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="space-y-1">
+          {Array.from({ length: 5 }, (_, i) => (
+            <MerchantSkeleton key={String(i)} />
+          ))}
+        </div>
+      );
+    }
+
+    if (!data?.data.length) {
+      return (
+        <div className="flex h-[200px] items-center justify-center">
+          <p className="text-muted-foreground text-sm">No merchants found</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-3">
+        {data.data.map((merchant, _index) => (
+          <div
+            className="flex items-center justify-between"
+            key={merchant.merchantName}
+          >
+            <div>
+              <p className="font-medium text-sm leading-none">
+                {merchant.merchantName}
+              </p>
+              <p className="text-muted-foreground text-xs">
+                {merchant.transactionCount} transaction
+                {merchant.transactionCount !== 1 ? "s" : ""}
+              </p>
+            </div>
+            <span className="font-medium text-sm">
+              {formatCurrency(merchant.totalAmount, data.currency)}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>Top merchants</CardTitle>
       </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="space-y-1">
-            {Array.from({ length: 5 }, (_, i) => (
-              <MerchantSkeleton key={String(i)} />
-            ))}
-          </div>
-        ) : !data?.data.length ? (
-          <div className="flex h-[200px] items-center justify-center">
-            <p className="text-muted-foreground text-sm">No merchants found</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {data.data.map((merchant, index) => (
-              <div
-                key={merchant.merchantName}
-                className="flex items-center justify-between"
-              >
-                <div>
-                  <p className="text-sm font-medium leading-none">
-                    {merchant.merchantName}
-                  </p>
-                  <p className="text-muted-foreground text-xs">
-                    {merchant.transactionCount} transaction
-                    {merchant.transactionCount !== 1 ? 's' : ''}
-                  </p>
-                </div>
-                <span className="text-sm font-medium">
-                  {formatCurrency(merchant.totalAmount, data.currency)}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
+      <CardContent>{renderContent()}</CardContent>
     </Card>
-  )
+  );
 }

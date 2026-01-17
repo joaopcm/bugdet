@@ -1,53 +1,54 @@
-'use client'
+"use client";
 
-import { Kbd } from '@/components/ui/kbd'
+import { useState } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
+import { Kbd } from "@/components/ui/kbd";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from "@/components/ui/select";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@/components/ui/tooltip'
-import { useCategories } from '@/hooks/use-categories'
-import { usePagination } from '@/hooks/use-pagination'
-import { useState } from 'react'
-import { useHotkeys } from 'react-hotkeys-hook'
-import { useTransactionsFilters } from './search-params'
+} from "@/components/ui/tooltip";
+import { useCategories } from "@/hooks/use-categories";
+import { usePagination } from "@/hooks/use-pagination";
+import { useTransactionsFilters } from "./search-params";
 
-const CATEGORY_SHORTCUT = 'C'
+const CATEGORY_SHORTCUT = "C";
 
 export function CategoryFilter() {
   const { data: categories } = useCategories({
     ignoreFilters: true,
     ignorePagination: true,
-  })
-  const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
-  const { setPagination } = usePagination('transactions')
-  const [isOpen, setIsOpen] = useState(false)
+  });
+  const { transactionFilters, setTransactionFilters } =
+    useTransactionsFilters();
+  const { setPagination } = usePagination("transactions");
+  const [isOpen, setIsOpen] = useState(false);
 
   useHotkeys(CATEGORY_SHORTCUT, (e) => {
-    e.preventDefault()
-    setIsOpen(!isOpen)
-  })
+    e.preventDefault();
+    setIsOpen(!isOpen);
+  });
 
   return (
     <Select
-      onValueChange={(value) => {
-        setTransactionFilters({ category: value })
-        setPagination({ page: 1 })
-      }}
-      value={transactionFilters.category || undefined}
-      open={isOpen}
       onOpenChange={setIsOpen}
+      onValueChange={(value) => {
+        setTransactionFilters({ category: value });
+        setPagination({ page: 1 });
+      }}
+      open={isOpen}
+      value={transactionFilters.category || undefined}
     >
       <Tooltip>
         <TooltipTrigger asChild>
-          <SelectTrigger id="categoryId" className="w-full">
+          <SelectTrigger className="w-full" id="categoryId">
             <SelectValue placeholder="Select a category" />
           </SelectTrigger>
         </TooltipTrigger>
@@ -65,5 +66,5 @@ export function CategoryFilter() {
         ))}
       </SelectContent>
     </Select>
-  )
+  );
 }

@@ -5,14 +5,14 @@ import {
   Html,
   Preview,
   Tailwind,
-} from '@react-email/components'
-import type { PropsWithChildren } from 'react'
-import { Footer } from './footer'
-import { Header } from './header'
+} from "@react-email/components";
+import type { PropsWithChildren } from "react";
+import { Footer } from "./footer";
+import { Header } from "./header";
 
 interface LayoutProps extends PropsWithChildren {
-  preview: string
-  title?: string
+  preview: string;
+  title?: string;
 }
 
 export function Layout({ children, preview, title }: LayoutProps) {
@@ -21,16 +21,16 @@ export function Layout({ children, preview, title }: LayoutProps) {
       <Head />
       <Preview>{preview}</Preview>
       <Tailwind>
-        <Body className="bg-[#F4F4F0] font-sans py-[40px]">
+        <Body className="bg-[#F4F4F0] py-[40px] font-sans">
           <Container
-            className="mx-auto bg-white rounded-[12px] overflow-hidden"
+            className="mx-auto overflow-hidden rounded-[12px] bg-white"
             style={{
-              maxWidth: '600px',
-              borderTop: '1px solid #999A5E',
-              borderLeft: '1px solid #999A5E',
-              borderRight: '6px solid #76773C',
-              borderBottom: '6px solid #76773C',
-              boxShadow: '0 6px 12px rgba(0, 0, 0, 0.1)',
+              maxWidth: "600px",
+              borderTop: "1px solid #999A5E",
+              borderLeft: "1px solid #999A5E",
+              borderRight: "6px solid #76773C",
+              borderBottom: "6px solid #76773C",
+              boxShadow: "0 6px 12px rgba(0, 0, 0, 0.1)",
             }}
           >
             <Header title={title} />
@@ -40,5 +40,5 @@ export function Layout({ children, preview, title }: LayoutProps) {
         </Body>
       </Tailwind>
     </Html>
-  )
+  );
 }

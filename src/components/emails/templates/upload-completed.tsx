@@ -1,70 +1,70 @@
-import { pluralize } from '@/lib/utils'
-import { Button, Link, Section, Text } from '@react-email/components'
-import { Layout } from '../components/layout'
+import { Button, Link, Section, Text } from "@react-email/components";
+import { pluralize } from "@/lib/utils";
+import { Layout } from "../components/layout";
 
 interface UploadCompletedEmailProps {
-  fileName: string
-  transactionCount: number
-  categoriesCreated: number
-  rulesApplied: number
-  lowConfidenceCount: number
-  uploadsLink: string
+  fileName: string;
+  transactionCount: number;
+  categoriesCreated: number;
+  rulesApplied: number;
+  lowConfidenceCount: number;
+  uploadsLink: string;
 }
 
 export default function UploadCompletedEmail({
-  fileName = 'mybankstatement.pdf',
+  fileName = "mybankstatement.pdf",
   transactionCount = 100,
   categoriesCreated = 10,
   rulesApplied = 0,
   lowConfidenceCount = 0,
-  uploadsLink = 'https://bugdet.co/uploads',
+  uploadsLink = "https://bugdet.co/uploads",
 }: UploadCompletedEmailProps) {
   return (
     <Layout
       preview={`Your bank statement ${fileName} has been processed successfully. Here's a summary of the results.`}
     >
-      <Section className="px-[24px] py-[32px] bg-white">
-        <Text className="text-[16px] text-gray-800 mb-[24px]">Hi,</Text>
+      <Section className="bg-white px-[24px] py-[32px]">
+        <Text className="mb-[24px] text-[16px] text-gray-800">Hi,</Text>
 
-        <Text className="text-[16px] text-gray-800 mb-[24px]">
+        <Text className="mb-[24px] text-[16px] text-gray-800">
           Great news! Your bank statement <strong>{fileName}</strong> has been
           successfully processed.
         </Text>
 
         <Section
-          className="bg-[#F4F4F0] p-[24px] pt-0 mb-[24px] rounded-[8px]"
+          className="mb-[24px] rounded-[8px] bg-[#F4F4F0] p-[24px] pt-0"
           style={{
-            borderTop: '1px solid #999A5E',
-            borderLeft: '1px solid #999A5E',
-            borderRight: '5px solid #76773C',
-            borderBottom: '5px solid #76773C',
+            borderTop: "1px solid #999A5E",
+            borderLeft: "1px solid #999A5E",
+            borderRight: "5px solid #76773C",
+            borderBottom: "5px solid #76773C",
           }}
         >
-          <Text className="text-[18px] font-bold text-[#76773C] mb-[16px]">
+          <Text className="mb-[16px] font-bold text-[#76773C] text-[18px]">
             Summary
           </Text>
-          <Text className="text-[16px] text-gray-800 mb-[8px] m-0">
-            • <strong>{transactionCount}</strong>{' '}
-            {pluralize(transactionCount, 'transaction')} imported
+          <Text className="m-0 mb-[8px] text-[16px] text-gray-800">
+            • <strong>{transactionCount}</strong>{" "}
+            {pluralize(transactionCount, "transaction")} imported
           </Text>
-          <Text className="text-[16px] text-gray-800 mb-[8px] m-0">
-            • <strong>{categoriesCreated}</strong> new{' '}
-            {pluralize(categoriesCreated, 'category', 'categories')} created
+          <Text className="m-0 mb-[8px] text-[16px] text-gray-800">
+            • <strong>{categoriesCreated}</strong> new{" "}
+            {pluralize(categoriesCreated, "category", "categories")} created
           </Text>
-          <Text className="text-[16px] text-gray-800 mb-[0px] m-0">
-            • <strong>{rulesApplied}</strong>{' '}
-            {pluralize(rulesApplied, 'rule match', 'rule matches')}
+          <Text className="m-0 mb-[0px] text-[16px] text-gray-800">
+            • <strong>{rulesApplied}</strong>{" "}
+            {pluralize(rulesApplied, "rule match", "rule matches")}
           </Text>
         </Section>
 
         {lowConfidenceCount > 0 && (
           <Section className="mb-[24px]">
-            <Text className="text-[16px] text-gray-800 m-0">
-              We noticed that{' '}
+            <Text className="m-0 text-[16px] text-gray-800">
+              We noticed that{" "}
               <strong>
-                {lowConfidenceCount}{' '}
-                {pluralize(lowConfidenceCount, 'transaction')}
-              </strong>{' '}
+                {lowConfidenceCount}{" "}
+                {pluralize(lowConfidenceCount, "transaction")}
+              </strong>{" "}
               {pluralize(lowConfidenceCount, "wasn't", "weren't")} easy to
               categorize automatically. Don't worry — our financial copilot is
               taking a closer look in the background to improve the
@@ -73,37 +73,37 @@ export default function UploadCompletedEmail({
           </Section>
         )}
 
-        <Text className="text-[16px] text-gray-800 mb-[24px]">
+        <Text className="mb-[24px] text-[16px] text-gray-800">
           View your transactions and make any adjustments to categories as
           needed:
         </Text>
 
         <Button
-          className="bg-[#999A5E] text-white font-bold py-[12px] px-[24px] rounded-[8px] text-[16px] no-underline text-center block box-border"
+          className="box-border block rounded-[8px] bg-[#999A5E] px-[24px] py-[12px] text-center font-bold text-[16px] text-white no-underline"
           href={uploadsLink}
           style={{
-            borderTop: '1px solid #999A5E',
-            borderLeft: '1px solid #999A5E',
-            borderRight: '4px solid #76773C',
-            borderBottom: '4px solid #76773C',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            borderTop: "1px solid #999A5E",
+            borderLeft: "1px solid #999A5E",
+            borderRight: "4px solid #76773C",
+            borderBottom: "4px solid #76773C",
+            boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
           }}
         >
           View my uploads
         </Button>
 
-        <Text className="text-[14px] text-gray-600 text-left mt-[16px] mb-[24px]">
+        <Text className="mt-[16px] mb-[24px] text-left text-[14px] text-gray-600">
           If the button doesn't work, copy and paste this link into your
           browser:
           <br />
           <Link
+            className="break-all font-medium text-[#76773C]"
             href={uploadsLink}
-            className="text-[#76773C] font-medium break-all"
           >
             {uploadsLink}
           </Link>
         </Text>
       </Section>
     </Layout>
-  )
+  );
 }

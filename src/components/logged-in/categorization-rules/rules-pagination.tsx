@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import {
   Pagination,
@@ -9,42 +9,42 @@ import {
   PaginationNext,
   PaginationPageSize,
   PaginationPrevious,
-} from '@/components/ui/pagination'
-import { usePagination } from '@/hooks/use-pagination'
+} from "@/components/ui/pagination";
+import { usePagination } from "@/hooks/use-pagination";
 
 interface RulesPaginationProps {
-  hasMore: boolean
+  hasMore: boolean;
 }
 
 export function RulesPagination({ hasMore }: RulesPaginationProps) {
-  const { pagination, setPagination } = usePagination('categorization-rules')
+  const { pagination, setPagination } = usePagination("categorization-rules");
 
-  const currentPage = pagination.page
-  const hasNextPage = hasMore
-  const hasPreviousPage = currentPage > 1
+  const currentPage = pagination.page;
+  const hasNextPage = hasMore;
+  const hasPreviousPage = currentPage > 1;
 
   function handlePageChange(page: number) {
-    setPagination({ page })
+    setPagination({ page });
   }
 
   return (
     <div className="mt-8 flex items-center justify-between gap-4">
       <PaginationPageSize
-        value={pagination.limit}
         onChange={(limit) => setPagination({ limit, page: 1 })}
+        value={pagination.limit}
       />
 
       <Pagination>
         <PaginationContent>
           <PaginationItem>
             <PaginationPrevious
+              className={
+                hasPreviousPage
+                  ? "cursor-pointer"
+                  : "pointer-events-none opacity-50"
+              }
               onClick={() =>
                 hasPreviousPage && handlePageChange(currentPage - 1)
-              }
-              className={
-                !hasPreviousPage
-                  ? 'pointer-events-none opacity-50'
-                  : 'cursor-pointer'
               }
             />
           </PaginationItem>
@@ -84,16 +84,16 @@ export function RulesPagination({ hasMore }: RulesPaginationProps) {
 
           <PaginationItem>
             <PaginationNext
-              onClick={() => hasNextPage && handlePageChange(currentPage + 1)}
               className={
-                !hasNextPage
-                  ? 'pointer-events-none opacity-50'
-                  : 'cursor-pointer'
+                hasNextPage
+                  ? "cursor-pointer"
+                  : "pointer-events-none opacity-50"
               }
+              onClick={() => hasNextPage && handlePageChange(currentPage + 1)}
             />
           </PaginationItem>
         </PaginationContent>
       </Pagination>
     </div>
-  )
+  );
 }

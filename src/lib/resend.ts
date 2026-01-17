@@ -1,15 +1,15 @@
-import { randomUUID } from 'node:crypto'
-import { FROM_EMAIL_ADDRESS } from '@/constants/resend'
-import { env } from '@/env'
-import { Resend } from 'resend'
-import { logger } from './logger'
+import { randomUUID } from "node:crypto";
+import { Resend } from "resend";
+import { FROM_EMAIL_ADDRESS } from "@/constants/resend";
+import { env } from "@/env";
+import { logger } from "./logger";
 
-const resendClient = new Resend(env.RESEND_API_KEY)
+const resendClient = new Resend(env.RESEND_API_KEY);
 
 interface SendEmailProps {
-  to: string
-  subject: string
-  react: React.ReactElement
+  to: string;
+  subject: string;
+  react: React.ReactElement;
 }
 
 async function sendEmail({ to, subject, react }: SendEmailProps) {
@@ -19,16 +19,16 @@ async function sendEmail({ to, subject, react }: SendEmailProps) {
     subject,
     react,
     headers: {
-      'X-Entity-Ref-ID': randomUUID(),
+      "X-Entity-Ref-ID": randomUUID(),
     },
-  })
+  });
 
   if (error) {
-    logger.error('Error sending email', error)
-    throw new Error(error.message)
+    logger.error("Error sending email", error);
+    throw new Error(error.message);
   }
 
-  return data
+  return data;
 }
 
 async function createContactWithSegment(email: string, segmentId: string) {
@@ -36,25 +36,25 @@ async function createContactWithSegment(email: string, segmentId: string) {
     email,
     unsubscribed: false,
     audienceId: segmentId,
-  })
+  });
 
   if (error) {
-    logger.error('Error creating contact with segment', error)
-    throw new Error(error.message)
+    logger.error("Error creating contact with segment", error);
+    throw new Error(error.message);
   }
 
-  return data
+  return data;
 }
 
 async function removeContactFromSegment(email: string, segmentId: string) {
   const { error } = await resendClient.contacts.segments.remove({
     email,
     segmentId,
-  })
+  });
 
   if (error) {
-    logger.error('Error removing contact from segment', error)
-    throw new Error(error.message)
+    logger.error("Error removing contact from segment", error);
+    throw new Error(error.message);
   }
 }
 
@@ -62,4 +62,4 @@ export const resend = {
   sendEmail,
   createContactWithSegment,
   removeContactFromSegment,
-}
+};

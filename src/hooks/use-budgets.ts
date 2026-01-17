@@ -1,24 +1,21 @@
-import { useBudgetsFilters } from '@/components/logged-in/budgets/filters/search-params'
-import { MAX_LIMIT_PER_PAGE } from '@/constants/pagination'
-import { trpc } from '@/lib/trpc/client'
-import { useCallback } from 'react'
-import { usePagination } from './use-pagination'
+import { useCallback } from "react";
+import { useBudgetsFilters } from "@/components/logged-in/budgets/filters/search-params";
+import { MAX_LIMIT_PER_PAGE } from "@/constants/pagination";
+import { trpc } from "@/lib/trpc/client";
+import { usePagination } from "./use-pagination";
 
 export function useInvalidateBudgets() {
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
   return useCallback(() => {
-    utils.budgets.invalidate()
-  }, [utils])
+    utils.budgets.invalidate();
+  }, [utils]);
 }
 
 export function useBudgets(
-  params: {
-    ignoreFilters?: boolean
-    ignorePagination?: boolean
-  } = {},
+  params: { ignoreFilters?: boolean; ignorePagination?: boolean } = {}
 ) {
-  const { budgetFilters } = useBudgetsFilters()
-  const { pagination } = usePagination('budgets')
+  const { budgetFilters } = useBudgetsFilters();
+  const { pagination } = usePagination("budgets");
 
   return trpc.budgets.list.useQuery({
     filters: {
@@ -29,5 +26,5 @@ export function useBudgets(
       page: params.ignorePagination ? 1 : pagination.page,
       limit: params.ignorePagination ? MAX_LIMIT_PER_PAGE : pagination.limit,
     },
-  })
+  });
 }

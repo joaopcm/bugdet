@@ -1,5 +1,5 @@
-import { trpc } from '@/lib/trpc/client'
+import { trpc } from "@/lib/trpc/client";
 
 export function useMostFrequentMerchant() {
-  return trpc.transactions.getMostFrequentMerchant.useQuery()
+  return trpc.transactions.getMostFrequentMerchant.useQuery();
 }

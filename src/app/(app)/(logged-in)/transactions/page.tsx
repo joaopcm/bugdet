@@ -1,12 +1,12 @@
-import { PageLayout } from '@/components/logged-in/page-layout'
-import { CreateTransactionDialog } from '@/components/logged-in/transactions/create-transaction-dialog'
-import { RefreshButton } from '@/components/logged-in/transactions/refresh-button'
-import { TransactionsTable } from '@/components/logged-in/transactions/transactions-table'
-import type { Metadata } from 'next'
+import type { Metadata } from "next";
+import { PageLayout } from "@/components/logged-in/page-layout";
+import { CreateTransactionDialog } from "@/components/logged-in/transactions/create-transaction-dialog";
+import { RefreshButton } from "@/components/logged-in/transactions/refresh-button";
+import { TransactionsTable } from "@/components/logged-in/transactions/transactions-table";
 
 export const metadata: Metadata = {
-  title: 'Transactions',
-}
+  title: "Transactions",
+};
 
 export default function TransactionsPage() {
   return (
@@ -24,5 +24,5 @@ export default function TransactionsPage() {
       </PageLayout.Header>
       <TransactionsTable />
     </PageLayout.Root>
-  )
+  );
 }

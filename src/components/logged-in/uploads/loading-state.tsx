@@ -1,21 +1,21 @@
-'use client'
+"use client";
 
-import { Skeleton } from '@/components/ui/skeleton'
-import { TableCell, TableRow } from '@/components/ui/table'
-import { usePagination } from '@/hooks/use-pagination'
-import { cn } from '@/lib/utils'
+import { Skeleton } from "@/components/ui/skeleton";
+import { TableCell, TableRow } from "@/components/ui/table";
+import { usePagination } from "@/hooks/use-pagination";
+import { cn } from "@/lib/utils";
 
 const RANDOM_FIRST_COLUMN_SIZES = [
-  'h-3.5 w-44',
-  'h-3.5 w-16',
-  'h-3.5 w-[93px]',
-  'h-3.5 w-[187px]',
-  'h-3.5 w-[95px]',
-  'h-3.5 w-[71px]',
-]
+  "h-3.5 w-44",
+  "h-3.5 w-16",
+  "h-3.5 w-[93px]",
+  "h-3.5 w-[187px]",
+  "h-3.5 w-[95px]",
+  "h-3.5 w-[71px]",
+];
 
 export function LoadingState() {
-  const { pagination } = usePagination('uploads')
+  const { pagination } = usePagination("uploads");
 
   return (
     <>
@@ -26,7 +26,7 @@ export function LoadingState() {
               className={cn(
                 RANDOM_FIRST_COLUMN_SIZES[
                   index % RANDOM_FIRST_COLUMN_SIZES.length
-                ],
+                ]
               )}
             />
           </TableCell>
@@ -45,5 +45,5 @@ export function LoadingState() {
         </TableRow>
       ))}
     </>
-  )
+  );
 }

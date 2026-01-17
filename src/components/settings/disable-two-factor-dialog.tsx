@@ -1,6 +1,8 @@
-'use client'
+"use client";
 
-import { Button } from '@/components/ui/button'
+import { useState } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,62 +10,60 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { authClient } from '@/lib/auth/client'
-import { useState } from 'react'
-import { toast } from 'sonner'
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { authClient } from "@/lib/auth/client";
 
 interface DisableTwoFactorDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 export function DisableTwoFactorDialog({
   open,
   onOpenChange,
 }: DisableTwoFactorDialogProps) {
-  const [isLoading, setIsLoading] = useState(false)
-  const [password, setPassword] = useState('')
+  const [isLoading, setIsLoading] = useState(false);
+  const [password, setPassword] = useState("");
 
   function reset() {
-    setPassword('')
-    setIsLoading(false)
+    setPassword("");
+    setIsLoading(false);
   }
 
   function handleOpenChange(nextOpen: boolean) {
     if (!nextOpen) {
-      reset()
+      reset();
     }
-    onOpenChange(nextOpen)
+    onOpenChange(nextOpen);
   }
 
   async function handleDisable() {
     if (!password) {
-      toast.error('Please enter your password')
-      return
+      toast.error("Please enter your password");
+      return;
     }
 
-    setIsLoading(true)
-    const toastId = toast.loading('Disabling two-factor authentication...')
+    setIsLoading(true);
+    const toastId = toast.loading("Disabling two-factor authentication...");
 
     const { error } = await authClient.twoFactor.disable({
       password,
-    })
+    });
 
     if (error) {
-      toast.error(error.message, { id: toastId })
-      setIsLoading(false)
-      return
+      toast.error(error.message, { id: toastId });
+      setIsLoading(false);
+      return;
     }
 
-    toast.success('Two-factor authentication disabled', { id: toastId })
-    handleOpenChange(false)
+    toast.success("Two-factor authentication disabled", { id: toastId });
+    handleOpenChange(false);
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog onOpenChange={handleOpenChange} open={open}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Disable two-factor authentication</DialogTitle>
@@ -76,28 +76,28 @@ export function DisableTwoFactorDialog({
           <div className="flex flex-col gap-2">
             <Label htmlFor="password">Password</Label>
             <Input
-              id="password"
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}
+              id="password"
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              type="password"
+              value={password}
             />
           </div>
         </div>
         <DialogFooter className="flex-col gap-2 sm:flex-row">
-          <Button variant="outline" onClick={() => handleOpenChange(false)}>
+          <Button onClick={() => handleOpenChange(false)} variant="outline">
             Cancel
           </Button>
           <Button
-            variant="destructive"
-            onClick={handleDisable}
             disabled={isLoading || !password}
+            onClick={handleDisable}
+            variant="destructive"
           >
             Disable 2FA
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

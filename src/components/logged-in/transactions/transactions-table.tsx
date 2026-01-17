@@ -1,37 +1,37 @@
-'use client'
+"use client";
 
-import { Checkbox } from '@/components/ui/checkbox'
+import { useMemo } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
+import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
   TableCell,
   TableHead,
+  TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { TableHeader } from '@/components/ui/table'
-import { useBulkSelection } from '@/hooks/use-bulk-selection'
-import { useIsMobile } from '@/hooks/use-is-mobile'
-import { useTransactions } from '@/hooks/use-transactions'
-import { trpc } from '@/lib/trpc/client'
-import { pluralize } from '@/lib/utils'
-import { useMemo } from 'react'
-import { useHotkeys } from 'react-hotkeys-hook'
-import { toast } from 'sonner'
-import { FloatingActionBar } from '../bulk-actions/floating-action-bar'
-import { EmptyState } from '../empty-state'
-import { TransactionsFilters } from './filters'
-import { LoadingState } from './loading-state'
-import { TransactionItem } from './transaction-item'
-import { TransactionsPagination } from './transactions-pagination'
+} from "@/components/ui/table";
+import { useBulkSelection } from "@/hooks/use-bulk-selection";
+import { useIsMobile } from "@/hooks/use-is-mobile";
+import { useTransactions } from "@/hooks/use-transactions";
+import { trpc } from "@/lib/trpc/client";
+import { pluralize } from "@/lib/utils";
+import { FloatingActionBar } from "../bulk-actions/floating-action-bar";
+import { EmptyState } from "../empty-state";
+import { TransactionsFilters } from "./filters";
+import { LoadingState } from "./loading-state";
+import { TransactionItem } from "./transaction-item";
+import { TransactionsPagination } from "./transactions-pagination";
 
 export const TransactionsTable = () => {
-  const isMobile = useIsMobile()
-  const { data: transactions, isLoading, invalidate } = useTransactions()
+  const isMobile = useIsMobile();
+  const { data: transactions, isLoading, invalidate } = useTransactions();
 
   const itemIds = useMemo(
     () => transactions?.data?.map((t) => t.id) ?? [],
-    [transactions?.data],
-  )
+    [transactions?.data]
+  );
 
   const {
     selectedIds,
@@ -41,42 +41,44 @@ export const TransactionsTable = () => {
     toggleAll,
     selectAll,
     clearSelection,
-  } = useBulkSelection({ itemIds })
+  } = useBulkSelection({ itemIds });
 
-  useHotkeys('mod+a', selectAll, { preventDefault: true, enabled: !isMobile })
+  useHotkeys("mod+a", selectAll, { preventDefault: true, enabled: !isMobile });
 
   const { mutate: deleteMany, isPending: isDeleting } =
     trpc.transactions.deleteMany.useMutation({
       onMutate: () => {
-        toast.loading('Deleting transactions...', { id: 'delete-transactions' })
+        toast.loading("Deleting transactions...", {
+          id: "delete-transactions",
+        });
       },
       onSuccess: () => {
         toast.success(
-          `Deleted ${selectedIds.size} ${pluralize(selectedIds.size, 'transaction')}`,
-          { id: 'delete-transactions' },
-        )
-        clearSelection()
-        invalidate()
+          `Deleted ${selectedIds.size} ${pluralize(selectedIds.size, "transaction")}`,
+          { id: "delete-transactions" }
+        );
+        clearSelection();
+        invalidate();
       },
       onError: (error) => {
-        toast.error(error.message, { id: 'delete-transactions' })
+        toast.error(error.message, { id: "delete-transactions" });
       },
-    })
+    });
 
   const handleBulkDelete = () => {
-    deleteMany({ ids: Array.from(selectedIds) })
-  }
+    deleteMany({ ids: Array.from(selectedIds) });
+  };
 
   return (
     <div className="flex flex-col gap-4">
       <TransactionsFilters />
       <div className="relative overflow-visible">
         <Checkbox
+          aria-label="Select all transactions"
           checked={isAllSelected}
+          className="absolute top-2.5 -left-8 hidden opacity-0 hover:opacity-100 data-[state=checked]:opacity-100 data-[state=indeterminate]:opacity-100 md:block"
           indeterminate={isPartiallySelected}
           onCheckedChange={toggleAll}
-          className="absolute -left-8 top-2.5 hidden opacity-0 hover:opacity-100 data-[state=checked]:opacity-100 data-[state=indeterminate]:opacity-100 md:block"
-          aria-label="Select all transactions"
         />
         <Table containerClassName="overflow-visible">
           <TableHeader>
@@ -93,19 +95,19 @@ export const TransactionsTable = () => {
 
             {transactions?.data?.map((transaction) => (
               <TransactionItem
-                key={transaction.id}
-                transaction={transaction}
                 isSelected={selectedIds.has(transaction.id)}
+                key={transaction.id}
                 onSelect={handleClick}
+                transaction={transaction}
               />
             ))}
 
             {transactions?.data?.length === 0 && (
               <TableRow>
-                <TableCell colSpan={5} className="py-10">
+                <TableCell className="py-10" colSpan={5}>
                   <EmptyState
-                    title="No transactions found."
                     description="Upload your bank statements to get started."
+                    title="No transactions found."
                   />
                 </TableCell>
               </TableRow>
@@ -117,11 +119,11 @@ export const TransactionsTable = () => {
       <TransactionsPagination hasMore={!!transactions?.hasMore} />
 
       <FloatingActionBar
-        selectedCount={selectedIds.size}
-        onDelete={handleBulkDelete}
-        isDeleting={isDeleting}
         className="w-[301px]"
+        isDeleting={isDeleting}
+        onDelete={handleBulkDelete}
+        selectedCount={selectedIds.size}
       />
     </div>
-  )
-}
+  );
+};

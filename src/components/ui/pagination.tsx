@@ -1,75 +1,75 @@
-import { type Button, buttonVariants } from '@/components/ui/button'
-import { LIMIT_PER_PAGE_OPTIONS } from '@/constants/pagination'
-import { cn } from '@/lib/utils'
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
   MoreHorizontalIcon,
-} from 'lucide-react'
-import type * as React from 'react'
-import { Label } from './label'
+} from "lucide-react";
+import type * as React from "react";
+import { type Button, buttonVariants } from "@/components/ui/button";
+import { LIMIT_PER_PAGE_OPTIONS } from "@/constants/pagination";
+import { cn } from "@/lib/utils";
+import { Label } from "./label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from './select'
+} from "./select";
 
-function Pagination({ className, ...props }: React.ComponentProps<'nav'>) {
+function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
   return (
     <nav
       aria-label="pagination"
+      className={cn("flex justify-center", className)}
       data-slot="pagination"
-      className={cn('flex justify-center', className)}
       {...props}
     />
-  )
+  );
 }
 
 function PaginationContent({
   className,
   ...props
-}: React.ComponentProps<'ul'>) {
+}: React.ComponentProps<"ul">) {
   return (
     <ul
+      className={cn("flex flex-row items-center gap-1", className)}
       data-slot="pagination-content"
-      className={cn('flex flex-row items-center gap-1', className)}
       {...props}
     />
-  )
+  );
 }
 
-function PaginationItem({ ...props }: React.ComponentProps<'li'>) {
-  return <li data-slot="pagination-item" {...props} />
+function PaginationItem({ ...props }: React.ComponentProps<"li">) {
+  return <li data-slot="pagination-item" {...props} />;
 }
 
 type PaginationLinkProps = {
-  isActive?: boolean
-} & Pick<React.ComponentProps<typeof Button>, 'size'> &
-  React.ComponentProps<'a'>
+  isActive?: boolean;
+} & Pick<React.ComponentProps<typeof Button>, "size"> &
+  React.ComponentProps<"a">;
 
 function PaginationLink({
   className,
   isActive,
-  size = 'sm',
+  size = "sm",
   ...props
 }: PaginationLinkProps) {
   return (
     <a
-      aria-current={isActive ? 'page' : undefined}
-      data-slot="pagination-link"
-      data-active={isActive}
+      aria-current={isActive ? "page" : undefined}
       className={cn(
         buttonVariants({
-          variant: isActive ? 'outline' : 'ghost',
+          variant: isActive ? "outline" : "ghost",
           size,
         }),
-        className,
+        className
       )}
+      data-active={isActive}
+      data-slot="pagination-link"
       {...props}
     />
-  )
+  );
 }
 
 function PaginationPrevious({
@@ -79,14 +79,14 @@ function PaginationPrevious({
   return (
     <PaginationLink
       aria-label="Go to previous page"
+      className={cn("gap-1 px-2.5 sm:pl-2.5", className)}
       size="default"
-      className={cn('gap-1 px-2.5 sm:pl-2.5', className)}
       {...props}
     >
       <ChevronLeftIcon />
       <span className="hidden sm:block">Previous</span>
     </PaginationLink>
-  )
+  );
 }
 
 function PaginationNext({
@@ -96,49 +96,49 @@ function PaginationNext({
   return (
     <PaginationLink
       aria-label="Go to next page"
+      className={cn("gap-1 px-2.5 sm:pr-2.5", className)}
       size="default"
-      className={cn('gap-1 px-2.5 sm:pr-2.5', className)}
       {...props}
     >
       <span className="hidden sm:block">Next</span>
       <ChevronRightIcon />
     </PaginationLink>
-  )
+  );
 }
 
 function PaginationEllipsis({
   className,
   ...props
-}: React.ComponentProps<'span'>) {
+}: React.ComponentProps<"span">) {
   return (
     <span
       aria-hidden
+      className={cn("flex size-9 items-center justify-center", className)}
       data-slot="pagination-ellipsis"
-      className={cn('flex size-9 items-center justify-center', className)}
       {...props}
     >
       <MoreHorizontalIcon className="size-4" />
       <span className="sr-only">More pages</span>
     </span>
-  )
+  );
 }
 
 interface PaginationPageSizeProps {
-  value: number
-  onChange: (size: number) => void
+  value: number;
+  onChange: (size: number) => void;
 }
 
 function PaginationPageSize({ value, onChange }: PaginationPageSizeProps) {
   return (
     <div className="flex items-center gap-2">
-      <Label htmlFor="pagination-page-size" className="hidden md:flex">
+      <Label className="hidden md:flex" htmlFor="pagination-page-size">
         Items per page
       </Label>
       <Select
-        value={value.toString()}
         onValueChange={(value) => onChange(Number(value))}
+        value={value.toString()}
       >
-        <SelectTrigger size="sm" id="pagination-page-size">
+        <SelectTrigger id="pagination-page-size" size="sm">
           <SelectValue placeholder="Select a page size" />
         </SelectTrigger>
         <SelectContent>
@@ -150,7 +150,7 @@ function PaginationPageSize({ value, onChange }: PaginationPageSizeProps) {
         </SelectContent>
       </Select>
     </div>
-  )
+  );
 }
 
 export {
@@ -162,4 +162,4 @@ export {
   PaginationNext,
   PaginationEllipsis,
   PaginationPageSize,
-}
+};

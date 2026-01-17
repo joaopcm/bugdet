@@ -1,23 +1,23 @@
-import { randomUUID } from 'node:crypto'
-import { db } from '@/db'
-import { userTenant } from '@/db/schema'
+import { randomUUID } from "node:crypto";
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { userTenant } from "@/db/schema";
 import {
   decryptWithKEK,
   encryptWithKEK,
   generateDEK,
   hashWithKEK,
-} from '@/lib/crypto'
-import { eq } from 'drizzle-orm'
+} from "@/lib/crypto";
 
 export interface TenantContext {
-  tenantId: string
-  dek: string
+  tenantId: string;
+  dek: string;
 }
 
 export async function getOrCreateTenant(
-  userId: string,
+  userId: string
 ): Promise<TenantContext> {
-  const userIdHash = hashWithKEK(userId)
+  const userIdHash = hashWithKEK(userId);
 
   const [existing] = await db
     .select({
@@ -26,18 +26,18 @@ export async function getOrCreateTenant(
     })
     .from(userTenant)
     .where(eq(userTenant.userIdHash, userIdHash))
-    .limit(1)
+    .limit(1);
 
   if (existing) {
     return {
       tenantId: existing.tenantId,
       dek: decryptWithKEK(existing.dekEncrypted),
-    }
+    };
   }
 
-  const tenantId = randomUUID()
-  const dek = generateDEK()
-  const dekEncrypted = encryptWithKEK(dek)
+  const tenantId = randomUUID();
+  const dek = generateDEK();
+  const dekEncrypted = encryptWithKEK(dek);
 
   await db
     .insert(userTenant)
@@ -47,7 +47,7 @@ export async function getOrCreateTenant(
       userIdEncrypted: encryptWithKEK(userId),
       dekEncrypted,
     })
-    .onConflictDoNothing({ target: userTenant.userIdHash })
+    .onConflictDoNothing({ target: userTenant.userIdHash });
 
   const [tenant] = await db
     .select({
@@ -56,22 +56,22 @@ export async function getOrCreateTenant(
     })
     .from(userTenant)
     .where(eq(userTenant.userIdHash, userIdHash))
-    .limit(1)
+    .limit(1);
 
   if (!tenant) {
-    throw new Error('Failed to create or retrieve tenant')
+    throw new Error("Failed to create or retrieve tenant");
   }
 
   return {
     tenantId: tenant.tenantId,
     dek: decryptWithKEK(tenant.dekEncrypted),
-  }
+  };
 }
 
 export async function resolveTenantFromUserId(
-  userId: string,
+  userId: string
 ): Promise<TenantContext | null> {
-  const userIdHash = hashWithKEK(userId)
+  const userIdHash = hashWithKEK(userId);
 
   const [tenant] = await db
     .select({
@@ -80,18 +80,20 @@ export async function resolveTenantFromUserId(
     })
     .from(userTenant)
     .where(eq(userTenant.userIdHash, userIdHash))
-    .limit(1)
+    .limit(1);
 
-  if (!tenant) return null
+  if (!tenant) {
+    return null;
+  }
 
   return {
     tenantId: tenant.tenantId,
     dek: decryptWithKEK(tenant.dekEncrypted),
-  }
+  };
 }
 
 export async function getUserIdFromTenant(
-  tenantId: string,
+  tenantId: string
 ): Promise<string | null> {
   const [tenant] = await db
     .select({
@@ -99,9 +101,11 @@ export async function getUserIdFromTenant(
     })
     .from(userTenant)
     .where(eq(userTenant.tenantId, tenantId))
-    .limit(1)
+    .limit(1);
 
-  if (!tenant) return null
+  if (!tenant) {
+    return null;
+  }
 
-  return decryptWithKEK(tenant.userIdEncrypted)
+  return decryptWithKEK(tenant.userIdEncrypted);
 }

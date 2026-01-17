@@ -1,5 +1,5 @@
-import { MonthFilter } from './month-filter'
-import { SearchFilter } from './search-filter'
+import { MonthFilter } from "./month-filter";
+import { SearchFilter } from "./search-filter";
 
 export function BudgetsFilters() {
   return (
@@ -7,5 +7,5 @@ export function BudgetsFilters() {
       <SearchFilter />
       <MonthFilter />
     </div>
-  )
+  );
 }

@@ -1,50 +1,51 @@
-'use client'
+"use client";
 
-import { Kbd } from '@/components/ui/kbd'
+import { useState } from "react";
+import { useHotkeys } from "react-hotkeys-hook";
+import { Kbd } from "@/components/ui/kbd";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from "@/components/ui/select";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@/components/ui/tooltip'
-import { usePagination } from '@/hooks/use-pagination'
-import { trpc } from '@/lib/trpc/client'
-import { useState } from 'react'
-import { useHotkeys } from 'react-hotkeys-hook'
-import { useTransactionsFilters } from './search-params'
+} from "@/components/ui/tooltip";
+import { usePagination } from "@/hooks/use-pagination";
+import { trpc } from "@/lib/trpc/client";
+import { useTransactionsFilters } from "./search-params";
 
-const UPLOAD_SHORTCUT = 'U'
+const UPLOAD_SHORTCUT = "U";
 
 export function UploadFilter() {
-  const { data: uploads } = trpc.uploads.listForFilter.useQuery()
-  const { transactionFilters, setTransactionFilters } = useTransactionsFilters()
-  const { setPagination } = usePagination('transactions')
-  const [isOpen, setIsOpen] = useState(false)
+  const { data: uploads } = trpc.uploads.listForFilter.useQuery();
+  const { transactionFilters, setTransactionFilters } =
+    useTransactionsFilters();
+  const { setPagination } = usePagination("transactions");
+  const [isOpen, setIsOpen] = useState(false);
 
   useHotkeys(UPLOAD_SHORTCUT, (e) => {
-    e.preventDefault()
-    setIsOpen(!isOpen)
-  })
+    e.preventDefault();
+    setIsOpen(!isOpen);
+  });
 
   return (
     <Select
-      onValueChange={(value) => {
-        setTransactionFilters({ uploadId: value })
-        setPagination({ page: 1 })
-      }}
-      value={transactionFilters.uploadId || undefined}
-      open={isOpen}
       onOpenChange={setIsOpen}
+      onValueChange={(value) => {
+        setTransactionFilters({ uploadId: value });
+        setPagination({ page: 1 });
+      }}
+      open={isOpen}
+      value={transactionFilters.uploadId || undefined}
     >
       <Tooltip>
         <TooltipTrigger asChild>
-          <SelectTrigger id="uploadId" className="w-full">
+          <SelectTrigger className="w-full" id="uploadId">
             <SelectValue placeholder="Select an upload" />
           </SelectTrigger>
         </TooltipTrigger>
@@ -62,5 +63,5 @@ export function UploadFilter() {
         ))}
       </SelectContent>
     </Select>
-  )
+  );
 }

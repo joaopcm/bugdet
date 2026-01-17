@@ -1,12 +1,12 @@
-import { PageLayout } from '@/components/logged-in/page-layout'
-import { NewUploadButton } from '@/components/logged-in/uploads/new-upload-button'
-import { RefreshButton } from '@/components/logged-in/uploads/refresh-button'
-import { UploadsTable } from '@/components/logged-in/uploads/uploads-table'
-import type { Metadata } from 'next'
+import type { Metadata } from "next";
+import { PageLayout } from "@/components/logged-in/page-layout";
+import { NewUploadButton } from "@/components/logged-in/uploads/new-upload-button";
+import { RefreshButton } from "@/components/logged-in/uploads/refresh-button";
+import { UploadsTable } from "@/components/logged-in/uploads/uploads-table";
 
 export const metadata: Metadata = {
-  title: 'Uploads',
-}
+  title: "Uploads",
+};
 
 export default function UploadsPage() {
   return (
@@ -24,5 +24,5 @@ export default function UploadsPage() {
       </PageLayout.Header>
       <UploadsTable />
     </PageLayout.Root>
-  )
+  );
 }

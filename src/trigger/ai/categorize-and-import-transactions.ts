@@ -1,46 +1,46 @@
-import { CONFIDENCE_THRESHOLD } from '@/constants/transactions'
-import { db } from '@/db'
+import { logger, task } from "@trigger.dev/sdk/v3";
+import { generateObject } from "ai";
+import { and, desc, eq, inArray, ne } from "drizzle-orm";
+import { z } from "zod";
+import { CONFIDENCE_THRESHOLD } from "@/constants/transactions";
+import { db } from "@/db";
 import {
   categorizationRule,
   category,
   transaction,
   upload,
   user,
-} from '@/db/schema'
-import { env } from '@/env'
-import { generateTransactionFingerprint } from '@/lib/fingerprint'
-import { applyRules } from '@/lib/rules/apply-rules'
-import { createLambdaClient } from '@/lib/supabase/server'
-import { getUserIdFromTenant } from '@/lib/tenant'
-import { sendUploadCompletedTask } from '@/trigger/emails/send-upload-completed'
-import { sendUploadFailedTask } from '@/trigger/emails/send-upload-failed'
-import { logger, task } from '@trigger.dev/sdk/v3'
-import { generateObject } from 'ai'
-import { and, desc, eq, inArray, ne } from 'drizzle-orm'
-import { z } from 'zod'
-import type { ExtractedTransaction } from './extract-transactions'
-import { secondPassCategorizationTask } from './second-pass-categorization'
+} from "@/db/schema";
+import { env } from "@/env";
+import { generateTransactionFingerprint } from "@/lib/fingerprint";
+import { applyRules } from "@/lib/rules/apply-rules";
+import { createLambdaClient } from "@/lib/supabase/server";
+import { getUserIdFromTenant } from "@/lib/tenant";
+import { sendUploadCompletedTask } from "@/trigger/emails/send-upload-completed";
+import { sendUploadFailedTask } from "@/trigger/emails/send-upload-failed";
+import type { ExtractedTransaction } from "./extract-transactions";
+import { secondPassCategorizationTask } from "./second-pass-categorization";
 
 const categorizationSchema = z.object({
   categorizedTransactions: z.array(
     z.object({
       index: z
         .number()
-        .describe('The index of the transaction in the input array (0-based).'),
+        .describe("The index of the transaction in the input array (0-based)."),
       category: z
         .string()
         .nullable()
         .describe(
-          'Suggested category from provided list, or a new descriptive category. Use null if uncertain.',
+          "Suggested category from provided list, or a new descriptive category. Use null if uncertain."
         ),
       confidence: z
         .number()
         .describe(
-          'Confidence score 0-100. BE CONSERVATIVE. 90-100: ONLY for exact merchant match in learned mappings. 70-89: Clear category is obvious (e.g., "Netflix" → Entertainment). 50-69: Category is a guess based on merchant name. Below 50: Uncertain category.',
+          'Confidence score 0-100. BE CONSERVATIVE. 90-100: ONLY for exact merchant match in learned mappings. 70-89: Clear category is obvious (e.g., "Netflix" → Entertainment). 50-69: Category is a guess based on merchant name. Below 50: Uncertain category.'
         ),
-    }),
+    })
   ),
-})
+});
 
 function buildSystemPrompt() {
   return `You are an expert financial analyst specializing in categorizing transactions from bank statements.
@@ -66,24 +66,24 @@ The confidence score should reflect how certain you are about the CATEGORY assig
 ### Important Guidelines
 - Consider the merchant name, description, and amount when categorizing
 - Negative amounts (income) often have different categories than expenses
-- Be consistent with categorization across similar merchants`
+- Be consistent with categorization across similar merchants`;
 }
 
 function buildUserPrompt(
   transactions: ExtractedTransaction[],
-  categories: { name: string }[],
+  categories: { name: string }[]
 ) {
   const categoryList =
     categories.length > 0
-      ? categories.map((c) => `- ${c.name}`).join('\n')
-      : '(No categories defined yet)'
+      ? categories.map((c) => `- ${c.name}`).join("\n")
+      : "(No categories defined yet)";
 
   const transactionsList = transactions
     .map(
       (tx, i) =>
-        `${i}. ${tx.date} | ${tx.merchantName}${tx.description ? ` (${tx.description})` : ''} | ${tx.amount > 0 ? 'Expense' : 'Income'}: ${Math.abs(tx.amount)} cents (${tx.currency})`,
+        `${i}. ${tx.date} | ${tx.merchantName}${tx.description ? ` (${tx.description})` : ""} | ${tx.amount > 0 ? "Expense" : "Income"}: ${Math.abs(tx.amount)} cents (${tx.currency})`
     )
-    .join('\n')
+    .join("\n");
 
   return `## AVAILABLE CATEGORIES
 Use these existing categories when appropriate:
@@ -111,20 +111,21 @@ Return categorizations for ALL transactions.
     { "index": 2, "category": null, "confidence": 25 }
   ]
 }
-\`\`\``
+\`\`\``;
 }
 
 export interface CategorizeAndImportPayload {
-  uploadId: string
-  tenantId: string
-  transactions: ExtractedTransaction[]
-  statementCurrency: string
-  openingBalance?: number
-  closingBalance?: number
+  uploadId: string;
+  tenantId: string;
+  transactions: ExtractedTransaction[];
+  statementCurrency: string;
+  openingBalance?: number;
+  closingBalance?: number;
 }
 
 export const categorizeAndImportTransactionsTask = task({
-  id: 'categorize-and-import-transactions',
+  id: "categorize-and-import-transactions",
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: complex workflow
   run: async (payload: CategorizeAndImportPayload, { ctx }) => {
     logger.info(
       `Categorizing and importing ${payload.transactions.length} transactions for upload ${payload.uploadId}...`,
@@ -134,16 +135,16 @@ export const categorizeAndImportTransactionsTask = task({
           transactions: `[${payload.transactions.length} items]`,
         },
         ctx,
-      },
-    )
+      }
+    );
 
     if (payload.transactions.length === 0) {
-      logger.warn('No transactions to import')
+      logger.warn("No transactions to import");
 
       await db
         .update(upload)
-        .set({ status: 'completed' })
-        .where(eq(upload.id, payload.uploadId))
+        .set({ status: "completed" })
+        .where(eq(upload.id, payload.uploadId));
 
       const [uploadData] = await db
         .select({
@@ -152,30 +153,30 @@ export const categorizeAndImportTransactionsTask = task({
           filePath: upload.filePath,
         })
         .from(upload)
-        .where(eq(upload.id, payload.uploadId))
+        .where(eq(upload.id, payload.uploadId));
 
       if (uploadData) {
-        logger.info(`Deleting original PDF for upload ${payload.uploadId}...`)
-        const supabase = createLambdaClient()
+        logger.info(`Deleting original PDF for upload ${payload.uploadId}...`);
+        const supabase = createLambdaClient();
         const { error: deleteError } = await supabase.storage
-          .from('bank-statements')
-          .remove([uploadData.filePath])
+          .from("bank-statements")
+          .remove([uploadData.filePath]);
 
         if (deleteError) {
-          logger.warn(`Failed to delete original PDF: ${deleteError.message}`)
+          logger.warn(`Failed to delete original PDF: ${deleteError.message}`);
         } else {
           await db
             .update(upload)
             .set({ pdfDeleted: true })
-            .where(eq(upload.id, payload.uploadId))
+            .where(eq(upload.id, payload.uploadId));
         }
 
-        const userId = await getUserIdFromTenant(uploadData.tenantId)
+        const userId = await getUserIdFromTenant(uploadData.tenantId);
         if (userId) {
           const [uploadUser] = await db
             .select({ email: user.email })
             .from(user)
-            .where(eq(user.id, userId))
+            .where(eq(user.id, userId));
 
           if (uploadUser) {
             await sendUploadCompletedTask.trigger({
@@ -186,12 +187,12 @@ export const categorizeAndImportTransactionsTask = task({
               rulesApplied: 0,
               lowConfidenceCount: 0,
               uploadsLink: `${env.NEXT_PUBLIC_APP_URL}/uploads`,
-            })
+            });
           }
         }
       }
 
-      return { success: true }
+      return { success: true };
     }
 
     const categories = await db
@@ -200,10 +201,10 @@ export const categorizeAndImportTransactionsTask = task({
       .where(
         and(
           eq(category.tenantId, payload.tenantId),
-          eq(category.deleted, false),
-        ),
-      )
-    logger.info(`Found ${categories.length} categories for tenant`)
+          eq(category.deleted, false)
+        )
+      );
+    logger.info(`Found ${categories.length} categories for tenant`);
 
     const rules = await db
       .select()
@@ -212,89 +213,89 @@ export const categorizeAndImportTransactionsTask = task({
         and(
           eq(categorizationRule.tenantId, payload.tenantId),
           eq(categorizationRule.deleted, false),
-          eq(categorizationRule.enabled, true),
-        ),
+          eq(categorizationRule.enabled, true)
+        )
       )
-      .orderBy(desc(categorizationRule.priority), categorizationRule.createdAt)
-    logger.info(`Found ${rules.length} categorization rules`)
+      .orderBy(desc(categorizationRule.priority), categorizationRule.createdAt);
+    logger.info(`Found ${rules.length} categorization rules`);
 
-    logger.info('Categorizing transactions with AI...')
+    logger.info("Categorizing transactions with AI...");
     const categorizationResult = await generateObject({
-      model: 'anthropic/claude-haiku-4.5',
-      mode: 'json',
-      schemaName: 'categorize-transactions',
-      schemaDescription: 'Category assignments for extracted transactions.',
+      model: "anthropic/claude-haiku-4.5",
+      mode: "json",
+      schemaName: "categorize-transactions",
+      schemaDescription: "Category assignments for extracted transactions.",
       schema: categorizationSchema,
       messages: [
         {
-          role: 'system',
+          role: "system",
           content: buildSystemPrompt(),
         },
         {
-          role: 'user',
+          role: "user",
           content: buildUserPrompt(payload.transactions, categories),
         },
       ],
-    })
-    logger.info('Categorization complete', {
+    });
+    logger.info("Categorization complete", {
       categorizedCount:
         categorizationResult.object.categorizedTransactions.length,
-    })
+    });
 
     const categorizationMap = new Map(
       categorizationResult.object.categorizedTransactions.map((c) => [
         c.index,
         { category: c.category, confidence: c.confidence },
-      ]),
-    )
+      ])
+    );
 
     const transactionsWithCategories = payload.transactions.map((tx, index) => {
-      const categorization = categorizationMap.get(index)
+      const categorization = categorizationMap.get(index);
       return {
         ...tx,
         category: categorization?.category ?? null,
         confidence: categorization?.confidence ?? 50,
-      }
-    })
+      };
+    });
 
-    let totalRulesApplied = 0
+    let totalRulesApplied = 0;
     const processedTransactions = transactionsWithCategories
       .map((tx) => {
         const ruleResult = applyRules(
           { merchantName: tx.merchantName, amount: tx.amount },
-          rules,
-        )
-        totalRulesApplied += ruleResult.rulesApplied
+          rules
+        );
+        totalRulesApplied += ruleResult.rulesApplied;
         if (ruleResult.skip) {
           logger.info(
-            `Skipping transaction "${tx.merchantName}" due to ignore rule`,
-          )
-          return null
+            `Skipping transaction "${tx.merchantName}" due to ignore rule`
+          );
+          return null;
         }
         // If a rule set the category, confidence is 100%
         const finalConfidence = ruleResult.overrides.categoryId
           ? 100
-          : Math.min(100, Math.max(0, tx.confidence))
+          : Math.min(100, Math.max(0, tx.confidence));
 
         return {
           ...tx,
           amount: ruleResult.overrides.amount ?? tx.amount,
           confidence: finalConfidence,
           ruleCategoryId: ruleResult.overrides.categoryId,
-        }
+        };
       })
-      .filter((tx): tx is NonNullable<typeof tx> => tx !== null)
+      .filter((tx): tx is NonNullable<typeof tx> => tx !== null);
 
     logger.info(
-      `Processed ${processedTransactions.length} transactions after applying rules (${transactionsWithCategories.length - processedTransactions.length} skipped)`,
-    )
+      `Processed ${processedTransactions.length} transactions after applying rules (${transactionsWithCategories.length - processedTransactions.length} skipped)`
+    );
 
-    let transactionCount = 0
-    let categoriesCreated = 0
-    let lowConfidenceCount = 0
-    let uploadTenantId: string | null = null
-    let uploadFileName: string | null = null
-    let uploadFilePath: string | null = null
+    let transactionCount = 0;
+    let categoriesCreated = 0;
+    let lowConfidenceCount = 0;
+    let uploadTenantId: string | null = null;
+    let uploadFileName: string | null = null;
+    let uploadFilePath: string | null = null;
 
     await db.transaction(async (tx) => {
       const [upToDateUpload] = await tx
@@ -305,23 +306,23 @@ export const categorizeAndImportTransactionsTask = task({
           filePath: upload.filePath,
         })
         .from(upload)
-        .where(eq(upload.id, payload.uploadId))
+        .where(eq(upload.id, payload.uploadId));
 
-      if (upToDateUpload.status !== 'processing') {
+      if (upToDateUpload.status !== "processing") {
         logger.warn(
-          `Stopping processing upload ${payload.uploadId} because it is not in a processing status anymore.`,
-        )
-        return { success: true }
+          `Stopping processing upload ${payload.uploadId} because it is not in a processing status anymore.`
+        );
+        return { success: true };
       }
 
       const uniqueCategories = [
         ...new Set(
           processedTransactions
             .map((transaction) => transaction.category)
-            .filter((category): category is string => category !== null),
+            .filter((category): category is string => category !== null)
         ),
-      ]
-      logger.info('Unique categories used:', { uniqueCategories })
+      ];
+      logger.info("Unique categories used:", { uniqueCategories });
 
       const existingCategories = await tx
         .select({ id: category.id, name: category.name })
@@ -330,19 +331,19 @@ export const categorizeAndImportTransactionsTask = task({
           and(
             eq(category.tenantId, upToDateUpload.tenantId),
             eq(category.deleted, false),
-            inArray(category.name, uniqueCategories),
-          ),
-        )
+            inArray(category.name, uniqueCategories)
+          )
+        );
 
       const existingCategoryNames = new Set(
-        existingCategories.map((cat) => cat.name),
-      )
+        existingCategories.map((cat) => cat.name)
+      );
 
       const categoriesToInsert = uniqueCategories.filter(
-        (categoryName) => !existingCategoryNames.has(categoryName),
-      )
+        (categoryName) => !existingCategoryNames.has(categoryName)
+      );
 
-      let newCategories: { id: string; name: string }[] = []
+      let newCategories: { id: string; name: string }[] = [];
       if (categoriesToInsert.length > 0) {
         newCategories = await tx
           .insert(category)
@@ -350,20 +351,20 @@ export const categorizeAndImportTransactionsTask = task({
             categoriesToInsert.map((categoryName) => ({
               name: categoryName,
               tenantId: upToDateUpload.tenantId,
-            })),
+            }))
           )
-          .returning({ id: category.id, name: category.name })
-        logger.info(`Inserted ${categoriesToInsert.length} new categories`)
+          .returning({ id: category.id, name: category.name });
+        logger.info(`Inserted ${categoriesToInsert.length} new categories`);
       } else {
-        logger.info('No new categories to insert')
+        logger.info("No new categories to insert");
       }
 
       const categoryNameToId = new Map(
         [...existingCategories, ...newCategories].map((cat) => [
           cat.name,
           cat.id,
-        ]),
-      )
+        ])
+      );
 
       const transactionsWithFingerprints = processedTransactions.map((txn) => ({
         ...txn,
@@ -374,11 +375,11 @@ export const categorizeAndImportTransactionsTask = task({
           amount: txn.amount,
           currency: txn.currency,
         }),
-      }))
+      }));
 
       const fingerprints = transactionsWithFingerprints.map(
-        (t) => t.fingerprint,
-      )
+        (t) => t.fingerprint
+      );
       const existingFingerprints = new Set(
         (
           await tx
@@ -388,22 +389,22 @@ export const categorizeAndImportTransactionsTask = task({
               and(
                 eq(transaction.tenantId, upToDateUpload.tenantId),
                 eq(transaction.deleted, false),
-                inArray(transaction.fingerprint, fingerprints),
-              ),
+                inArray(transaction.fingerprint, fingerprints)
+              )
             )
         )
           .map((r) => r.fingerprint)
-          .filter((fp): fp is string => fp !== null),
-      )
+          .filter((fp): fp is string => fp !== null)
+      );
 
       const newTransactions = transactionsWithFingerprints.filter(
-        (txn) => !existingFingerprints.has(txn.fingerprint),
-      )
+        (txn) => !existingFingerprints.has(txn.fingerprint)
+      );
 
       const skippedCount =
-        transactionsWithFingerprints.length - newTransactions.length
+        transactionsWithFingerprints.length - newTransactions.length;
       if (skippedCount > 0) {
-        logger.info(`Skipped ${skippedCount} duplicate transactions`)
+        logger.info(`Skipped ${skippedCount} duplicate transactions`);
       }
 
       if (newTransactions.length > 0) {
@@ -422,58 +423,58 @@ export const categorizeAndImportTransactionsTask = task({
             currency: txn.currency,
             confidence: txn.confidence,
             fingerprint: txn.fingerprint,
-          })),
-        )
+          }))
+        );
         logger.info(
-          `Imported ${newTransactions.length} transactions to the database for upload ${payload.uploadId}.`,
-        )
+          `Imported ${newTransactions.length} transactions to the database for upload ${payload.uploadId}.`
+        );
       } else {
         logger.info(
-          `All transactions are duplicates, nothing to import for upload ${payload.uploadId}.`,
-        )
+          `All transactions are duplicates, nothing to import for upload ${payload.uploadId}.`
+        );
       }
 
       await tx
         .update(upload)
         .set({
-          status: 'completed',
+          status: "completed",
         })
-        .where(eq(upload.id, payload.uploadId))
+        .where(eq(upload.id, payload.uploadId));
 
-      transactionCount = newTransactions.length
-      categoriesCreated = newCategories.length
+      transactionCount = newTransactions.length;
+      categoriesCreated = newCategories.length;
       lowConfidenceCount = newTransactions.filter(
-        (txn) => txn.confidence < CONFIDENCE_THRESHOLD,
-      ).length
-      uploadTenantId = upToDateUpload.tenantId
-      uploadFileName = upToDateUpload.fileName
-      uploadFilePath = upToDateUpload.filePath
-    })
+        (txn) => txn.confidence < CONFIDENCE_THRESHOLD
+      ).length;
+      uploadTenantId = upToDateUpload.tenantId;
+      uploadFileName = upToDateUpload.fileName;
+      uploadFilePath = upToDateUpload.filePath;
+    });
 
     if (uploadFilePath) {
-      logger.info(`Deleting original PDF for upload ${payload.uploadId}...`)
-      const supabase = createLambdaClient()
+      logger.info(`Deleting original PDF for upload ${payload.uploadId}...`);
+      const supabase = createLambdaClient();
       const { error: deleteError } = await supabase.storage
-        .from('bank-statements')
-        .remove([uploadFilePath])
+        .from("bank-statements")
+        .remove([uploadFilePath]);
 
       if (deleteError) {
-        logger.warn(`Failed to delete original PDF: ${deleteError.message}`)
+        logger.warn(`Failed to delete original PDF: ${deleteError.message}`);
       } else {
         await db
           .update(upload)
           .set({ pdfDeleted: true })
-          .where(eq(upload.id, payload.uploadId))
+          .where(eq(upload.id, payload.uploadId));
       }
     }
 
     if (uploadTenantId && uploadFileName) {
-      const userId = await getUserIdFromTenant(uploadTenantId)
+      const userId = await getUserIdFromTenant(uploadTenantId);
       if (userId) {
         const [uploadUser] = await db
           .select({ email: user.email })
           .from(user)
-          .where(eq(user.id, userId))
+          .where(eq(user.id, userId));
 
         if (uploadUser) {
           await sendUploadCompletedTask.trigger({
@@ -484,28 +485,28 @@ export const categorizeAndImportTransactionsTask = task({
             rulesApplied: totalRulesApplied,
             lowConfidenceCount,
             uploadsLink: `${env.NEXT_PUBLIC_APP_URL}/uploads`,
-          })
+          });
         }
       }
 
       if (lowConfidenceCount > 0) {
         logger.info(
-          `Triggering second-pass categorization for ${lowConfidenceCount} low-confidence transactions in upload ${payload.uploadId}...`,
-        )
+          `Triggering second-pass categorization for ${lowConfidenceCount} low-confidence transactions in upload ${payload.uploadId}...`
+        );
         await secondPassCategorizationTask.trigger({
           uploadId: payload.uploadId,
           tenantId: uploadTenantId,
-        })
+        });
       } else {
         logger.info(
-          'No low-confidence transactions to re-evaluate, skipping second-pass categorization',
-        )
+          "No low-confidence transactions to re-evaluate, skipping second-pass categorization"
+        );
       }
     }
 
     return {
       success: true,
-    }
+    };
   },
   catchError: async ({ ctx, error, payload }) => {
     logger.error(`Run ${ctx.run.id} failed`, {
@@ -514,44 +515,44 @@ export const categorizeAndImportTransactionsTask = task({
         transactions: `[${payload.transactions?.length ?? 0} items]`,
       },
       error,
-    })
+    });
 
     const [failedUpload] = await db
       .select({ fileName: upload.fileName, tenantId: upload.tenantId })
       .from(upload)
-      .where(eq(upload.id, payload.uploadId))
+      .where(eq(upload.id, payload.uploadId));
 
     await db
       .update(upload)
       .set({
-        status: 'failed',
+        status: "failed",
         failedReason:
           "I'm sorry, I had a hard time processing your request. Please try again later.",
       })
       .where(
-        and(eq(upload.id, payload.uploadId), ne(upload.status, 'cancelled')),
-      )
+        and(eq(upload.id, payload.uploadId), ne(upload.status, "cancelled"))
+      );
 
     if (failedUpload) {
-      const userId = await getUserIdFromTenant(failedUpload.tenantId)
+      const userId = await getUserIdFromTenant(failedUpload.tenantId);
       if (userId) {
         const [uploadUser] = await db
           .select({ email: user.email })
           .from(user)
-          .where(eq(user.id, userId))
+          .where(eq(user.id, userId));
 
         if (uploadUser) {
           await sendUploadFailedTask.trigger({
             to: uploadUser.email,
             fileName: failedUpload.fileName,
             uploadsLink: `${env.NEXT_PUBLIC_APP_URL}/uploads`,
-          })
+          });
         }
       }
     }
 
     return {
       skipRetrying: true,
-    }
+    };
   },
-})
+});

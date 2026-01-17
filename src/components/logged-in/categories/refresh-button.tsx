@@ -1,40 +1,40 @@
-'use client'
+"use client";
 
-import { Button } from '@/components/ui/button'
-import { Kbd } from '@/components/ui/kbd'
+import { RefreshCcwIcon } from "lucide-react";
+import { useHotkeys } from "react-hotkeys-hook";
+import { Button } from "@/components/ui/button";
+import { Kbd } from "@/components/ui/kbd";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from '@/components/ui/tooltip'
-import { useCategories } from '@/hooks/use-categories'
-import { cn } from '@/lib/utils'
-import { RefreshCcwIcon } from 'lucide-react'
-import { useHotkeys } from 'react-hotkeys-hook'
+} from "@/components/ui/tooltip";
+import { useCategories } from "@/hooks/use-categories";
+import { cn } from "@/lib/utils";
 
-const REFRESH_SHORTCUT = 'R'
+const REFRESH_SHORTCUT = "R";
 
 export function RefreshButton() {
   const {
     refetch: refetchCategories,
     isRefetching,
     isLoading,
-  } = useCategories()
+  } = useCategories();
 
-  useHotkeys(REFRESH_SHORTCUT, () => refetchCategories())
+  useHotkeys(REFRESH_SHORTCUT, () => refetchCategories());
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
-          variant="outline"
-          size="icon"
-          onClick={() => refetchCategories()}
           disabled={isRefetching || isLoading}
+          onClick={() => refetchCategories()}
+          size="icon"
+          variant="outline"
         >
           <RefreshCcwIcon
             className={cn({
-              'animate-spin-reverse': isRefetching,
+              "animate-spin-reverse": isRefetching,
             })}
           />
         </Button>
@@ -44,5 +44,5 @@ export function RefreshButton() {
         category list
       </TooltipContent>
     </Tooltip>
-  )
+  );
 }

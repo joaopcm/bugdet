@@ -1,8 +1,8 @@
-'use client'
+"use client";
 
-import { SidebarTrigger } from '@/components/ui/sidebar'
-import { Kbd, SHORTCUTS_VALUES } from '../ui/kbd'
-import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip'
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Kbd, SHORTCUTS_VALUES } from "../ui/kbd";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 export function SiteHeader() {
   return (
@@ -19,5 +19,5 @@ export function SiteHeader() {
         </Tooltip>
       </div>
     </header>
-  )
+  );
 }
