@@ -232,6 +232,13 @@
       "when": 1768518111955,
       "tag": "0032_mean_bruce_banner",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1768676140372,
+      "tag": "0033_wooden_the_captain",
+      "breakpoints": true
     }
   ]
 }

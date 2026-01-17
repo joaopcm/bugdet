@@ -150,7 +150,31 @@ export const uploadStatusEnum = pgEnum("upload_status", [
   "failed",
   "cancelled",
   "waiting_for_password",
+  "waiting_for_csv_answers",
 ]);
+
+export const fileTypeEnum = pgEnum("file_type", ["pdf", "csv"]);
+
+export interface CsvQuestion {
+  id: string;
+  type: "text" | "select" | "date" | "boolean";
+  label: string;
+  description?: string;
+  options?: string[];
+  required: boolean;
+  defaultValue?: string;
+}
+
+export interface CsvConfig {
+  questions?: CsvQuestion[];
+  answers?: Record<string, string>;
+  inferredMapping?: {
+    dateColumn?: string;
+    merchantColumn?: string;
+    amountColumn?: string;
+    descriptionColumn?: string;
+  };
+}
 
 export interface UploadMetadata {
   documentType?: string | null;
@@ -165,6 +189,7 @@ export interface UploadMetadata {
         value: string;
       }[]
     | null;
+  csvConfig?: CsvConfig;
 }
 
 export type Upload = typeof upload.$inferSelect;
@@ -179,6 +204,7 @@ export const upload = pgTable(
     fileName: text("file_name").notNull(),
     filePath: text("file_path").notNull(),
     fileSize: integer("file_size").notNull(),
+    fileType: fileTypeEnum("file_type").notNull().default("pdf"),
     status: uploadStatusEnum("status").notNull().default("queued"),
     encryptedPassword: text("encrypted_password"),
     failedReason: text("failed_reason"),
