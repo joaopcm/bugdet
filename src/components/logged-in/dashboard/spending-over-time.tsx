@@ -106,6 +106,7 @@ export function SpendingOverTime() {
             <YAxis
               tickLine={false}
               axisLine={false}
+              width={80}
               tickFormatter={(value) =>
                 formatCurrency(value, data.currency).replace(/\.00$/, '')
               }
