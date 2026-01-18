@@ -23,14 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import type { CsvQuestion } from "@/db/schema";
 import { useInvalidateUploads } from "@/hooks/use-uploads";
 import { trpc } from "@/lib/trpc/client";
@@ -203,10 +195,10 @@ export function CsvConfigDialog({
   return (
     <Dialog onOpenChange={handleOpenChange} open={open}>
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Configure CSV Import</DialogTitle>
+            <DialogTitle>Configure CSV import</DialogTitle>
             <DialogDescription>
               We need a bit more context about <strong>{fileName}</strong> to
               extract transactions accurately.
@@ -239,44 +231,6 @@ export function CsvConfigDialog({
 
           {analysisData && !isAnalyzing && (
             <div className="grid gap-6 py-4">
-              {analysisData.preview.headers.length > 0 && (
-                <div className="space-y-2">
-                  <Label className="font-medium text-sm">Preview</Label>
-                  <div className="max-h-40 overflow-auto rounded border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          {analysisData.preview.headers.map((header, i) => (
-                            <TableHead
-                              className="whitespace-nowrap text-xs"
-                              key={`header-${String(i)}`}
-                            >
-                              {header}
-                            </TableHead>
-                          ))}
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {analysisData.preview.sampleRows.map(
-                          (row, rowIndex) => (
-                            <TableRow key={`row-${String(rowIndex)}`}>
-                              {row.map((cell, cellIndex) => (
-                                <TableCell
-                                  className="max-w-32 truncate whitespace-nowrap text-xs"
-                                  key={`cell-${String(cellIndex)}`}
-                                >
-                                  {cell}
-                                </TableCell>
-                              ))}
-                            </TableRow>
-                          )
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-              )}
-
               {analysisData.questions.length > 0 && (
                 <div className="space-y-4">
                   <Label className="font-medium text-sm">
