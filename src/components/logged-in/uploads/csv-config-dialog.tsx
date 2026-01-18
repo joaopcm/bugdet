@@ -92,17 +92,21 @@ export function CsvConfigDialog({
 
   useEffect(() => {
     if (analysisData?.questions) {
-      const initialAnswers: Record<string, string> = {};
-      for (const question of analysisData.questions) {
-        if (question.defaultValue) {
-          initialAnswers[question.id] = question.defaultValue;
-        } else if (question.type === "boolean") {
-          initialAnswers[question.id] = "false";
+      if (analysisData.questions.length === 0) {
+        submitAnswers({ uploadId, answers: {} });
+      } else {
+        const initialAnswers: Record<string, string> = {};
+        for (const question of analysisData.questions) {
+          if (question.defaultValue) {
+            initialAnswers[question.id] = question.defaultValue;
+          } else if (question.type === "boolean") {
+            initialAnswers[question.id] = "false";
+          }
         }
+        setAnswers(initialAnswers);
       }
-      setAnswers(initialAnswers);
     }
-  }, [analysisData?.questions]);
+  }, [analysisData?.questions, uploadId, submitAnswers]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -233,9 +237,6 @@ export function CsvConfigDialog({
             <div className="grid gap-6 py-4">
               {analysisData.questions.length > 0 && (
                 <div className="space-y-4">
-                  <Label className="font-medium text-sm">
-                    Please answer these questions
-                  </Label>
                   {analysisData.questions.map((question) => (
                     <div className="grid gap-2" key={question.id}>
                       <Label htmlFor={question.id}>
@@ -253,12 +254,6 @@ export function CsvConfigDialog({
                     </div>
                   ))}
                 </div>
-              )}
-
-              {analysisData.questions.length === 0 && (
-                <p className="text-center text-muted-foreground">
-                  Your CSV looks ready to process. Click Submit to start.
-                </p>
               )}
             </div>
           )}
