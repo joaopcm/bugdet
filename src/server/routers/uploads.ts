@@ -3,6 +3,7 @@ import { tasks } from "@trigger.dev/sdk/v3";
 import { TRPCError } from "@trpc/server";
 import { generateObject } from "ai";
 import { and, desc, eq, ilike, inArray } from "drizzle-orm";
+import Papa from "papaparse";
 import { z } from "zod";
 import { CANCELLABLE_STATUSES, DELETABLE_STATUSES } from "@/constants/uploads";
 import { db } from "@/db";
@@ -32,46 +33,22 @@ const csvAnalysisResultSchema = z.object({
   }),
 });
 
-function parseCsvLine(line: string): string[] {
-  const result: string[] = [];
-  let current = "";
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    if (char === '"') {
-      if (inQuotes && line[i + 1] === '"') {
-        current += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (char === "," && !inQuotes) {
-      result.push(current.trim());
-      current = "";
-    } else {
-      current += char;
-    }
-  }
-  result.push(current.trim());
-  return result;
-}
-
-const LINE_BREAK_REGEX = /\r?\n/;
-
 function parseCsvContent(
   content: string,
   maxRows = 50
 ): { headers: string[]; rows: string[][] } {
-  const lines = content
-    .split(LINE_BREAK_REGEX)
-    .filter((line) => line.trim().length > 0);
-  if (lines.length === 0) {
+  const result = Papa.parse<string[]>(content, {
+    header: false,
+    skipEmptyLines: true,
+    preview: maxRows + 1,
+  });
+
+  if (result.data.length === 0) {
     return { headers: [], rows: [] };
   }
 
-  const headers = parseCsvLine(lines[0]);
-  const rows = lines.slice(1, maxRows + 1).map((line) => parseCsvLine(line));
+  const headers = result.data[0];
+  const rows = result.data.slice(1, maxRows + 1);
 
   return { headers, rows };
 }
@@ -567,7 +544,7 @@ export const uploadsRouter = router({
       z.object({
         fileName: z.string(),
         filePath: z.string(),
-        fileSize: z.number().max(1024 * 1024, "CSV file must be under 1MiB"),
+        fileSize: z.number().max(1024 * 1024, "CSV file must be under 1MB"),
         cleanupFilePaths: z.array(z.string()).max(10).optional(),
       })
     )
@@ -585,10 +562,20 @@ export const uploadsRouter = router({
         .returning({ id: upload.id });
 
       if (input.cleanupFilePaths && input.cleanupFilePaths.length > 0) {
-        const supabase = await createClient({ admin: true });
-        await supabase.storage
-          .from("bank-statements")
-          .remove(input.cleanupFilePaths);
+        const existingUploads = await ctx.db
+          .select({ filePath: upload.filePath })
+          .from(upload)
+          .where(inArray(upload.filePath, input.cleanupFilePaths));
+
+        const existingPaths = new Set(existingUploads.map((u) => u.filePath));
+        const orphanedPaths = input.cleanupFilePaths.filter(
+          (p) => !existingPaths.has(p)
+        );
+
+        if (orphanedPaths.length > 0) {
+          const supabase = await createClient({ admin: true });
+          await supabase.storage.from("bank-statements").remove(orphanedPaths);
+        }
       }
 
       return { uploadId: newUpload.id };

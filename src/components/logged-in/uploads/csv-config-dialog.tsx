@@ -1,8 +1,10 @@
 "use client";
 
-import { IconLoader2 } from "@tabler/icons-react";
-import { useEffect, useRef, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "sonner";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -14,8 +16,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -23,9 +32,52 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { CsvQuestion } from "@/db/schema";
 import { useInvalidateUploads } from "@/hooks/use-uploads";
 import { trpc } from "@/lib/trpc/client";
+
+function buildSchema(questions: CsvQuestion[]) {
+  const shape: Record<string, z.ZodTypeAny> = {};
+  for (const question of questions) {
+    let fieldSchema = z.string();
+    if (question.required) {
+      fieldSchema = fieldSchema.min(1, "This answer is required");
+    }
+    shape[question.id] = fieldSchema;
+  }
+  return z.object(shape);
+}
+
+function getDefaultValues(questions: CsvQuestion[]) {
+  const defaults: Record<string, string> = {};
+  for (const question of questions) {
+    if (question.defaultValue) {
+      defaults[question.id] = question.defaultValue;
+    } else if (question.type === "boolean") {
+      defaults[question.id] = "false";
+    } else {
+      defaults[question.id] = "";
+    }
+  }
+  return defaults;
+}
+
+function QuestionsSkeleton() {
+  return (
+    <div className="grid gap-6 py-4">
+      <div className="space-y-4">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div className="grid gap-2" key={String(index)}>
+            <Skeleton className="h-3 w-48" />
+            <Skeleton className="h-2 w-full" />
+            <Skeleton className="h-9 w-full" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 interface CsvConfigDialogProps {
   uploadId: string;
@@ -43,8 +95,6 @@ export function CsvConfigDialog({
   defaultOpen = false,
 }: CsvConfigDialogProps) {
   const [open, setOpen] = useState(defaultOpen);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const hasTriggeredAnalysis = useRef(false);
   const invalidate = useInvalidateUploads();
 
   const {
@@ -68,7 +118,7 @@ export function CsvConfigDialog({
           }
         );
         setOpen(false);
-        setAnswers({});
+        form.reset({});
         resetAnalysis();
         invalidate();
         onSuccess?.();
@@ -78,14 +128,16 @@ export function CsvConfigDialog({
       },
     });
 
+  const questions = analysisData?.questions ?? [];
+  const schema = useMemo(() => buildSchema(questions), [questions]);
+
+  const form = useForm<Record<string, string>>({
+    resolver: zodResolver(schema),
+    defaultValues: getDefaultValues(questions),
+  });
+
   useEffect(() => {
-    if (
-      open &&
-      !analysisData &&
-      !isAnalyzing &&
-      !hasTriggeredAnalysis.current
-    ) {
-      hasTriggeredAnalysis.current = true;
+    if (open && !analysisData && !isAnalyzing) {
       analyzeCsv({ uploadId });
     }
   }, [open, uploadId, analysisData, isAnalyzing, analyzeCsv]);
@@ -95,60 +147,39 @@ export function CsvConfigDialog({
       if (analysisData.questions.length === 0) {
         submitAnswers({ uploadId, answers: {} });
       } else {
-        const initialAnswers: Record<string, string> = {};
-        for (const question of analysisData.questions) {
-          if (question.defaultValue) {
-            initialAnswers[question.id] = question.defaultValue;
-          } else if (question.type === "boolean") {
-            initialAnswers[question.id] = "false";
-          }
-        }
-        setAnswers(initialAnswers);
+        form.reset(getDefaultValues(analysisData.questions));
       }
     }
-  }, [analysisData?.questions, uploadId, submitAnswers]);
+  }, [analysisData?.questions, uploadId, submitAnswers, form]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const questions = analysisData?.questions ?? [];
-    for (const question of questions) {
-      if (question.required && !answers[question.id]?.trim()) {
-        toast.error(`Please answer: ${question.label}`);
-        return;
-      }
-    }
-
+  const handleSubmit = (answers: Record<string, string>) => {
     submitAnswers({ uploadId, answers });
   };
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
     if (!newOpen) {
-      setAnswers({});
+      form.reset({});
       resetAnalysis();
-      hasTriggeredAnalysis.current = false;
     }
   };
 
   const handleRetryAnalysis = () => {
     resetAnalysis();
-    hasTriggeredAnalysis.current = false;
     analyzeCsv({ uploadId });
   };
 
-  const renderQuestion = (question: CsvQuestion) => {
-    const value = answers[question.id] ?? "";
-
+  const renderQuestionControl = (
+    question: CsvQuestion,
+    field: {
+      value: string;
+      onChange: (value: string) => void;
+    }
+  ) => {
     switch (question.type) {
       case "select":
         return (
-          <Select
-            onValueChange={(val) =>
-              setAnswers((prev) => ({ ...prev, [question.id]: val }))
-            }
-            value={value}
-          >
+          <Select onValueChange={field.onChange} value={field.value}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select an option" />
             </SelectTrigger>
@@ -166,31 +197,26 @@ export function CsvConfigDialog({
         return (
           <div className="flex items-center gap-2">
             <Checkbox
-              checked={value === "true"}
+              checked={field.value === "true"}
               id={question.id}
               onCheckedChange={(checked) =>
-                setAnswers((prev) => ({
-                  ...prev,
-                  [question.id]: checked ? "true" : "false",
-                }))
+                field.onChange(checked ? "true" : "false")
               }
             />
-            <Label className="font-normal" htmlFor={question.id}>
+            <label className="font-normal text-sm" htmlFor={question.id}>
               Yes
-            </Label>
+            </label>
           </div>
         );
 
       default:
         return (
           <Input
-            onChange={(e) =>
-              setAnswers((prev) => ({ ...prev, [question.id]: e.target.value }))
-            }
+            onChange={(e) => field.onChange(e.target.value)}
             placeholder={
               question.type === "date" ? "e.g., MM/DD/YYYY" : "Enter value"
             }
-            value={value}
+            value={field.value}
           />
         );
     }
@@ -200,80 +226,83 @@ export function CsvConfigDialog({
     <Dialog onOpenChange={handleOpenChange} open={open}>
       {children && <DialogTrigger asChild>{children}</DialogTrigger>}
       <DialogContent className="max-h-[90vh] overflow-y-auto">
-        <form onSubmit={handleSubmit}>
-          <DialogHeader>
-            <DialogTitle>Configure CSV import</DialogTitle>
-            <DialogDescription>
-              We need a bit more context about <strong>{fileName}</strong> to
-              extract transactions accurately.
-            </DialogDescription>
-          </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)}>
+            <DialogHeader>
+              <DialogTitle>Configure CSV import</DialogTitle>
+              <DialogDescription>
+                We need a bit more context about <strong>{fileName}</strong> to
+                extract transactions accurately.
+              </DialogDescription>
+            </DialogHeader>
 
-          {isAnalyzing && (
-            <div className="flex items-center justify-center py-8">
-              <IconLoader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              <span className="ml-2 text-muted-foreground">
-                Analyzing CSV...
-              </span>
-            </div>
-          )}
+            {isAnalyzing && <QuestionsSkeleton />}
 
-          {analysisError && !isAnalyzing && (
-            <div className="flex flex-col items-center justify-center gap-4 py-8">
-              <p className="text-center text-destructive text-sm">
-                Failed to analyze CSV. Please try again.
-              </p>
+            {analysisError && !isAnalyzing && (
+              <div className="flex flex-col items-center justify-center gap-4 py-8">
+                <p className="text-center text-destructive text-sm">
+                  Failed to analyze CSV. Please try again.
+                </p>
+                <Button
+                  onClick={handleRetryAnalysis}
+                  type="button"
+                  variant="outline"
+                >
+                  Retry
+                </Button>
+              </div>
+            )}
+
+            {analysisData && !isAnalyzing && (
+              <div className="grid gap-6 py-4">
+                {questions.length > 0 && (
+                  <div className="space-y-4">
+                    {questions.map((question) => (
+                      <FormField
+                        control={form.control}
+                        key={question.id}
+                        name={question.id}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{question.label}</FormLabel>
+                            {question.description && (
+                              <p className="text-muted-foreground text-xs">
+                                {question.description}
+                              </p>
+                            )}
+                            <FormControl>
+                              {renderQuestionControl(question, {
+                                value: field.value ?? "",
+                                onChange: field.onChange,
+                              })}
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <DialogFooter>
               <Button
-                onClick={handleRetryAnalysis}
+                onClick={() => handleOpenChange(false)}
                 type="button"
                 variant="outline"
               >
-                Retry
+                Cancel
               </Button>
-            </div>
-          )}
-
-          {analysisData && !isAnalyzing && (
-            <div className="grid gap-6 py-4">
-              {analysisData.questions.length > 0 && (
-                <div className="space-y-4">
-                  {analysisData.questions.map((question) => (
-                    <div className="grid gap-2" key={question.id}>
-                      <Label htmlFor={question.id}>
-                        {question.label}
-                        {question.required && (
-                          <span className="ml-1 text-red-500">*</span>
-                        )}
-                      </Label>
-                      {question.description && (
-                        <p className="text-muted-foreground text-xs">
-                          {question.description}
-                        </p>
-                      )}
-                      {renderQuestion(question)}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button
-              onClick={() => handleOpenChange(false)}
-              type="button"
-              variant="outline"
-            >
-              Cancel
-            </Button>
-            <Button
-              disabled={isAnalyzing || isSubmitting || !analysisData}
-              type="submit"
-            >
-              Submit
-            </Button>
-          </DialogFooter>
-        </form>
+              <Button
+                disabled={isAnalyzing || isSubmitting || !analysisData}
+                type="submit"
+              >
+                Submit
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

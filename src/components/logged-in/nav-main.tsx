@@ -56,8 +56,9 @@ export function NavMain({
 
   const { mutate: createCsvUpload } = trpc.uploads.createCsvUpload.useMutation({
     onSuccess: (data, variables) => {
+      toast.dismiss("upload-bank-statement");
       toast.success("CSV uploaded", {
-        id: "upload-bank-statement",
+        id: "upload-csv",
         description: "Please provide some additional information.",
       });
       setIsUploading(false);
@@ -68,9 +69,10 @@ export function NavMain({
       setFiles(null);
     },
     onError: (error) => {
+      toast.dismiss("upload-bank-statement");
       setIsUploading(false);
       toast.error(error.message, {
-        id: "upload-bank-statement",
+        id: "upload-csv",
         description: null,
       });
     },
