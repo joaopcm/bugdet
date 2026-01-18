@@ -1,0 +1,1 @@
+ALTER TABLE "upload" RENAME COLUMN "pdf_deleted" TO "file_deleted";

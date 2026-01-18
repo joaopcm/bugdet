@@ -20,6 +20,7 @@ import { useInvalidateUploads } from "@/hooks/use-uploads";
 import { trpc } from "@/lib/trpc/client";
 import { formatBytes } from "@/lib/utils";
 import { DoubleConfirmationAlertDialog } from "../double-confirmation-alert-dialog";
+import { CsvConfigDialog } from "./csv-config-dialog";
 import { FileName } from "./file-name";
 import { PasswordDialog } from "./password-dialog";
 import { StatusBadge } from "./status-badge";
@@ -34,7 +35,7 @@ interface UploadItemProps {
     | "failedReason"
     | "fileSize"
     | "metadata"
-    | "pdfDeleted"
+    | "fileDeleted"
     | "retryCount"
   >;
   isSelected?: boolean;
@@ -134,6 +135,14 @@ export function UploadItem({
           </PasswordDialog>
         )}
 
+        {upload.status === "waiting_for_csv_answers" && (
+          <CsvConfigDialog fileName={upload.fileName} uploadId={upload.id}>
+            <Button size="sm" variant="default">
+              Answer
+            </Button>
+          </CsvConfigDialog>
+        )}
+
         {CANCELLABLE_STATUSES.includes(upload.status) && (
           <DoubleConfirmationAlertDialog
             description="Are you sure you want to cancel the processing of this upload? This action cannot be undone."
@@ -147,7 +156,7 @@ export function UploadItem({
         )}
 
         {upload.status === "failed" &&
-          !upload.pdfDeleted &&
+          !upload.fileDeleted &&
           upload.retryCount < 3 && (
             <DoubleConfirmationAlertDialog
               description="This will restart processing from the beginning."
