@@ -1,7 +1,7 @@
 "use client";
 
 import { IconLoader2 } from "@tabler/icons-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -52,6 +52,7 @@ export function CsvConfigDialog({
 }: CsvConfigDialogProps) {
   const [open, setOpen] = useState(defaultOpen);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const hasTriggeredAnalysis = useRef(false);
   const invalidate = useInvalidateUploads();
 
   const {
@@ -89,7 +90,13 @@ export function CsvConfigDialog({
     });
 
   useEffect(() => {
-    if (open && !analysisData && !isAnalyzing) {
+    if (
+      open &&
+      !analysisData &&
+      !isAnalyzing &&
+      !hasTriggeredAnalysis.current
+    ) {
+      hasTriggeredAnalysis.current = true;
       analyzeCsv({ uploadId });
     }
   }, [open, uploadId, analysisData, isAnalyzing, analyzeCsv]);
@@ -100,6 +107,8 @@ export function CsvConfigDialog({
       for (const question of analysisData.questions) {
         if (question.defaultValue) {
           initialAnswers[question.id] = question.defaultValue;
+        } else if (question.type === "boolean") {
+          initialAnswers[question.id] = "false";
         }
       }
       setAnswers(initialAnswers);
@@ -125,6 +134,7 @@ export function CsvConfigDialog({
     if (!newOpen) {
       setAnswers({});
       resetAnalysis();
+      hasTriggeredAnalysis.current = false;
     }
   };
 
