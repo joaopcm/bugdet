@@ -59,12 +59,9 @@ export function CsvConfigDialog({
     mutate: analyzeCsv,
     data: analysisData,
     isPending: isAnalyzing,
+    error: analysisError,
     reset: resetAnalysis,
-  } = trpc.uploads.analyzeCsv.useMutation({
-    onError: (error) => {
-      toast.error(error.message);
-    },
-  });
+  } = trpc.uploads.analyzeCsv.useMutation();
 
   const { mutate: submitAnswers, isPending: isSubmitting } =
     trpc.uploads.submitCsvAnswers.useMutation({
@@ -136,6 +133,12 @@ export function CsvConfigDialog({
       resetAnalysis();
       hasTriggeredAnalysis.current = false;
     }
+  };
+
+  const handleRetryAnalysis = () => {
+    resetAnalysis();
+    hasTriggeredAnalysis.current = false;
+    analyzeCsv({ uploadId });
   };
 
   const renderQuestion = (question: CsvQuestion) => {
@@ -216,6 +219,21 @@ export function CsvConfigDialog({
               <span className="ml-2 text-muted-foreground">
                 Analyzing CSV...
               </span>
+            </div>
+          )}
+
+          {analysisError && !isAnalyzing && (
+            <div className="flex flex-col items-center justify-center gap-4 py-8">
+              <p className="text-center text-destructive text-sm">
+                Failed to analyze CSV. Please try again.
+              </p>
+              <Button
+                onClick={handleRetryAnalysis}
+                type="button"
+                variant="outline"
+              >
+                Retry
+              </Button>
             </div>
           )}
 
