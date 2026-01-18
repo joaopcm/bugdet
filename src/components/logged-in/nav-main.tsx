@@ -54,6 +54,9 @@ export function NavMain({
 
   useHotkeys(IMPORT_BANK_STATEMENT_SHORTCUT, () => handleImportClick());
 
+  const { mutate: deleteStorageFiles } =
+    trpc.uploads.deleteStorageFiles.useMutation();
+
   const { mutate: createCsvUpload } = trpc.uploads.createCsvUpload.useMutation({
     onSuccess: (data, variables) => {
       toast.success("CSV uploaded", {
@@ -117,6 +120,10 @@ export function NavMain({
           });
 
           if (csvUploads.length > 1) {
+            const skippedCsvPaths = csvUploads
+              .slice(1)
+              .map((u) => u.signedUrlConfig.path);
+            deleteStorageFiles({ filePaths: skippedCsvPaths });
             toast.info("Only one CSV can be processed at a time", {
               description: "Additional CSV files were skipped.",
             });

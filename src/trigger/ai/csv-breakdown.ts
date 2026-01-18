@@ -1,4 +1,4 @@
-import { logger, task } from "@trigger.dev/sdk/v3";
+import { AbortTaskRunError, logger, task } from "@trigger.dev/sdk/v3";
 import { and, eq, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { upload, user } from "@/db/schema";
@@ -28,14 +28,12 @@ export const csvBreakdownTask = task({
       .where(eq(upload.id, payload.uploadId));
 
     if (!existingUpload) {
-      logger.error(`Upload ${payload.uploadId} not found`);
-      return { success: false, reason: "Upload not found" };
+      throw new AbortTaskRunError(`Upload ${payload.uploadId} not found`);
     }
 
     const userId = await getUserIdFromTenant(existingUpload.tenantId);
     if (!userId) {
-      logger.error("Tenant not found for upload");
-      return { success: false, reason: "Tenant not found" };
+      throw new AbortTaskRunError("Tenant not found for upload");
     }
 
     const [uploadUser] = await db
@@ -44,8 +42,7 @@ export const csvBreakdownTask = task({
       .where(eq(user.id, userId));
 
     if (!uploadUser) {
-      logger.error("User not found for upload");
-      return { success: false, reason: "User not found" };
+      throw new AbortTaskRunError("User not found for upload");
     }
 
     await db

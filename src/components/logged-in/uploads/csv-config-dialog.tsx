@@ -67,9 +67,15 @@ export function CsvConfigDialog({
 
   const { mutate: submitAnswers, isPending: isSubmitting } =
     trpc.uploads.submitCsvAnswers.useMutation({
+      onMutate: () => {
+        toast.loading("Submitting answers...", { id: "csv-submit" });
+      },
       onSuccess: () => {
         toast.success(
-          "CSV processing started. We'll email you when it's done."
+          "CSV processing started. We'll email you when it's done.",
+          {
+            id: "csv-submit",
+          }
         );
         setOpen(false);
         setAnswers({});
@@ -78,7 +84,7 @@ export function CsvConfigDialog({
         onSuccess?.();
       },
       onError: (error) => {
-        toast.error(error.message);
+        toast.error(error.message, { id: "csv-submit" });
       },
     });
 
@@ -287,14 +293,7 @@ export function CsvConfigDialog({
               disabled={isAnalyzing || isSubmitting || !analysisData}
               type="submit"
             >
-              {isSubmitting ? (
-                <>
-                  <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                "Submit"
-              )}
+              Submit
             </Button>
           </DialogFooter>
         </form>

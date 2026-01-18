@@ -174,6 +174,10 @@ export interface CsvConfig {
     amountColumn?: string;
     descriptionColumn?: string;
   };
+  preview?: {
+    headers: string[];
+    sampleRows: string[][];
+  };
 }
 
 export interface UploadMetadata {

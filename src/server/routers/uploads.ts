@@ -567,7 +567,7 @@ export const uploadsRouter = router({
       z.object({
         fileName: z.string(),
         filePath: z.string(),
-        fileSize: z.number(),
+        fileSize: z.number().max(1024 * 1024, "CSV file must be under 1MiB"),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -622,7 +622,7 @@ export const uploadsRouter = router({
         return {
           questions: existingUpload.metadata.csvConfig
             .questions as CsvQuestion[],
-          preview: {
+          preview: existingUpload.metadata.csvConfig.preview ?? {
             headers: [] as string[],
             sampleRows: [] as string[][],
           },
@@ -652,45 +652,62 @@ export const uploadsRouter = router({
         });
       }
 
-      const analysisResult = await generateObject({
-        model: "anthropic/claude-haiku-4.5",
-        mode: "json",
-        schemaName: "csv-analysis",
-        schemaDescription:
-          "Analysis result for a CSV bank statement with questions and column mapping.",
-        schema: csvAnalysisResultSchema,
-        messages: [
-          {
-            role: "user",
-            content: buildCsvAnalysisPrompt(headers, rows),
-          },
-        ],
-      });
-
-      const questions = analysisResult.object.questions;
-      const inferredMapping = analysisResult.object.inferredMapping;
-
-      await ctx.db
-        .update(upload)
-        .set({
-          metadata: {
-            ...existingUpload.metadata,
-            csvConfig: {
-              questions,
-              inferredMapping,
+      try {
+        const analysisResult = await generateObject({
+          model: "anthropic/claude-haiku-4.5",
+          mode: "json",
+          schemaName: "csv-analysis",
+          schemaDescription:
+            "Analysis result for a CSV bank statement with questions and column mapping.",
+          schema: csvAnalysisResultSchema,
+          messages: [
+            {
+              role: "user",
+              content: buildCsvAnalysisPrompt(headers, rows),
             },
-          },
-        })
-        .where(eq(upload.id, input.uploadId));
+          ],
+        });
 
-      return {
-        questions,
-        preview: {
+        const questions = analysisResult.object.questions;
+        const inferredMapping = analysisResult.object.inferredMapping;
+        const preview = {
           headers,
           sampleRows: rows.slice(0, 5),
-        },
-        inferredMapping,
-      };
+        };
+
+        await ctx.db
+          .update(upload)
+          .set({
+            metadata: {
+              ...existingUpload.metadata,
+              csvConfig: {
+                questions,
+                inferredMapping,
+                preview,
+              },
+            },
+          })
+          .where(eq(upload.id, input.uploadId));
+
+        return {
+          questions,
+          preview,
+          inferredMapping,
+        };
+      } catch {
+        await ctx.db
+          .update(upload)
+          .set({
+            status: "failed",
+            failedReason: "Failed to analyze CSV file. Please try again.",
+          })
+          .where(eq(upload.id, input.uploadId));
+
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to analyze CSV file. Please try again.",
+        });
+      }
     }),
   submitCsvAnswers: protectedProcedure
     .input(
@@ -729,6 +746,16 @@ export const uploadsRouter = router({
         });
       }
 
+      const questions = existingUpload.metadata?.csvConfig?.questions ?? [];
+      for (const question of questions) {
+        if (question.required && !input.answers[question.id]?.trim()) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Required answer missing: ${question.label}`,
+          });
+        }
+      }
+
       await ctx.db
         .update(upload)
         .set({
@@ -745,6 +772,13 @@ export const uploadsRouter = router({
 
       await tasks.trigger("csv-breakdown", { uploadId: input.uploadId });
 
+      return { success: true };
+    }),
+  deleteStorageFiles: protectedProcedure
+    .input(z.object({ filePaths: z.array(z.string()).min(1).max(10) }))
+    .mutation(async ({ input }) => {
+      const supabase = await createClient({ admin: true });
+      await supabase.storage.from("bank-statements").remove(input.filePaths);
       return { success: true };
     }),
 });
