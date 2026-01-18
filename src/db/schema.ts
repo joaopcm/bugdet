@@ -214,7 +214,7 @@ export const upload = pgTable(
     failedReason: text("failed_reason"),
     metadata: jsonb("metadata").$type<UploadMetadata>(),
     pageCount: integer("page_count"),
-    pdfDeleted: boolean("pdf_deleted").notNull().default(false),
+    fileDeleted: boolean("file_deleted").notNull().default(false),
     retryCount: integer("retry_count").notNull().default(0),
     deleted: boolean("deleted").notNull().default(false),
     createdAt: timestamp("created_at").notNull().defaultNow(),

@@ -167,7 +167,7 @@ export const categorizeAndImportTransactionsTask = task({
         } else {
           await db
             .update(upload)
-            .set({ pdfDeleted: true })
+            .set({ fileDeleted: true })
             .where(eq(upload.id, payload.uploadId));
         }
 
@@ -463,7 +463,7 @@ export const categorizeAndImportTransactionsTask = task({
       } else {
         await db
           .update(upload)
-          .set({ pdfDeleted: true })
+          .set({ fileDeleted: true })
           .where(eq(upload.id, payload.uploadId));
       }
     }

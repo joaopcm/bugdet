@@ -35,7 +35,7 @@ interface UploadItemProps {
     | "failedReason"
     | "fileSize"
     | "metadata"
-    | "pdfDeleted"
+    | "fileDeleted"
     | "retryCount"
   >;
   isSelected?: boolean;
@@ -156,7 +156,7 @@ export function UploadItem({
         )}
 
         {upload.status === "failed" &&
-          !upload.pdfDeleted &&
+          !upload.fileDeleted &&
           upload.retryCount < 3 && (
             <DoubleConfirmationAlertDialog
               description="This will restart processing from the beginning."

@@ -101,7 +101,7 @@ async function getExistingUpload(id: string, tenantId: string) {
       status: upload.status,
       filePath: upload.filePath,
       pageCount: upload.pageCount,
-      pdfDeleted: upload.pdfDeleted,
+      fileDeleted: upload.fileDeleted,
       retryCount: upload.retryCount,
     })
     .from(upload)
@@ -261,7 +261,7 @@ export const uploadsRouter = router({
           status: upload.status,
           failedReason: upload.failedReason,
           metadata: upload.metadata,
-          pdfDeleted: upload.pdfDeleted,
+          fileDeleted: upload.fileDeleted,
           retryCount: upload.retryCount,
           createdAt: upload.createdAt,
         })
@@ -309,7 +309,7 @@ export const uploadsRouter = router({
         });
       }
 
-      if (existingUpload.pdfDeleted) {
+      if (existingUpload.fileDeleted) {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Cannot retry: original PDF has been deleted.",

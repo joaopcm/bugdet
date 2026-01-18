@@ -265,7 +265,7 @@ export const extractTransactionsCsvTask = task({
     } else {
       await db
         .update(upload)
-        .set({ pdfDeleted: true })
+        .set({ fileDeleted: true })
         .where(eq(upload.id, payload.uploadId));
       logger.info(`Deleted CSV file for upload ${payload.uploadId}`);
     }
