@@ -568,6 +568,7 @@ export const uploadsRouter = router({
         fileName: z.string(),
         filePath: z.string(),
         fileSize: z.number().max(1024 * 1024, "CSV file must be under 1MiB"),
+        cleanupFilePaths: z.array(z.string()).max(10).optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -582,6 +583,13 @@ export const uploadsRouter = router({
           status: "waiting_for_csv_answers",
         })
         .returning({ id: upload.id });
+
+      if (input.cleanupFilePaths && input.cleanupFilePaths.length > 0) {
+        const supabase = await createClient({ admin: true });
+        await supabase.storage
+          .from("bank-statements")
+          .remove(input.cleanupFilePaths);
+      }
 
       return { uploadId: newUpload.id };
     }),
@@ -772,13 +780,6 @@ export const uploadsRouter = router({
 
       await tasks.trigger("csv-breakdown", { uploadId: input.uploadId });
 
-      return { success: true };
-    }),
-  deleteStorageFiles: protectedProcedure
-    .input(z.object({ filePaths: z.array(z.string()).min(1).max(10) }))
-    .mutation(async ({ input }) => {
-      const supabase = await createClient({ admin: true });
-      await supabase.storage.from("bank-statements").remove(input.filePaths);
       return { success: true };
     }),
 });
