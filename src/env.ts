@@ -4,7 +4,6 @@ import { z } from "zod";
 
 export const env = createEnv({
   server: {
-    ADMIN_EMAILS: z.string().default(""),
     AI_GATEWAY_API_KEY: z.string(),
     BACKOFFICE_API_KEY: z.string(),
     BETTER_AUTH_SECRET: z.string(),
@@ -16,7 +15,6 @@ export const env = createEnv({
     SUPABASE_ANON_KEY: z.string(),
     SUPABASE_SERVICE_ROLE_KEY: z.string(),
     SUPABASE_URL: z.string().url(),
-    TRIGGER_PROJECT: z.string(),
     TRIGGER_SECRET_KEY: z.string(),
     UPLOAD_PASSWORD_ENCRYPTION_KEY: z.string().min(64),
     UPSTASH_REDIS_REST_TOKEN: z.string(),
@@ -28,7 +26,6 @@ export const env = createEnv({
     NODE_ENV: z.enum(["development", "production"]),
   },
   runtimeEnv: {
-    ADMIN_EMAILS: process.env.ADMIN_EMAILS,
     AI_GATEWAY_API_KEY: process.env.AI_GATEWAY_API_KEY,
     BACKOFFICE_API_KEY: process.env.BACKOFFICE_API_KEY,
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
@@ -42,7 +39,6 @@ export const env = createEnv({
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     SUPABASE_URL: process.env.SUPABASE_URL,
-    TRIGGER_PROJECT: process.env.TRIGGER_PROJECT,
     TRIGGER_SECRET_KEY: process.env.TRIGGER_SECRET_KEY,
     UPLOAD_PASSWORD_ENCRYPTION_KEY: process.env.UPLOAD_PASSWORD_ENCRYPTION_KEY,
     UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN,

@@ -101,6 +101,14 @@ export function AIModelSettings() {
     [allModelsQuery.data]
   );
 
+  const modelById = useMemo(() => {
+    const map = new Map<string, ModelRow>();
+    for (const model of allModelsQuery.data ?? []) {
+      map.set(model.modelId, model);
+    }
+    return map;
+  }, [allModelsQuery.data]);
+
   function onSubmit(values: FormValues) {
     updatePreferences.mutate({
       statementExtractionModel:
@@ -186,9 +194,12 @@ export function AIModelSettings() {
                       </FormControl>
                       <FormDescription>
                         {config.description} Recommended:{" "}
-                        <code className="rounded bg-muted px-1 py-0.5 text-xs">
-                          {config.defaultModel}
-                        </code>
+                        <span className="font-medium text-foreground">
+                          {formatRecommendation(
+                            config.defaultModel,
+                            modelById.get(config.defaultModel)
+                          )}
+                        </span>
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -221,6 +232,16 @@ interface ModelRow {
 interface ProviderGroup {
   provider: string;
   models: ModelRow[];
+}
+
+function formatRecommendation(
+  modelId: string,
+  model: ModelRow | undefined
+): string {
+  if (!model) {
+    return modelId;
+  }
+  return `${model.provider}'s ${model.name}`;
 }
 
 function groupByProvider(models: ModelRow[]): ProviderGroup[] {
