@@ -1,7 +1,9 @@
 import { defineConfig } from "@trigger.dev/sdk/v3";
+// import { env } from "@/env";
 
 export default defineConfig({
-  project: "proj_yewubdlbjccxwzskauad",
+  // project: env.TRIGGER_PROJECT,
+  project: "proj_vaqzcpxtjwtxijppnrhu",
   runtime: "node",
   logLevel: "log",
   maxDuration: 600, // 10 minutes in seconds

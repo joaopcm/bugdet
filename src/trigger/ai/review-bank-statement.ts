@@ -1,6 +1,10 @@
 import { logger, task } from "@trigger.dev/sdk/v3";
 import { generateObject } from "ai";
+import { eq } from "drizzle-orm";
 import { z } from "zod";
+import { db } from "@/db";
+import { upload } from "@/db/schema";
+import { getTaskModel } from "@/lib/ai/get-task-model";
 import type { PdfPageImage } from "@/lib/pdf";
 import { getUploadImages, type PageImage } from "@/lib/uploads/get-page-images";
 
@@ -69,9 +73,23 @@ export const reviewBankStatementTask = task({
       };
     }
 
-    logger.info("Analyzing bank statement with AI...");
+    const [uploadRecord] = await db
+      .select({ tenantId: upload.tenantId })
+      .from(upload)
+      .where(eq(upload.id, payload.uploadId));
+
+    if (!uploadRecord) {
+      return {
+        isValid: false,
+        reason: "Upload not found in database.",
+        documentType: "unknown" as const,
+      };
+    }
+
+    const model = await getTaskModel(uploadRecord.tenantId, "documentAnalysis");
+    logger.info("Analyzing bank statement with AI...", { model });
     const result = await generateObject({
-      model: "anthropic/claude-haiku-4.5",
+      model,
       mode: "json",
       schemaName: "review-bank-statement",
       schemaDescription:

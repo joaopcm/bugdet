@@ -2,6 +2,7 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 import { db } from "@/db";
+import { env } from "@/env";
 import { auth } from "@/lib/auth/auth";
 import { getOrCreateTenant, type TenantContext } from "@/lib/tenant";
 
@@ -63,3 +64,18 @@ export interface ProtectedContext {
   user: NonNullable<Awaited<ReturnType<typeof createTRPCContext>>["user"]>;
   tenant: TenantContext;
 }
+
+export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
+  const adminEmails = env.ADMIN_EMAILS.split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter((e) => e.length > 0);
+
+  if (!adminEmails.includes(ctx.user.email.toLowerCase())) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Admin access required.",
+    });
+  }
+
+  return next({ ctx });
+});

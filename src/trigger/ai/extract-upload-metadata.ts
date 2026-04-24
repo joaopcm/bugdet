@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { upload } from "@/db/schema";
+import { getTaskModel } from "@/lib/ai/get-task-model";
 import type { PdfPageImage } from "@/lib/pdf";
 import { getUploadImages, type PageImage } from "@/lib/uploads/get-page-images";
 
@@ -99,9 +100,21 @@ export const extractUploadMetadataTask = task({
       );
     }
 
-    logger.info("Extracting metadata with AI...");
+    const [uploadRecord] = await db
+      .select({ tenantId: upload.tenantId })
+      .from(upload)
+      .where(eq(upload.id, payload.uploadId));
+
+    if (!uploadRecord) {
+      throw new AbortTaskRunError(
+        `Upload ${payload.uploadId} not found in database`
+      );
+    }
+
+    const model = await getTaskModel(uploadRecord.tenantId, "documentAnalysis");
+    logger.info("Extracting metadata with AI...", { model });
     const result = await generateObject({
-      model: "anthropic/claude-haiku-4.5",
+      model,
       mode: "json",
       schemaName: "extract-upload-metadata",
       schemaDescription:

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PageLayout } from "@/components/logged-in/page-layout";
+import { AIModelSettings } from "@/components/settings/ai-model-settings";
 import { ProfilePictureSettings } from "@/components/settings/profile-picture-settings";
 import { TwoFactorSettings } from "@/components/settings/two-factor-settings";
 
@@ -19,6 +20,7 @@ export default function SettingsPage() {
       <div className="flex flex-col gap-6">
         <ProfilePictureSettings />
         <TwoFactorSettings />
+        <AIModelSettings />
       </div>
     </PageLayout.Root>
   );

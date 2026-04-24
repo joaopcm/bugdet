@@ -1,5 +1,7 @@
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { db } from "@/db";
+import { aiModelsRouter } from "./routers/ai-models";
+import { aiPreferencesRouter } from "./routers/ai-preferences";
 import { budgetsRouter } from "./routers/budgets";
 import { categoriesRouter } from "./routers/categories";
 import { categorizationRulesRouter } from "./routers/categorization-rules";
@@ -25,6 +27,8 @@ export const appRouter = router({
   waitlist: waitlistRouter,
   users: usersRouter,
   onboarding: onboardingRouter,
+  aiModels: aiModelsRouter,
+  aiPreferences: aiPreferencesRouter,
 });
 
 export type AppRouter = typeof appRouter;

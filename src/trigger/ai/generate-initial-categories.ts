@@ -5,6 +5,7 @@ import { z } from "zod";
 import { INDUSTRIES, PRIMARY_USES, WORK_TYPES } from "@/constants/onboarding";
 import { db } from "@/db";
 import { category, userProfile } from "@/db/schema";
+import { getTaskModel } from "@/lib/ai/get-task-model";
 import { getUserIdFromTenant } from "@/lib/tenant";
 
 const UNIVERSAL_CATEGORIES = [
@@ -131,12 +132,14 @@ export const generateInitialCategoriesTask = task({
       profile &&
       (profile.workType || profile.primaryUse || profile.industry)
     ) {
+      const model = await getTaskModel(payload.tenantId, "categorization");
       logger.info("Generating AI-suggested categories based on profile", {
         profile,
+        model,
       });
 
       const result = await generateObject({
-        model: "anthropic/claude-haiku-4.5",
+        model,
         mode: "json",
         schemaName: "additional-categories",
         schemaDescription: "Additional categories based on user profile",

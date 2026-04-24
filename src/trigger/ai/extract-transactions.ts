@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { upload } from "@/db/schema";
+import { getTaskModel } from "@/lib/ai/get-task-model";
 import type { PdfPageImage } from "@/lib/pdf";
 import { getUploadImages, type PageImage } from "@/lib/uploads/get-page-images";
 import type { DocumentType } from "./review-bank-statement";
@@ -248,9 +249,13 @@ export const extractTransactionsTask = task({
       );
     }
 
-    logger.info("Extracting transactions with AI...");
+    const model = await getTaskModel(
+      uploadRecord.tenantId,
+      "statementExtraction"
+    );
+    logger.info("Extracting transactions with AI...", { model });
     const result = await generateObject({
-      model: "anthropic/claude-sonnet-4.5",
+      model,
       mode: "json",
       schemaName: "extract-transactions",
       schemaDescription:

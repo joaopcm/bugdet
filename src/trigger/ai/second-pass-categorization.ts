@@ -5,6 +5,7 @@ import { z } from "zod";
 import { CONFIDENCE_THRESHOLD } from "@/constants/transactions";
 import { db } from "@/db";
 import { category, transaction } from "@/db/schema";
+import { getTaskModel } from "@/lib/ai/get-task-model";
 
 const recategorizationSchema = z.object({
   recategorizedTransactions: z.array(
@@ -186,9 +187,10 @@ export const secondPassCategorizationTask = task({
       currentConfidence: tx.confidence,
     }));
 
-    logger.info("Re-categorizing transactions with AI...");
+    const model = await getTaskModel(payload.tenantId, "categorization");
+    logger.info("Re-categorizing transactions with AI...", { model });
     const recategorizationResult = await generateObject({
-      model: "anthropic/claude-sonnet-4.5",
+      model,
       mode: "json",
       schemaName: "recategorize-transactions",
       schemaDescription:

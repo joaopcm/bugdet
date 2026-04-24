@@ -354,6 +354,46 @@ export const budget = pgTable(
   })
 );
 
+export type AIModel = typeof aiModel.$inferSelect;
+
+export const aiModel = pgTable(
+  "ai_model",
+  {
+    id: uuid("id").defaultRandom().notNull().primaryKey(),
+    modelId: text("model_id").notNull().unique(),
+    provider: text("provider").notNull(),
+    name: text("name").notNull(),
+    vision: boolean("vision").notNull().default(false),
+    enabled: boolean("enabled").notNull().default(true),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at")
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => ({
+    enabledIdx: index("ai_model_enabled_idx").on(table.enabled),
+  })
+);
+
+export type AIPreferences = typeof aiPreferences.$inferSelect;
+
+export const aiPreferences = pgTable("ai_preferences", {
+  id: uuid("id").defaultRandom().notNull().primaryKey(),
+  tenantId: uuid("tenant_id")
+    .notNull()
+    .unique()
+    .references(() => userTenant.tenantId, { onDelete: "cascade" }),
+  statementExtractionModel: text("statement_extraction_model"),
+  documentAnalysisModel: text("document_analysis_model"),
+  categorizationModel: text("categorization_model"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at")
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
 export type BudgetCategory = typeof budgetCategory.$inferSelect;
 
 export const budgetCategory = pgTable(

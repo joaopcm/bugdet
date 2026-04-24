@@ -12,6 +12,7 @@ import {
   user,
 } from "@/db/schema";
 import { env } from "@/env";
+import { getTaskModel } from "@/lib/ai/get-task-model";
 import { generateTransactionFingerprint } from "@/lib/fingerprint";
 import { applyRules } from "@/lib/rules/apply-rules";
 import { createLambdaClient } from "@/lib/supabase/server";
@@ -219,9 +220,10 @@ export const categorizeAndImportTransactionsTask = task({
       .orderBy(desc(categorizationRule.priority), categorizationRule.createdAt);
     logger.info(`Found ${rules.length} categorization rules`);
 
-    logger.info("Categorizing transactions with AI...");
+    const model = await getTaskModel(payload.tenantId, "categorization");
+    logger.info("Categorizing transactions with AI...", { model });
     const categorizationResult = await generateObject({
-      model: "anthropic/claude-haiku-4.5",
+      model,
       mode: "json",
       schemaName: "categorize-transactions",
       schemaDescription: "Category assignments for extracted transactions.",
