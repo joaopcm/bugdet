@@ -57,6 +57,25 @@ export const userProfile = pgTable("user_profile", {
     .$onUpdate(() => new Date()),
 });
 
+export const colorModeEnum = pgEnum("color_mode", ["light", "dark", "system"]);
+
+export type UserSettings = typeof userSettings.$inferSelect;
+
+export const userSettings = pgTable("user_settings", {
+  id: uuid("id").defaultRandom().notNull().primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .unique()
+    .references(() => user.id, { onDelete: "cascade" }),
+  themePreset: text("theme_preset").notNull().default("matsu"),
+  colorMode: colorModeEnum("color_mode").notNull().default("system"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at")
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
 export const session = pgTable("session", {
   id: text("id").primaryKey(),
   expiresAt: timestamp("expires_at").notNull(),

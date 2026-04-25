@@ -5,6 +5,7 @@ import { categoriesRouter } from "./routers/categories";
 import { categorizationRulesRouter } from "./routers/categorization-rules";
 import { dashboardRouter } from "./routers/dashboard";
 import { onboardingRouter } from "./routers/onboarding";
+import { settingsRouter } from "./routers/settings";
 import { transactionsRouter } from "./routers/transactions";
 import { uploadsRouter } from "./routers/uploads";
 import { usersRouter } from "./routers/users";
@@ -25,6 +26,7 @@ export const appRouter = router({
   waitlist: waitlistRouter,
   users: usersRouter,
   onboarding: onboardingRouter,
+  settings: settingsRouter,
 });
 
 export type AppRouter = typeof appRouter;

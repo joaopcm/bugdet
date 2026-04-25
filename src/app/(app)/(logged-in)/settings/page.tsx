@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PageLayout } from "@/components/logged-in/page-layout";
 import { ProfilePictureSettings } from "@/components/settings/profile-picture-settings";
+import { ThemeSettings } from "@/components/settings/theme-settings";
 import { TwoFactorSettings } from "@/components/settings/two-factor-settings";
 
 export const metadata: Metadata = {
@@ -17,6 +18,7 @@ export default function SettingsPage() {
         </PageLayout.HeaderContent>
       </PageLayout.Header>
       <div className="flex flex-col gap-6">
+        <ThemeSettings />
         <ProfilePictureSettings />
         <TwoFactorSettings />
       </div>

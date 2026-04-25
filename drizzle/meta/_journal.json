@@ -232,6 +232,13 @@
       "when": 1768518111955,
       "tag": "0032_mean_bruce_banner",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1777071986896,
+      "tag": "0033_rich_luke_cage",
+      "breakpoints": true
     }
   ]
 }

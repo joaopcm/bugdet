@@ -1,12 +1,17 @@
 import type { Metadata } from "next";
 import { Nunito, PT_Sans } from "next/font/google";
 import "./globals.css";
+import { cookies, headers } from "next/headers";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import type { PropsWithChildren } from "react";
 import { TailwindIndicator } from "@/components/devtools/tailwind-indicator";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import TRPCProvider from "@/components/providers/trpc";
 import { Toaster } from "@/components/ui/sonner";
 import { env } from "@/env";
+import { auth } from "@/lib/auth/auth";
+import { buildPresetCss, getPreset } from "@/lib/themes/apply";
+import { parseThemeCookie, THEME_COOKIE } from "@/lib/themes/cookie";
 
 const nunito = Nunito({
   variable: "--font-nunito",
@@ -79,19 +84,41 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: PropsWithChildren) {
+export default async function RootLayout({ children }: PropsWithChildren) {
+  const [cookieStore, requestHeaders] = await Promise.all([
+    cookies(),
+    headers(),
+  ]);
+  const theme = parseThemeCookie(cookieStore.get(THEME_COOKIE)?.value);
+  const presetCss = buildPresetCss(getPreset(theme.preset));
+  const session = await auth.api.getSession({ headers: requestHeaders });
+  const isAuthenticated = Boolean(session?.user?.id);
+
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <style
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: server-rendered CSS vars
+          dangerouslySetInnerHTML={{ __html: presetCss }}
+          id="bugdet-theme-vars"
+        />
+      </head>
       <body
         className={`${nunito.variable} ${ptSans.variable} relative antialiased`}
       >
         <div className="texture" />
         <TRPCProvider>
-          <NuqsAdapter>
-            <main>{children}</main>
-            <Toaster />
-            <TailwindIndicator />
-          </NuqsAdapter>
+          <ThemeProvider
+            initialMode={theme.mode}
+            initialPreset={theme.preset}
+            isAuthenticated={isAuthenticated}
+          >
+            <NuqsAdapter>
+              <main>{children}</main>
+              <Toaster />
+              <TailwindIndicator />
+            </NuqsAdapter>
+          </ThemeProvider>
         </TRPCProvider>
       </body>
     </html>
